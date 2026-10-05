@@ -1,0 +1,17 @@
+name: Host tests
+
+on: [push, pull_request, workflow_dispatch]
+
+permissions:
+  contents: read
+
+jobs:
+  game:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rules and 20,000-seed fairness simulation
+        run: ./tools/test.sh
+      - name: Address and undefined-behavior sanitizers
+        run: ./tools/test.sh --sanitize
