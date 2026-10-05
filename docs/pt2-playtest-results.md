@@ -1,6 +1,6 @@
 # PT2 play-test results — 2026-10-05
 
-Status: **menu size and clock clearance accepted; title styling update in progress**. The owner is available and
+Status: **green title banners installed; attack/feedback play-test pending**. The owner is available and
 enabled the phone's Dev Connection. CloudPebble ping returned Pong, and the
 installer exited 0 with `App install succeeded.` Game A subsequently appeared
 in the physical-device log. Connection, installation and runtime logs do not
@@ -14,9 +14,35 @@ an explanation of the A/B hint. Those changes are installed in the new
 candidate below; the menu/clock readability recheck has been requested.
 The owner subsequently confirmed “Both looks good” for larger menu text and
 clock clearance, and requested a vibrant title background to distinguish it
-from menu content. That additional styling is being prepared.
+from menu content. That additional styling is installed. The next requested
+observations cover deliberate Brutus hits, dizzy/MISS/vibration feedback and
+Game B's side changes.
 
-## Current candidate: larger menus and clock clearance
+## Current candidate: green title banners
+
+- Version **1.0.0**, source commit `15ea674141ab4508f9156a0ddd338b180daeec83`.
+- Clean tree when frozen at **2026-10-05 18:26:59 JST**.
+- Frozen file: `.release/pt2-playtest/15ea674141ab/popeye-gw.pbw`.
+- SHA-256: `4871914cca78826738c159a38b71bfc8f2c2d61d07d67183cc80ef163b27de33`.
+- Physical installation: **pass**, CloudPebble exit 0, `App install succeeded.`
+
+| Build check | Result |
+|---|---|
+| Host tests / ASan+UBSan | Both pass; green palette rotation covered; 10,000 seeds/mode with zero unavoidable misses |
+| Clean SDK build | Exit 0, literal `'build' finished`; Tool 5.0.40 / SDK 4.33.1 |
+| App image / headroom | **17,572 / 61,440 bytes**, 43,868 bytes headroom; playable engine retained |
+| PBW / resources | **37,974 / 18,689 bytes**, within budgets |
+| Identity / icon | Name, UUID, version, Emery-only watchapp verified; unchanged launcher icon |
+| Emulator heap, A and B | **47,548 free / 65,948 used**, 41.89% free after visiting menus |
+| Physical heap | Not yet sampled on this candidate |
+| Visual checks | Two native captures confirm green titles and white lettering in portrait and landscape |
+| Cleanup | Build environment locks removed; emulator logger stopped |
+
+Logs and captures: `.release/pt2-header/`. The title accent uses the existing
+fourth palette slot; the UI bitmap remains 10 KB. The owner-accepted font size
+and clock inset are unchanged. No publication approval has been given.
+
+## Previous candidate: larger menus and clock clearance
 
 - Version: **1.0.0**, source commit `d27d095287ddb2f851aea17e087a52d2fd8c9533`.
 - Clean tree when frozen at **2026-10-05 18:19:39 JST**.
@@ -75,7 +101,8 @@ This frozen play-test candidate is not a store publication approval.
 | CloudPebble connection | Pass: phone/watch connection responded to ping |
 | Frozen PBW installed | Pass: updated candidate's CloudPebble install exited 0; initial candidate also ran Game A on watch |
 | Larger menus and clock top clearance | Pass: owner confirmed “Both looks good” on candidate `d27d095` |
-| Colored title banner | Requested after readability acceptance; update in progress |
+| Colored title banner | Installed in `15ea674`; native portrait/landscape checks pass; owner observation pending |
+| Brutus hit feedback and B side changes | Guided test requested; owner observation pending |
 | Clock food demonstration | Owner observation pending |
 | Up/Down controls | Owner reports controls feel fine on initial build; <50 ms latency remains unmeasured |
 | Catches and miss feedback | Detailed owner observation pending |
