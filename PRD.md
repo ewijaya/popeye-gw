@@ -8,7 +8,7 @@
 
 | | |
 |---|---|
-| Status | Draft 1.0 for owner review |
+| Status | M5 watch validation; implementation and store art ready, M6 unreleased |
 | Date | 5 October 2026 |
 | Owner | Edward Wijaya |
 | Target | Pebble Time 2 (Emery, 200 × 228, 64 colours) |
@@ -62,7 +62,7 @@ to be an official Nintendo release or an exact hardware emulation.
 
 - Other Pebble models (Pebble 2 Duo, round watches). The design keeps
   layout data separate so they can follow later.
-- Sound. Pebble has no speaker; feedback is visual plus vibration.
+- Sound in version 1. Feedback is visual plus vibration; no audio is implemented.
 - Online leaderboards, phone settings or any network use.
 - Additional game modes beyond A and B.
 - Exact emulation of the original handheld hardware.
@@ -85,7 +85,7 @@ to be an official Nintendo release or an exact hardware emulation.
 |---|---|
 | Popeye | Recognizable sailor with cap, pipe and oversized forearms in a rowboat at the centre of the harbour. Five poses: far-left reach, near-left reach, upright centre, near-right reach, far-right reach. |
 | Olive Oyl | Tall, slender figure beside her car on the left ledge; fixed ready/throw poses launch food along authored arcs. |
-| Cargo | Falls along one of four lanes, one per catch pose. Each lane has its own fixed drawing (lane 1 crates, lane 2 fish, lane 3 lanterns, lane 4 barrels), as LCD segments cannot change shape. |
+| Cargo | Falls along one of four lanes, one per catch pose. Each lane has its own fixed drawing (lane 1 tilted bottle, lane 2 fish, lane 3 upright bottle, lane 4 food can), as LCD segments cannot change shape. |
 | Brutus | Burly, bearded rival with a sailor cap. Game A: hammer from the left pier. Game B: one Brutus changes between the left pier and right ship (fist). |
 | Splash | Shown at the bottom of a lane when cargo hits the water. |
 | MISS cans | Upper-right miss counter, up to three empty cans. A half-can marks one pending dropped food (watch affordance, see 5.6). |
@@ -239,9 +239,12 @@ up to 1,000 points and must record zero unavoidable misses.
 
 - The **clock** state shows the time on the four digits with a blinking
   colon. AM/PM indicators follow the watch's 12/24-hour setting.
-- Attract animation: in clock mode Olive, Popeye and Brutus move through a few
-  idle poses slowly, about one change every two seconds, as the classic
-  handhelds did. A setting turns this off to save battery.
+- Attract animation: a silent throw/flight/catch demonstration uses all four
+  authored food arcs over 48 seconds, with one pose change every two seconds.
+  Olive throws from her car, Popeye moves to catch, and Brutus threatens the
+  opposite side. These are watch presentation timings, not measured PP-23
+  timings. Alarm ringing replaces the demonstration with Olive’s bell.
+- Attract Off uses static poses and a steady colon with minute-only updates.
 
 ### 6.2 Alarm
 
@@ -268,6 +271,7 @@ up to 1,000 points and must record zero unavoidable misses.
   - Vibration (on)
   - Ghost segments (on)
   - Attract animation (on)
+  - Orientation: Portrait / Landscape (Portrait); rotate all game, clock and menu UI
 - **About:** version, licence, and a one-line note identifying this as a fan-made watch adaptation.
 - All settings and scores are saved on the watch and survive app updates.
 
@@ -275,14 +279,22 @@ up to 1,000 points and must record zero unavoidable misses.
 
 | Event | Visual | Vibration |
 |---|---|---|
-| Catch | Popeye's catch pose flashes | none |
+| Catch | Catch sparkle and final food position for one game step | none |
 | Drop (first) | Splash, then half-can | none |
-| Miss | Dizzy Popeye or flashing splash, MISS can lights | short pulse |
-| Bonus threshold | MISS marks clear | short pulse (planned) |
-| New high score | "HI" indicator flashes on game over | double pulse |
+| Miss | Dizzy Popeye or splash blinks; MISS cans stay lit | short pulse |
+| Bonus threshold | MISS marks clear; MISS label blinks | short pulse |
+| New high score at game over | HI and score blink, then remain visible | game-over long pulse followed by two short pulses |
 | Game over | Score flashes | long pulse |
 
-Every vibration respects the Vibration setting and Quiet Time.
+Every vibration respects the Vibration setting and Quiet Time. A new best
+catch does not trigger a vibration. Combined third-miss/game-over events
+produce one end-of-round cue, not stacked miss and game-over pulses.
+
+Miss, bonus and end-of-round blinking lasts 1.5 active seconds with 250 ms
+phases, then ends on a readable scene. Pause, focus loss or a full-screen
+alarm freezes visual feedback; resume does not replay its vibration.
+Restart/quit clears feedback. A failed presentation-timer allocation leaves
+a readable, non-flashing scene.
 
 ## 9. Visual style and art
 
@@ -330,6 +342,12 @@ Menu icon 25 × 25; store icons 48 × 48 and 144 × 144; a 720 × 320 banner;
 4–5 native emulator screenshots: clock, Game A, Game B with Brutus
 striking, game over with "HI", and alarm ringing.
 
+The owner-approved banner uses **BACK TO GAME & WATCH** and
+**A whole childhood on one small screen.** The footer is large vintage type
+without flanking rules. Source prompts, masters and exact-size exports live
+in `art/store/` and `docs/releases/listing/`. Banner wording does not expand
+the Emery-only platform target.
+
 ## 10. Technical architecture
 
 ### 10.1 Modules
@@ -338,17 +356,28 @@ striking, game over with "HI", and alarm ringing.
 |---|---|---|
 | `src/c/game.c/.h` | Pure game rules: state, step, input, scoring, misses, scheduler, Brutus cycle, fairness rules, deterministic xorshift RNG | none (host-testable) |
 | `src/c/tuning.h` | All tunable numbers (section 5.8) | none |
-| `src/c/view.c/.h` | Turns game, clock and alarm state into the set of lit segments, then draws backdrop plus lit segments | Graphics |
-| `src/c/segments.h` | Generated segment table | none |
-| `src/c/clock.c/.h` | Clock mode, colon blink, attract animation | Tick timer |
-| `src/c/alarm.c/.h` | Alarm settings, wakeup scheduling, ringing | Wakeup, vibes |
-| `src/c/store.c/.h` | Settings and high scores with versioned records | Persist |
-| `src/c/main.c` | App lifecycle, window, buttons, state machine, focus handling | App, window, focus |
+| `src/c/scene.c/.h` | Pure game state → active segment bitset | none |
+| `src/c/view.c/.h` | Backdrop, segments, menus, overlays and orientation | Graphics |
+| `src/c/segments.h`, `segments_landscape.h` | Generated portrait/landscape segment tables | none |
+| `src/c/orientation.c/.h` | Pack the reusable rotated UI buffer | none |
+| `src/c/clock.c/.h` | Pure clock/attract scene and local-calendar alarm calculation | none |
+| `src/c/alarm.c/.h` | Daily alarm scheduling and wakeup lifecycle | Wakeup, Persist |
+| `src/c/store.c/.h` | Versioned settings/high-score codecs and defaults | none |
+| `src/c/storage.c/.h` | Read/write those records on the watch | Persist |
+| `src/c/feedback.c/.h` | Pure finite visual feedback and event priority | none |
+| `src/c/feedback_service.c/.h` | Feedback timer, haptics and Quiet Time | AppTimer, vibes |
+| `src/c/main.c` | App lifecycle, buttons, state machine, focus, clock ticks and alarm ringing | App, window, focus, TickTimer, AppTimer, vibes |
 
 ### 10.2 Timing
 
-- **Game steps:** one `AppTimer` rescheduled each step. No timers run while
-  paused, in the background or game over.
+- **Game steps:** one `AppTimer` rescheduled per step or miss recovery; it
+  stops while paused, in the background and immediately at game over.
+- **Feedback:** a separate presentation timer runs only for the finite
+  1.5-second effect, including the end-of-round flash after gameplay stops.
+  It is cancelled while paused/hidden/backgrounded and resumes the remaining
+  phase without repeating a pulse. No feedback timer remains after the effect.
+- **Alarm:** a separate one-second foreground timer animates ringing, for at
+  most 60 seconds. Idle clock ticks are unsubscribed during alarm rendering.
 - **Clock:** a per-second tick for the colon blink while the clock is
   visible; per-minute when attract animation is off.
 - **Input:** presses change state immediately and request one redraw.
@@ -359,17 +388,23 @@ striking, game over with "HI", and alarm ringing.
 - The update procedure draws the backdrop bitmap (with or without ghosts),
   then each lit segment as a sub-bitmap of the sprite sheet using transparent
   compositing.
-- Redraws only when state changes: at most one per step, input or clock tick.
+- Redraws follow game steps, input, visible clock ticks and alarm ticks.
+  Finite feedback adds a redraw at each 250 ms phase boundary. There is no
+  continuous frame loop.
 
 ### 10.4 Saved data
 
 | Key | Record | Fields |
 |---|---|---|
-| 1 | Settings, version 1 | swap buttons, vibration, ghosts, attract, alarm on, alarm hour, alarm minute |
-| 2 | High scores, version 1 | Game A best + date, Game B best + date |
+| 1 | Settings, version 2, 8 bytes | swap buttons, vibration, ghosts, attract, alarm on, landscape, alarm hour/minute, checksum |
+| 2 | High scores, version 1, 21 bytes | Game A/B full 32-bit best totals and local dates, checksum |
+| 3 | Wakeup ID, signed integer | OS wakeup identifier for the daily alarm; reconciled on launch |
 
-Each record has a version byte. Unknown or corrupt records fall back to
-defaults without crashing.
+Settings and score records have a version byte and checksum. Settings v1
+remains readable, with Portrait as the orientation default. Unknown/corrupt
+records fall back independently without crashing. Writes occur at pause,
+game over, focus loss and exit; failures stay visible. Wakeup scheduling
+verifies its persisted ID against the OS rather than trusting stale data.
 
 ### 10.5 Budgets
 
@@ -384,10 +419,15 @@ The release build checks the app image size and fails above budget.
 
 ## 11. Performance, battery and reliability
 
-- No work at all while paused or in the background.
+- No gameplay or feedback timer runs while paused or backgrounded. Explicit
+  input/focus transitions may save state or redraw, and an alarm can wake the
+  app into the foreground. A foreground paused game can still receive an alarm.
 - The clock redraws at most once per second, only while visible.
-- Input to redraw within 50 ms.
-- No heap allocation per frame; bitmaps are loaded once.
+- Input-to-redraw target: within 50 ms. Immediate state changes are implemented;
+  physical input/display latency remains a measurement to validate, not a
+  claimed result from host tests.
+- No heap allocation in the renderer update loop; bitmaps and the rotated
+  UI buffer are reused. Orientation/ghost changes may replace loaded resources.
 - The game never crashes on missing or corrupt saved data.
 - Wakeup scheduling failures are visible in the Alarm menu, never silent.
 
@@ -403,7 +443,10 @@ The release build checks the app image size and fails above budget.
    - deterministic replay from a seed.
 2. **Fairness simulation:** the perfect-player bot from section 5.9, over
    10,000 seeds per mode.
-3. **Store tests:** saved-data round trip, corrupt and old records, defaults.
+3. **Store/adapter tests:** saved-data round trip, corrupt/old records, write
+   failures, defaults, clock/calendar/DST and wakeup lifecycle. M5 tests cover
+   all demo food positions, finite feedback, pause/resume, delayed callbacks,
+   timer failure and haptic priority/settings/Quiet Time.
 4. **Art pipeline test:** the generated files match the source art.
 5. **CI:** a GitHub Action runs the host tests on every push. The Pebble SDK
    build stays local.
@@ -412,7 +455,9 @@ The release build checks the app image size and fails above budget.
    - emulator screenshots of the five store scenes;
    - 10-minute play-test on the owner's Pebble Time 2, covering both modes,
      pause and resume, alarm firing while closed and while playing, and the
-     settings round trip.
+     settings round trip. Record observations against the frozen PBW hash in
+     [the PT2 checklist](docs/pt2-playtest.md); emulator results do not count as
+     physical-watch passes.
 
 ## 13. Release and distribution
 
@@ -466,8 +511,11 @@ The release build checks the app image size and fails above budget.
 
 1. **Art production:** approved generated character sources feed the
    deterministic segment pipeline; the owner reviews final native-size art.
-2. **Tuning:** the numbers in section 5.8 are starting points to settle by
-   play-testing.
+2. **Tuning and fidelity:** section 5.8 is the watch adaptation’s provisional
+   table. Watch play-testing can settle usability, not prove Nintendo timing.
+   Original hold/release, catch windows, path counts and attack cadence remain
+   trace-dependent in [the fidelity ledger](docs/pp23-fidelity.md). Do not mark
+   these resolved solely because watch tests pass.
 3. **Identity (resolved):** Popeye G&W, starring Popeye, Olive Oyl and Brutus.
 4. **Later platforms:** Pebble 2 Duo (black-and-white, 144 × 168) is the
    most likely second target after 1.0.

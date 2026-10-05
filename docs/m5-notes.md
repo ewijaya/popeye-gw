@@ -1,7 +1,8 @@
 # M5 implementation notes
 
-M5's software and store-art work is implemented. Owner play-testing on a
-physical PT2, art acceptance and final timing/input tuning remain open.
+M5's software and store-art work is implemented; the owner approved the final
+banner. Physical PT2 play-testing and final timing/input tuning remain open.
+Use the [guided checklist](pt2-playtest.md) and [results record](pt2-playtest-results.md).
 Nothing has been published to the store. [Validation](m5-audit.md) covers the
 local development build; [reference gaps](pp23-fidelity.md) remain explicit.
 
@@ -28,13 +29,14 @@ contains the Pebble timer and haptic calls; `main.c` connects game events and
 app lifecycle. The game engine, score format, UUID and gameplay timing tables
 are unchanged. The same segment mask works in portrait and landscape.
 
-**PRD interpretation:** sections 8 and 10 require flashing feedback but say
-there are no timers after game over. The gameplay timer still stops immediately;
+**PRD reconciliation:** sections 8 and 10 now explicitly describe the finite
+feedback timer. The gameplay timer still stops immediately;
 a separate finite presentation timer finishes the 1.5-second end sequence,
 then stops too. During these effects there can be up to four presentation
 redraws per second in addition to game/input redraws. There is no perpetual
 post-game animation or timer while paused/backgrounded. These are presentation
-durations, not claimed Nintendo timing. The PRD itself was not edited.
+durations, not claimed Nintendo timing. The owner authorized this PRD cleanup
+before beginning the physical play-test.
 
 ## Clock demonstration
 
@@ -64,7 +66,7 @@ The master and store export now use those lines, preserving the liked design.
 Use `build/popeye-gw.pbw` from the audit; it is a development build, not an
 approved release candidate. The owner needs to check:
 
-- Play at least ten minutes in each mode, including busy food sequences and
+- Play at least ten minutes total across both modes, including busy food sequences and
   Brutus side changes; report unfair or unreadable moments and the score.
 - Try portrait and landscape, swapped controls, press/hold/release and rapid
   direction changes; verify the catch window and vibration comfort on a wrist.

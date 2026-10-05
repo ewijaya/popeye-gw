@@ -9,7 +9,8 @@ black segments, a white field, and vivid red, orange, blue and turquoise.
 **Status:** M5 software and store artwork are implemented: 82 segments, Game A/B,
 clock with a food-catching demo, daily alarm, saved settings/high scores,
 portrait/landscape, and finite visual/haptic feedback. Physical-watch play-test
-sign-off and M6 release remain pending. This is a watch adaptation, not an exact ROM recreation.
+sign-off and M6 release remain pending. Use the [PT2 play-test checklist](docs/pt2-playtest.md)
+and [results record](docs/pt2-playtest-results.md). This is a watch adaptation, not an exact ROM recreation.
 [Reference observations and remaining fidelity gaps](docs/pp23-fidelity.md)
 distinguish confirmed rules from provisional timing, paths and input behavior.
 The app name is **Popeye G&W**; repository/package/build slug is `popeye-gw`.
