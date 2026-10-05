@@ -19,7 +19,7 @@ changing it and restore it afterwards. The build does not reset saved data.
    should release food from the car, food should travel through fixed positions,
    and Popeye should move to catch it. All four routes fit in a 48-second cycle.
 2. Press **Select** once for Game A. **Up moves left**, **Down moves right**
-   unless Swap controls is enabled. A press moves one pose; holding does not
+   unless Swap is enabled. A press moves one pose; holding does not
    repeat. The center is safe from Brutus but cannot catch food.
 3. Catch one item. Deliberately miss two: the first drop adds a half-can and
    stays silent; the second adds a full miss, blinks the splash and gives a
@@ -44,10 +44,10 @@ is useful but does not establish a measured <50 ms input latency.
 7. During a round, cover the app with a notification/system screen if practical.
    On return it should be paused; no hidden play or continuing game vibration.
    Select resumes. Ordinary app exit ends the in-memory round.
-8. From clock: Down → Settings → Orientation. Try Landscape with the three
+8. From clock: Down → Settings → View. Try Landscape with the three
    buttons along the top, then return to Portrait. Menus and clock rotate too.
-   Toggle Swap controls and Ghost segments once; verify the change and restore
-   the previous choices. Turn Attract Off: poses and colon become static.
+   Toggle Swap and Ghosts once; verify the change and restore
+   the previous choices. Turn Demo Off: poses and colon become static.
 
 If naturally reached, check 200/500: MISS cans clear, MISS blinks, one short
 pulse. If not reached, record **not reached**; host tests cover those events,
@@ -55,9 +55,9 @@ not a fabricated physical-watch result.
 
 ## Vibration and alarms
 
-9. Set Vibration Off. Preview an alarm through Down → Alarm → Test alarm;
+9. Set Vibrate Off. Preview an alarm through Down → Alarm → Test alarm;
    it should animate without vibrating. Any button dismisses it. Restore
-   Vibration On, enable the watch's Quiet Time, and repeat; it stays silent.
+   Vibrate On, enable the watch's Quiet Time, and repeat; it stays silent.
    Restore Quiet Time afterwards. With both enabled normally, the test alarm
    should give short pulses roughly every two seconds until dismissed.
 10. Record the existing alarm setting, then set a daily alarm one or two

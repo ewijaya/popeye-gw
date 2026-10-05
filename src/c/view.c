@@ -27,28 +27,50 @@ static void draw_text(GContext *ctx, const char *text, GRect rect, bool bold,
       rect, GTextOverflowModeWordWrap, alignment, NULL);
 }
 
+/* Keep menu entries on one line. Only unusually long values (for example a
+ * ten-digit high score) step down from the large default. */
+static void draw_panel_line(GContext *ctx, const char *text, GRect rect,
+                            GTextAlignment alignment) {
+  static const char *const keys[] = {
+    FONT_KEY_GOTHIC_28_BOLD, FONT_KEY_GOTHIC_24_BOLD, FONT_KEY_GOTHIC_18_BOLD
+  };
+  unsigned i;
+  GFont font = NULL;
+  for (i = 0; i < ARRAY_LENGTH(keys); ++i) {
+    GSize size;
+    font = fonts_get_system_font(keys[i]);
+    size = graphics_text_layout_get_content_size(text, font,
+        GRect(0, 0, 2000, 40), GTextOverflowModeWordWrap, GTextAlignmentLeft);
+    if (size.w <= rect.size.w) break;
+  }
+  graphics_draw_text(ctx, text, font, rect, GTextOverflowModeTrailingEllipsis,
+                     alignment, NULL);
+}
+
 static void draw_panel(GContext *ctx) {
   unsigned row;
   unsigned first = s_panel.selected > 3 ? (unsigned)s_panel.selected - 3u : 0u;
-  int start = s_landscape ? 33 : 45;
-  int spacing = s_landscape ? 31 : 34;
+  int start = s_landscape ? 37 : 42;
+  int spacing = s_landscape ? 30 : 34;
   graphics_context_set_fill_color(ctx, GColorWhite);
   graphics_fill_rect(ctx, GRect(0, 0, 200, s_landscape ? 200 : 228), 0, GCornerNone);
   graphics_context_set_text_color(ctx, GColorBlack);
-  draw_text(ctx, s_panel.title, GRect(8, 7, 184, 25), true, GTextAlignmentCenter);
+  draw_panel_line(ctx, s_panel.title, GRect(4, -2, 192, 36), GTextAlignmentCenter);
   graphics_context_set_stroke_color(ctx, GColorBlack);
-  graphics_draw_line(ctx, GPoint(8, s_landscape ? 30 : 36), GPoint(192, s_landscape ? 30 : 36));
+  graphics_draw_line(ctx, GPoint(6, 34), GPoint(194, 34));
   for (row = first; row < s_panel.count && row < first + 4u; ++row) {
     bool selected = (int)row == s_panel.selected;
-    GRect box = GRect(8, start + (row - first) * spacing, 184, spacing - 2);
+    GRect box = GRect(4, start + (row - first) * spacing, 192, spacing - 1);
     graphics_context_set_fill_color(ctx, selected ? GColorBlack : GColorWhite);
     graphics_fill_rect(ctx, box, 2, GCornersAll);
     graphics_context_set_text_color(ctx, selected ? GColorWhite : GColorBlack);
-    draw_text(ctx, s_panel.rows[row], GRect(13, box.origin.y + 3, 174, 28), true,
-              GTextAlignmentLeft);
+    draw_panel_line(ctx, s_panel.rows[row], GRect(8, box.origin.y - 5, 184, 35),
+                    GTextAlignmentLeft);
   }
   graphics_context_set_text_color(ctx, GColorBlack);
-  draw_text(ctx, s_panel.footer, GRect(8, s_landscape ? 163 : 187, 184, 37), false, GTextAlignmentCenter);
+  graphics_draw_text(ctx, s_panel.footer, fonts_get_system_font(FONT_KEY_GOTHIC_18),
+      GRect(4, s_landscape ? 158 : 182, 192, 44),
+      GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
 }
 
 static void draw_segment(GContext *ctx, unsigned seg) {
@@ -69,8 +91,10 @@ static void draw_overlay(GContext *ctx) {
   if (s_overlay == VIEW_OVERLAY_NONE) return;
   if (s_overlay == VIEW_OVERLAY_CLOCK) {
     graphics_context_set_text_color(ctx, GColorBlack);
-    /* Keep the playfield clear with a compact clock-only start hint. */
-    draw_text(ctx, "Select A  Hold B", GRect(4, s_landscape ? 24 : 27, 106, 20), false, GTextAlignmentCenter);
+    /* Both modes use the same physical Select button. Leave the food field
+     * clear and spell out tap versus hold beside the clock register. */
+    draw_text(ctx, "Tap Select: A\nHold Select: B", GRect(4, 3, 98, 38), false,
+              GTextAlignmentLeft);
     return;
   }
   graphics_context_set_fill_color(ctx, GColorWhite);

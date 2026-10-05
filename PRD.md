@@ -239,6 +239,8 @@ up to 1,000 points and must record zero unavoidable misses.
 
 - The **clock** state shows the time on the four digits with a blinking
   colon. AM/PM indicators follow the watch's 12/24-hour setting.
+- The clock/score register has an eight-pixel top inset. Clock hints spell out
+  **Tap Select: A** and **Hold Select: B** beside the digits.
 - Attract animation: a silent throw/flight/catch demonstration uses all four
   authored food arcs over 48 seconds, with one pose change every two seconds.
   Olive throws from her car, Popeye moves to catch, and Brutus threatens the
@@ -264,14 +266,16 @@ up to 1,000 points and must record zero unavoidable misses.
 ## 7. Menu, settings and high scores
 
 - **Menu** (Down in clock mode): High scores, Alarm, Settings, About.
+- Menu titles and rows use 28-pixel bold text with compact, single-line labels;
+  unusually long values use a smaller font to fit. Footers use 18-pixel text.
 - **High scores:** best score and date for Game A and Game B, plus a reset
   option with confirmation.
 - **Settings:**
-  - Swap Up and Down (off)
-  - Vibration (on)
-  - Ghost segments (on)
-  - Attract animation (on)
-  - Orientation: Portrait / Landscape (Portrait); rotate all game, clock and menu UI
+  - Swap: swap Up and Down (off)
+  - Vibrate: vibration (on)
+  - Ghosts: ghost segments (on)
+  - Demo: attract animation (on)
+  - View: Portrait / Landscape (Portrait); rotate all game, clock and menu UI
 - **About:** version, licence, and a one-line note identifying this as a fan-made watch adaptation.
 - All settings and scores are saved on the watch and survive app updates.
 

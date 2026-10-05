@@ -10,6 +10,7 @@ the earlier invented freighter layout and Lucky Tide rules.
 - [MAME handheld driver](https://github.com/mamedev/mame/blob/master/src/mame/handheld/hh_sm510.cpp): PP-23 definition, input wiring, custom LCD segments and the note about movement after game over. The 1604 × 1080 size and 60 Hz are emulator rendering settings, not game timing.
 - [Original manual scan](https://handheldempire.com/manuals/11_1467239843743.pdf), discovered through [Handheld Empire](https://handheldempire.com/game.jsp?game=11). All eight PDF pages inspected; **PP-23 is printed on the cover**. PDF pages below are one-based.
 - [Old80s MAME recording](https://www.youtube.com/watch?v=7r-XsTXNuNU): inspected extracted frames at the timestamps below, plus the narrow 00:59–01:03 timing sample added in M5. This does not establish input transitions or a complete side-switch sequence.
+- [MasterAbbott physical PP-23 recording](https://www.youtube.com/watch?v=wqVdknR8228): inspected an overview of the full recording and sampled frames from 14:30–14:45 at 0.5-second intervals. These show gameplay on the physical handheld; thumb placement obscures exact button edges.
 - Owner's reference photograph: Olive beside the left car, right ship, orange boat, food and upper-right score/MISS.
 
 Driver artifact identity, checked against the source:
@@ -30,17 +31,20 @@ are used as evidence. Spinach is food here, not a combat power-up.
 | Source / location | Observation | Confidence / consequence |
 |---|---|---|
 | Manual p1 | Cover identifies PP-23 | High; correct manual |
+| Manual p4, rule 1 | Holding Game A displays the best score; play begins on release | High; the watch instead uses Select tap/hold for A/B |
 | Manual p4, rules 3–5 | One point per catch; two dropped items or a Brutus hit give one miss; third miss ends play | High; implemented |
 | Manual p5, rule 6 | Miss marks clear at 200/500 | High; implemented; pending-drop detail remains open |
 | Manual p5, rule 7 | Food quantity and speed return to normal every 100 points | High; implemented cycle reset, numerical table provisional |
 | Manual p5, score note | Display rolls over beyond 999 | High; display wraps, app retains true total for records |
 | Manual p5, Game B | Brutus moves between right boat and left pier | High; one rival, side changes in B |
+| Manual p5, clock note | Returns to the clock after about five minutes without input following game over | High; watch requires Back to return to clock |
 | MAME source, general note | Controls remain active after game over | High for continued movement; exact original poses/input mapping still open |
 | Recording 00:20 | Clock scene: Olive at car, left hammer, food, upper-right time | High for visible composition only |
 | Recording 01:00 / 03:00 / 05:00 | Game A; left hammer, food arcs, can-shaped miss marks | High for visible states only |
 | Recording 10:00 | Game A; hammer extended toward Popeye | High for pose; no duration inferred |
 | Recording 20:00 | Game B; Brutus left, food and splash visible | High for visible state |
 | Recording 23:00 | Game B; Brutus right, fist raised | High for visible state; switch timing unmeasured |
+| Physical recording 14:30–14:45 | Game A shows Olive beside the car, moving food, left-side hammer, and several Popeye/boat configurations while the score advances | High for composition and visible states; insufficient to enumerate every pose or map press/hold/release |
 
 ## M5 timing sample (2026-10-05)
 
@@ -73,6 +77,20 @@ No gameplay timing table changed: this short, low-score sample cannot settle
 all food paths, speed tiers, catch windows, attack phases or hold behavior.
 M5's two-second idle demo and 250 ms feedback blink are watch presentation
 choices, not measurements from Nintendo hardware.
+
+## Physical-device footage check (2026-10-05)
+
+The MasterAbbott overview was decoded from the 640 × 360, 30 fps recording.
+A separate 1280 × 720, 60 fps excerpt covers 14:30–14:45; a contact sheet samples
+it every 0.5 seconds. The actual PP-23 display shows food travelling from Olive,
+Popeye in different configurations above the orange boat, and the left hammer
+during Game A. This supports the scene arrangement used by the watch.
+
+The hands are visible, but the thumbs obscure button travel and the sampled
+frames omit transitions. Apparent returns to a central pose cannot establish
+whether release, a fresh press or a catch caused them. No hold/release rule,
+latency, total pose count or movement duration is inferred from this sample.
+The local videos and contact sheets remain under `.release/pp23/`, uncommitted.
 
 ## Implemented watch behavior versus open questions
 
@@ -114,8 +132,9 @@ transitions and timings for these scenarios, then replay the same input edges:
 5. Cause a catch/attack overlap and a miss during multiple airborne items.
 6. Reach game over, move, and restart with press/hold/release controls.
 
-[Physical PP-23 recording](https://www.youtube.com/watch?v=wqVdknR8228) remains a
-reference to inspect; it was not used for input/timing claims in this change.
+The [physical PP-23 recording](https://www.youtube.com/watch?v=wqVdknR8228) has
+now been inspected for composition, but a controlled input recording or trace
+is still needed for input/timing claims.
 If a matching ROM becomes available, use the [SM5A source](https://github.com/mamedev/mame/blob/master/src/devices/cpu/sm510/sm5a.cpp),
 [SM500 operations](https://github.com/mamedev/mame/blob/master/src/devices/cpu/sm510/sm500op.cpp),
 [disassembler](https://github.com/mamedev/mame/blob/master/src/devices/cpu/sm510/sm510d.cpp)

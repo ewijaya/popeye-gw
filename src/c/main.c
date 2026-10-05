@@ -213,8 +213,7 @@ static void render_panel(void) {
   ViewPanel panel = { .count = 4, .selected = (int)s_row };
   const Settings *settings = &s_data.settings;
   const AlarmStatus *alarm = alarm_status();
-  snprintf(panel.footer, sizeof(panel.footer), "%s: move\nSelect: choose   Back: return",
-           settings->landscape ? "Left/Right" : "Up/Down");
+  snprintf(panel.footer, sizeof(panel.footer), "Select: open  Back: clock");
   switch (s_page) {
     case PAGE_MENU:
       panel.title = "Popeye G&W";
@@ -226,11 +225,12 @@ static void render_panel(void) {
     case PAGE_SETTINGS:
       panel.count = 5;
       panel.title = "Settings";
-      snprintf(panel.rows[4], sizeof(panel.rows[4]), "Orientation: %s", settings->landscape ? "Landscape" : "Portrait");
-      snprintf(panel.rows[0], sizeof(panel.rows[0]), "Swap controls: %s", on_off(settings->swap_buttons));
-      snprintf(panel.rows[1], sizeof(panel.rows[1]), "Vibration: %s", on_off(settings->vibration));
-      snprintf(panel.rows[2], sizeof(panel.rows[2]), "Ghost segments: %s", on_off(settings->ghosts));
-      snprintf(panel.rows[3], sizeof(panel.rows[3]), "Attract animation: %s", on_off(settings->attract));
+      snprintf(panel.rows[4], sizeof(panel.rows[4]), "View: %s", settings->landscape ? "Landscape" : "Portrait");
+      snprintf(panel.rows[0], sizeof(panel.rows[0]), "Swap: %s", on_off(settings->swap_buttons));
+      snprintf(panel.rows[1], sizeof(panel.rows[1]), "Vibrate: %s", on_off(settings->vibration));
+      snprintf(panel.rows[2], sizeof(panel.rows[2]), "Ghosts: %s", on_off(settings->ghosts));
+      snprintf(panel.rows[3], sizeof(panel.rows[3]), "Demo: %s", on_off(settings->attract));
+      snprintf(panel.footer, sizeof(panel.footer), "Select: change  Back: menu");
       break;
     case PAGE_SCORES:
       panel.title = "High scores";
@@ -242,10 +242,11 @@ static void render_panel(void) {
       snprintf(panel.footer, sizeof(panel.footer), "Select: reset scores\nBack: clock");
       break;
     case PAGE_RESET:
-      panel.title = "Reset both scores?";
+      panel.title = "Reset scores?";
       panel.count = 2;
       snprintf(panel.rows[0], sizeof(panel.rows[0]), "Keep scores");
-      snprintf(panel.rows[1], sizeof(panel.rows[1]), "Reset both modes");
+      snprintf(panel.rows[1], sizeof(panel.rows[1]), "Reset A + B");
+      snprintf(panel.footer, sizeof(panel.footer), "Select: choose  Back: cancel");
       break;
     case PAGE_ALARM: {
       unsigned hour = settings->alarm_hour, minute = settings->alarm_minute;
@@ -255,32 +256,33 @@ static void render_panel(void) {
       snprintf(panel.rows[0], sizeof(panel.rows[0]), "Alarm: %s", on_off(settings->alarm_on));
       snprintf(panel.rows[1], sizeof(panel.rows[1]), "Hour (24h): %02u", hour);
       snprintf(panel.rows[2], sizeof(panel.rows[2]), "Minute: %02u", minute);
-      snprintf(panel.rows[3], sizeof(panel.rows[3]), "%s", alarm->error ? "Retry scheduling" : "Test alarm");
-      if (s_editing) snprintf(panel.footer, sizeof(panel.footer), "Up/Down: change\nSelect: save   Back: cancel");
+      snprintf(panel.rows[3], sizeof(panel.rows[3]), "%s", alarm->error ? "Retry alarm" : "Test alarm");
+      if (s_editing) snprintf(panel.footer, sizeof(panel.footer), "%s: change\nSelect: save  Back: cancel",
+                             settings->landscape ? "Left/Right" : "Up/Down");
       else if (alarm->error) {
         const char *reason = alarm->error == E_RANGE ? "Time unavailable" :
-                             alarm->error == E_OUT_OF_STORAGE ? "Could not save alarm" : "Could not set alarm";
-        snprintf(panel.footer, sizeof(panel.footer), "%s\nSelect Retry to try again", reason);
+                             alarm->error == E_OUT_OF_STORAGE ? "Alarm save failed" : "Alarm not set";
+        snprintf(panel.footer, sizeof(panel.footer), "%s\nSelect: retry", reason);
       }
       else if (alarm->next != 0) {
         char next[24];
         strftime(next, sizeof(next), "%a %H:%M", localtime(&alarm->next));
-        snprintf(panel.footer, sizeof(panel.footer), "%s: %s\nSelect: edit   Back: menu", alarm->adjusted ? "Adjusted +1m" : "Next", next);
-      } else snprintf(panel.footer, sizeof(panel.footer), "Alarm is off\nSelect: edit   Back: menu");
+        snprintf(panel.footer, sizeof(panel.footer), "%s: %s\nSelect: edit  Back: menu", alarm->adjusted ? "+1m" : "Next", next);
+      } else snprintf(panel.footer, sizeof(panel.footer), "Select: edit  Back: menu");
       break;
     }
     case PAGE_ABOUT:
       panel.title = "About";
       panel.selected = -1;
-      snprintf(panel.rows[0], sizeof(panel.rows[0]), "Popeye G&W v" POPEYE_GW_VERSION);
-      snprintf(panel.rows[1], sizeof(panel.rows[1]), "Fan-made adaptation");
-      snprintf(panel.rows[2], sizeof(panel.rows[2]), "Code: MIT licence");
+      snprintf(panel.rows[0], sizeof(panel.rows[0]), "Popeye G&W");
+      snprintf(panel.rows[1], sizeof(panel.rows[1]), "Fan-made game");
+      snprintf(panel.rows[2], sizeof(panel.rows[2]), "Code: MIT");
       snprintf(panel.rows[3], sizeof(panel.rows[3]), "Edward Wijaya");
-      snprintf(panel.footer, sizeof(panel.footer), "Pebble Time 2\nBack: menu");
+      snprintf(panel.footer, sizeof(panel.footer), "v" POPEYE_GW_VERSION " - Pebble Time 2\nBack: menu");
       break;
     default: return;
   }
-  if (save_error()) snprintf(panel.footer, sizeof(panel.footer), "Save failed. Select retries.\nBack: return");
+  if (save_error()) snprintf(panel.footer, sizeof(panel.footer), "Save failed\nSelect: retry  Back: return");
   view_panel(&panel);
 }
 

@@ -47,6 +47,22 @@ continues to display normally, with no gameplay score or vibration. Alarm
 ringing replaces this with Olive's bell. Attract Off remains static and only
 needs the existing minute tick. No extra clock timer is introduced.
 
+## Watch feedback: menu and clock readability
+
+The owner's first PT2 report was positive about the controls. Following that
+report, menu titles/rows now use 28-pixel bold text, compact one-line settings
+labels and 18-pixel footers. Long values step down in font size to stay readable
+without wrapping. The four-row viewport still scrolls to the fifth setting;
+portrait and landscape share the layout.
+
+The clock/score register moved down six pixels to an eight-pixel top inset;
+AM/PM and both ghost backdrops move with it. Clock hints now say “Tap Select: A”
+and “Hold Select: B”. The alarm indicator sits at the right edge, clear of the
+hints and MISS cans. These are presentation changes; game rules are unchanged.
+Native captures cover clock, menu, settings, landscape settings and alarm.
+Store screenshots predate this readability update and need refreshing against
+the final accepted build before publication; approved banner artwork is unchanged.
+
 ## Store artwork
 
 The owner's revised brief is implemented as a 1981-style green/gold/ivory advert
@@ -63,8 +79,10 @@ The master and store export now use those lines, preserving the liked design.
 
 ## Owner PT2 play-test remaining
 
-Use `build/popeye-gw.pbw` from the audit; it is a development build, not an
-approved release candidate. The owner needs to check:
+Use the frozen PBW identified in [the results record](pt2-playtest-results.md),
+not a later rebuild in `build/`. It has been installed through the phone's
+CloudPebble connection; physical acceptance is still pending. The owner needs
+to check:
 
 - Play at least ten minutes total across both modes, including busy food sequences and
   Brutus side changes; report unfair or unreadable moments and the score.

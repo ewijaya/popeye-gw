@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Prepare all 80 LCD segments from approved imagegen art and geometric UI.
+"""Prepare all 82 LCD segments from approved imagegen art and geometric UI.
 
 Maintainer-only tool: requires ImageMagick. Normal builds and CI consume the
 committed PNGs and use build_art.py, which needs only Python's standard library.
@@ -140,15 +140,16 @@ def ui(temp):
     for digit, x in enumerate((108, 126, 150, 168)):
         for bar, points in zip("abcdefg", bars):
             vector(f"digit-{digit}-{bar}",
-                   f'<g transform="translate({x},2)"><polygon points="{points}"/></g>', temp)
-    vector("colon", rect(145,7,2,2) + rect(145,14,2,2), temp)
-    for name, label, x, y in (("am","AM",186,4), ("pm","PM",186,14),
+                   f'<g transform="translate({x},8)"><polygon points="{points}"/></g>', temp)
+    vector("colon", rect(145,13,2,2) + rect(145,20,2,2), temp)
+    for name, label, x, y in (("am","AM",186,10), ("pm","PM",186,20),
                               ("game-a","GAME A",5,4), ("game-b","GAME B",5,14),
                               ("hi","HI",80,7)):
         vector(name, lettering(label, x, y), temp)
-    vector("bell", '<path d="M 50 16 L 52 13 V 9 Q 52 5 56 5 Q 60 5 60 9 V 13 '
+    # Right-edge alarm indicator leaves room for the explicit Select hints.
+    vector("bell", '<g transform="translate(136,26)"><path d="M 50 16 L 52 13 V 9 Q 52 5 56 5 Q 60 5 60 9 V 13 '
            'L 62 16 Z M 54 18 H 58" fill="none" stroke="black" stroke-width="2"/>'
-           + rect(55,3,2,2), temp)
+           + rect(55,3,2,2) + '</g>', temp)
 
 
 def main():
