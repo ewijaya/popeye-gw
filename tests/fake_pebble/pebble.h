@@ -22,4 +22,16 @@ void wakeup_cancel(WakeupId id);
 void wakeup_cancel_all(void);
 bool wakeup_get_launch_event(WakeupId *id, int32_t *cookie);
 bool wakeup_query(WakeupId id, time_t *timestamp);
+/* Feedback adapter surface. */
+typedef struct AppTimer AppTimer;
+typedef void (*AppTimerCallback)(void *data);
+AppTimer *app_timer_register(uint32_t timeout_ms, AppTimerCallback callback, void *data);
+void app_timer_cancel(AppTimer *timer);
+uint16_t time_ms(time_t *seconds, uint16_t *milliseconds);
+typedef struct { const uint32_t *durations; uint32_t num_segments; } VibePattern;
+bool quiet_time_is_active(void);
+void vibes_cancel(void);
+void vibes_short_pulse(void);
+void vibes_long_pulse(void);
+void vibes_enqueue_custom_pattern(VibePattern pattern);
 #endif

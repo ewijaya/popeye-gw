@@ -31,7 +31,11 @@ time_t clock_next_alarm(time_t now, unsigned hour, unsigned minute) {
 void clock_scene(Scene *scene, const struct tm *local, bool style_24h,
                  bool attract, bool alarm_on, bool ringing) {
   unsigned hour = (unsigned)local->tm_hour;
-  unsigned phase = attract ? (unsigned)local->tm_sec / 2u : 0u;
+  unsigned beat = ((unsigned)local->tm_hour * 3600u +
+                   (unsigned)local->tm_min * 60u + (unsigned)local->tm_sec) / 2u;
+  unsigned phase = beat % 6u, lane = beat / 6u % GAME_LANES;
+  unsigned pose = 2u, side = GAME_LEFT, attack = GAME_ATTACK_IDLE;
+  bool demo = attract && !ringing;
   scene_clear(scene);
   if (!style_24h) {
     scene_light(scene, hour < 12u ? SEG_AM : SEG_PM);
@@ -43,13 +47,25 @@ void clock_scene(Scene *scene, const struct tm *local, bool style_24h,
   scene_digit(scene, 2u, (unsigned)local->tm_min / 10u);
   scene_digit(scene, 3u, (unsigned)local->tm_min % 10u);
   if (!attract || local->tm_sec % 2 == 0) scene_light(scene, SEG_COLON);
-  scene_light(scene, SEG_POPEYE + (attract ? phase % GAME_POSES : 2u));
-  scene_light(scene, SEG_BRUTUS + (attract && phase % 4u >= 2u ? 3u : 0u) + (attract && phase % 2u ? GAME_ATTACK_WINDUP : GAME_ATTACK_IDLE));
+  if (demo) {
+    unsigned target = game_lane_pose((uint8_t)lane);
+    /* A deliberately slow, silent demonstration: ready, release, four fixed
+     * food positions, then catch. No score, random state or gameplay timer. */
+    if (phase >= 2u) pose = target < 2u ? 1u : 3u;
+    if (phase >= 3u) pose = target;
+    if (phase != 0u) scene_light(scene, SEG_CARGO + lane * GAME_CARGO_STEPS + phase - 1u);
+    if (phase == 5u) scene_light(scene, SEG_POPEYE_CATCH);
+    side = target < 2u ? GAME_RIGHT : GAME_LEFT;
+    if (phase == 2u || phase == 3u) attack = GAME_ATTACK_WINDUP;
+    if (phase == 4u) attack = GAME_ATTACK_STRIKE;
+  }
+  scene_light(scene, SEG_POPEYE + pose);
+  scene_light(scene, SEG_BRUTUS + side * 3u + attack);
   if (ringing) {
     scene_light(scene, SEG_OLIVE_BELL + (unsigned)local->tm_sec % 2u);
     if (local->tm_sec % 2 == 0) scene_light(scene, SEG_BELL);
   } else {
-    scene_light(scene, attract && phase % 2u ? SEG_OLIVE_THROW : SEG_OLIVE_READY);
+    scene_light(scene, demo && phase == 1u ? SEG_OLIVE_THROW : SEG_OLIVE_READY);
     if (alarm_on) scene_light(scene, SEG_BELL);
   }
 }

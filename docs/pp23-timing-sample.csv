@@ -1,0 +1,7 @@
+position,first_frame,last_frame,start_seconds,end_exclusive_seconds,duration_seconds,censored_end
+1,10,27,59.333,59.933,0.600,False
+2,28,44,59.933,60.500,0.567,False
+3,45,62,60.500,61.100,0.600,False
+4,63,79,61.100,61.667,0.567,False
+5,80,102,61.667,62.433,0.767,False
+6,103,119,62.433,63.000,0.567,True

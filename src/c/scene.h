@@ -16,7 +16,7 @@ enum {
   SEG_POPEYE_DIZZY_LEFT = SEG_POPEYE + 5,
   SEG_POPEYE_DIZZY_RIGHT,
   SEG_POPEYE_CATCH,
-  SEG_SPLASH,                              /* fixed left ledge */
+  SEG_SPLASH,                              /* + lane, 4 */
   SEG_BRUTUS = SEG_SPLASH + 4,            /* + side * 3 + phase, 6 */
   SEG_MISS = SEG_BRUTUS + 6,              /* + mark, 3 */
   SEG_MISS_HALF = SEG_MISS + 3,

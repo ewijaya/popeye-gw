@@ -9,7 +9,7 @@ the earlier invented freighter layout and Lucky Tide rules.
 
 - [MAME handheld driver](https://github.com/mamedev/mame/blob/master/src/mame/handheld/hh_sm510.cpp): PP-23 definition, input wiring, custom LCD segments and the note about movement after game over. The 1604 × 1080 size and 60 Hz are emulator rendering settings, not game timing.
 - [Original manual scan](https://handheldempire.com/manuals/11_1467239843743.pdf), discovered through [Handheld Empire](https://handheldempire.com/game.jsp?game=11). All eight PDF pages inspected; **PP-23 is printed on the cover**. PDF pages below are one-based.
-- [Old80s MAME recording](https://www.youtube.com/watch?v=7r-XsTXNuNU): inspected extracted frames at the timestamps below. These establish visible states, not durations, input transitions, or a complete side-switch sequence.
+- [Old80s MAME recording](https://www.youtube.com/watch?v=7r-XsTXNuNU): inspected extracted frames at the timestamps below, plus the narrow 00:59–01:03 timing sample added in M5. This does not establish input transitions or a complete side-switch sequence.
 - Owner's reference photograph: Olive beside the left car, right ship, orange boat, food and upper-right score/MISS.
 
 Driver artifact identity, checked against the source:
@@ -41,6 +41,38 @@ are used as evidence. Spinach is food here, not a combat power-up.
 | Recording 10:00 | Game A; hammer extended toward Popeye | High for pose; no duration inferred |
 | Recording 20:00 | Game B; Brutus left, food and splash visible | High for visible state |
 | Recording 23:00 | Game B; Brutus right, fist raised | High for visible state; switch timing unmeasured |
+
+## M5 timing sample (2026-10-05)
+
+The 710 × 480, 30 fps version of the Old80s recording was decoded over
+00:59–01:03. Game A shows score 4, then 5. Six successive can positions were
+identified visually; pixel counts in fixed regions locate their on/off frames.
+[Raw measurements](pp23-timing-sample.csv) retain the frame indices.
+
+| Position in this sample | Visible interval | Observed dwell |
+|---|---|---|
+| 1 | 59.333–59.933 s | 0.600 s |
+| 2 | 59.933–60.500 s | 0.567 s |
+| 3 | 60.500–61.100 s | 0.600 s |
+| 4 | 61.100–61.667 s | 0.567 s |
+| 5 | 61.667–62.433 s | 0.767 s |
+| 6 | 62.433–63.000 s | At least 0.567 s; sample ends |
+
+Confidence: medium for this recording's visible transitions, with at least
+one decoded frame (~33 ms) boundary uncertainty; low for original hardware
+clock rates or a general timing rule. The longer fifth interval is observed,
+not explained. This sample contains more distinct can positions than the
+watch's five-position arc. Do not treat the watch paths as an exact copy.
+
+Reproduce from a local copy of that recording with
+`python3 tools/measure_pp23_sample.py PATH_TO_VIDEO`. The helper requires
+ffmpeg and the stated 710 × 480 version; it does not download a ROM or video.
+The video itself and extracted images are not committed.
+
+No gameplay timing table changed: this short, low-score sample cannot settle
+all food paths, speed tiers, catch windows, attack phases or hold behavior.
+M5's two-second idle demo and 250 ms feedback blink are watch presentation
+choices, not measurements from Nintendo hardware.
 
 ## Implemented watch behavior versus open questions
 

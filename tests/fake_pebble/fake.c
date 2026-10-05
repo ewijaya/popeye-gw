@@ -71,3 +71,53 @@ void fake_fire(void) {
   fake_scheduled = 0;
   s_handler(fake_id, fake_cookie);
 }
+
+/* One timer is sufficient to exercise the feedback service in isolation. */
+struct AppTimer { AppTimerCallback callback; void *data; };
+static AppTimer s_timer;
+static uint16_t s_millis;
+bool fake_quiet, fake_timer_fail, fake_timer_pending;
+unsigned fake_short_pulses, fake_long_pulses, fake_patterns, fake_vibe_cancels;
+uint32_t fake_pattern[5], fake_timer_delay;
+void fake_feedback_reset(void) {
+  s_millis = 0;
+  fake_quiet = fake_timer_fail = fake_timer_pending = false;
+  fake_short_pulses = fake_long_pulses = fake_patterns = fake_vibe_cancels = 0;
+  fake_timer_delay = 0;
+  memset(fake_pattern, 0, sizeof(fake_pattern));
+}
+AppTimer *app_timer_register(uint32_t delay, AppTimerCallback callback, void *data) {
+  assert(!fake_timer_pending && delay > 0);
+  if (fake_timer_fail) return NULL;
+  s_timer.callback = callback; s_timer.data = data;
+  fake_timer_delay = delay; fake_timer_pending = true;
+  return &s_timer;
+}
+void app_timer_cancel(AppTimer *timer) {
+  assert(timer == &s_timer && fake_timer_pending);
+  fake_timer_pending = false;
+}
+uint16_t time_ms(time_t *seconds, uint16_t *milliseconds) {
+  if (seconds != NULL) *seconds = fake_now;
+  if (milliseconds != NULL) *milliseconds = s_millis;
+  return s_millis;
+}
+void fake_elapse(uint32_t ms) {
+  uint64_t total = (uint64_t)s_millis + ms;
+  fake_now += (time_t)(total / 1000u); s_millis = (uint16_t)(total % 1000u);
+}
+void fake_timer_fire(void) {
+  assert(fake_timer_pending);
+  fake_elapse(fake_timer_delay);
+  fake_timer_pending = false;
+  s_timer.callback(s_timer.data);
+}
+bool quiet_time_is_active(void) { return fake_quiet; }
+void vibes_cancel(void) { ++fake_vibe_cancels; }
+void vibes_short_pulse(void) { ++fake_short_pulses; }
+void vibes_long_pulse(void) { ++fake_long_pulses; }
+void vibes_enqueue_custom_pattern(VibePattern pattern) {
+  assert(pattern.num_segments == 5);
+  memcpy(fake_pattern, pattern.durations, sizeof(fake_pattern));
+  ++fake_patterns;
+}

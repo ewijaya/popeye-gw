@@ -1,0 +1,12 @@
+Use case: ads-marketing / product-mockup.
+Create a finished, beautiful 1981-inspired magazine advertisement banner for the fan-made watch game "Popeye G&W". This is a new composition using two references.
+Reference 1 is the exact Pebble Time 2 hardware design: black rounded rectangular steel case, three textured oblong buttons on the right, vivid red silicone strap, broad black glass bezel. Preserve this particular watch identity. Do not substitute an Apple Watch, round watch, digital crown or generic smartwatch.
+Reference 2 is the actual app screen to imprint into the watch display. Preserve its crisp pixel artwork and composition: Olive Oyl next to her red car on the upper left throws food, Popeye catches in the orange boat below, Brutus on the right ship extends his fist; white background, bright blue/turquoise water, black LCD characters, top-right score 78 and MISS, GAME B top-left. Show the screen as this app, not a newly illustrated full-color cartoon.
+Composition: extra wide landscape 1800x800, exactly 9:4 aspect ratio for a 720x320 store banner. Left 48 percent has very strong legible stacked retro display typography. Right 52 percent has a large, appealing nearly frontal Pebble Time 2 watch with the game visible on its screen, red strap curving gently above and below. The screen must be large and clearly readable at banner size. Watch case/buttons remain recognizable. Keep all important artwork and text at least 5 percent inside canvas edges.
+Style: authentic early 1980s Japanese handheld-game box / print advert nostalgia, warm ivory paper, deep forest green rounded border and lettering, golden ochre accents, small red and orange stripes, very subtle lithographic ink grain away from the watch screen. Cheerful, charming and collectible, premium product advertising with a slightly airbrushed period product illustration. Crisp strong contrast, saturated red strap and vivid game colors; avoid muted brown wash, excessive distressed texture, neon cyberpunk or modern tech gradients.
+Exact text, no other copy:
+"Popeye"
+"G&W"
+"FOR PEBBLE TIME 2"
+Small footer: "1981-inspired • Fan-made"
+Make "Popeye G&W" the dominant readable headline; the ampersand is essential. A tiny simple period sunburst or nautical stripe detail is welcome but keep the layout uncluttered. No Nintendo logo, no invented official endorsement, no extra characters outside the screen. Deliver just the finished banner, no presentation wall, no external frame, no mockup sheet.

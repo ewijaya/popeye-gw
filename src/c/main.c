@@ -3,6 +3,7 @@
 #include "alarm.h"
 #include "clock.h"
 #include "game.h"
+#include "feedback_service.h"
 #include "storage.h"
 #include "view.h"
 
@@ -84,7 +85,8 @@ static void schedule_timer(void) {
 static void timer_fired(void *data) {
   s_timer = NULL;
   game_step(&s_game);
-  game_take_events(&s_game); /* Game-event vibration/flashing is M5. */
+  feedback_service_events(game_take_events(&s_game), s_game.new_high_score,
+                          s_data.settings.vibration);
   record_score();
   if (s_game.status == GAME_OVER) { flush_scores(); log_heap("over"); }
   schedule_timer();
@@ -92,12 +94,14 @@ static void timer_fired(void *data) {
 }
 
 static void start_game(GameMode mode) {
+  feedback_service_reset();
   flush_scores();
   s_game.high_scores[0] = s_data.scores.best[0];
   s_game.high_scores[1] = s_data.scores.best[1];
   s_game.controls_swapped = s_data.settings.swap_buttons;
   game_start(&s_game, mode, (uint32_t)now_ms());
   s_page = PAGE_GAME;
+  feedback_service_set_running(s_focused && !(s_ringing && !s_passive_ring));
   sync_ticks();
   log_heap("start");
   schedule_timer();
@@ -105,6 +109,8 @@ static void start_game(GameMode mode) {
 }
 
 static void pause_game(void) {
+  feedback_service_set_running(false);
+  vibes_cancel();
   if (s_timer != NULL) {
     uint64_t elapsed = now_ms() - s_timer_start;
     if (elapsed >= s_timer_delay) elapsed = s_timer_delay - 1u;
@@ -118,6 +124,11 @@ static void pause_game(void) {
 }
 
 static void open_page(Page page) {
+  if (page != PAGE_GAME) {
+    feedback_service_set_running(false);
+    feedback_service_reset();
+    vibes_cancel();
+  }
   s_page = page;
   s_row = 0u;
   s_editing = false;
@@ -130,6 +141,7 @@ static void stop_ring(void) {
   if (s_ring_timer != NULL) app_timer_cancel(s_ring_timer);
   s_ring_timer = NULL;
   s_ringing = false;
+  feedback_service_set_running(s_focused && s_page == PAGE_GAME && s_game.status != GAME_PAUSED);
   vibes_cancel();
   sync_ticks();
   render();
@@ -155,6 +167,7 @@ static void begin_ring(void) {
   s_passive_ring = s_page == PAGE_GAME &&
       (s_game.status == GAME_PLAYING || s_game.status == GAME_RECOVERING);
   s_ring_end = time(NULL) + 60;
+  if (!s_passive_ring) feedback_service_set_running(false);
   APP_LOG(APP_LOG_LEVEL_INFO, "alarm ringing passive %d", s_passive_ring);
   if (s_focused) pulse();
   s_ring_timer = s_focused ? app_timer_register(1000, ring_tick, NULL) : NULL;
@@ -285,6 +298,7 @@ static void render(void) {
     overlay = full_alarm ? VIEW_OVERLAY_ALARM : VIEW_OVERLAY_CLOCK;
   } else {
     scene_game(&scene, &s_game);
+    feedback_service_apply(&scene);
     if (s_data.settings.alarm_on && (!s_ringing || local.tm_sec % 2 == 0)) scene_light(&scene, SEG_BELL);
     if (s_game.status == GAME_PAUSED) overlay = VIEW_OVERLAY_PAUSED;
     if (s_game.status == GAME_OVER) overlay = VIEW_OVERLAY_GAME_OVER;
@@ -322,7 +336,11 @@ static void select_handler(ClickRecognizerRef recognizer, void *context) {
   switch (s_page) {
     case PAGE_CLOCK: start_game(GAME_A); return;
     case PAGE_GAME:
-      if (s_game.status == GAME_PAUSED) { game_resume(&s_game); schedule_timer(); }
+      if (s_game.status == GAME_PAUSED) {
+        game_resume(&s_game);
+        feedback_service_set_running(s_focused);
+        schedule_timer();
+      }
       else if (s_game.status == GAME_OVER) start_game(s_game.mode);
       else pause_game();
       break;
@@ -412,6 +430,8 @@ static void will_focus(bool in_focus) {
     alarm_refresh(&s_data.settings, time(NULL));
     if (s_ringing && time(NULL) >= s_ring_end) stop_ring();
     else if (s_ringing && s_ring_timer == NULL) s_ring_timer = app_timer_register(1000, ring_tick, NULL);
+    feedback_service_set_running(s_page == PAGE_GAME && s_game.status != GAME_PAUSED &&
+                                 !(s_ringing && !s_passive_ring));
     render();
   }
   sync_ticks();
@@ -420,6 +440,8 @@ static void will_focus(bool in_focus) {
 static void window_load(Window *window) { view_init(window_get_root_layer(window), s_data.settings.ghosts); render(); }
 
 static void window_unload(Window *window) {
+  feedback_service_set_running(false);
+  feedback_service_reset();
   cancel_timer();
   if (s_ring_timer != NULL) app_timer_cancel(s_ring_timer);
   s_ring_timer = NULL;
@@ -431,6 +453,7 @@ static void window_unload(Window *window) {
 }
 
 int main(void) {
+  feedback_service_init(render);
   storage_load(&s_data);
   s_window = window_create();
   if (s_window == NULL) return 1;

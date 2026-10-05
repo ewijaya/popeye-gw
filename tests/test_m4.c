@@ -133,8 +133,9 @@ static void test_clock(void) {
   assert(!scene_lit(&scene, SEG_BELL));
   local.tm_sec = 2;
   clock_scene(&scene, &local, true, true, false, false);
-  assert(scene_lit(&scene, SEG_BRUTUS + GAME_ATTACK_WINDUP));
-  assert(scene_lit(&scene, SEG_POPEYE + 1) && scene_lit(&scene, SEG_OLIVE_THROW));
+  assert(scene_lit(&scene, SEG_BRUTUS + 3u + GAME_ATTACK_IDLE));
+  assert(scene_lit(&scene, SEG_POPEYE + 2) && scene_lit(&scene, SEG_OLIVE_THROW));
+  assert(scene_lit(&scene, SEG_CARGO + GAME_CARGO_STEPS));
   clock_scene(&scene, &local, true, false, true, true);
   assert(scene_lit(&scene, SEG_BRUTUS + GAME_ATTACK_IDLE));
   assert(scene_lit(&scene, SEG_OLIVE_BELL) && scene_lit(&scene, SEG_BELL));

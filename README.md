@@ -6,14 +6,15 @@ left; Popeye catches it in his boat while Brutus threatens him with a hammer
 from the left pier or a fist from the right ship. The PT2 scene uses crisp
 black segments, a white field, and vivid red, orange, blue and turquoise.
 
-**Status:** M4 features plus the PP-23 scene/rules correction are implemented:
-82 segments, Game A/B, clock, daily alarm, menus, saved settings/high scores,
-and portrait/landscape. This is a watch adaptation, not an exact ROM recreation.
+**Status:** M5 software and store artwork are implemented: 82 segments, Game A/B,
+clock with a food-catching demo, daily alarm, saved settings/high scores,
+portrait/landscape, and finite visual/haptic feedback. Physical-watch play-test
+sign-off and M6 release remain pending. This is a watch adaptation, not an exact ROM recreation.
 [Reference observations and remaining fidelity gaps](docs/pp23-fidelity.md)
 distinguish confirmed rules from provisional timing, paths and input behavior.
 The app name is **Popeye G&W**; repository/package/build slug is `popeye-gw`.
 See the [PRD](PRD.md), [repository conventions](CLAUDE.md), and the
-[scene audit](docs/pp23-scene-audit.md). Earlier M3/M4 audits describe their
+[M5 notes and artwork](docs/m5-notes.md) and [M5 audit](docs/m5-audit.md). Earlier scene/M3/M4 audits describe their
 historical builds.
 
 ## Host tests
@@ -31,7 +32,9 @@ address and undefined-behavior sanitizers. The M4 suite tests versioned records,
 corrupt data, write failures, 12/24-hour clock segments, calendar/DST rollover,
 alarm conflicts and wakeup delivery using the real adapters with a small SDK
 fake. It runs in UTC and America/New_York. Both commands run on every push and
-pull request; neither requires the watch SDK.
+pull request; neither requires the watch SDK. The M5 suite covers every attract
+food position, alarm override, finite flashing, pause/resume, delayed callbacks,
+timer allocation failure and haptic priority/settings/Quiet Time.
 
 `src/c/game.c` and `game.h` have no platform dependencies. `game_init` starts a
 round; `game_input` handles press/release edges immediately; `game_advance`
@@ -64,11 +67,14 @@ is pure C99 and host-tested. `src/c/view.c` draws each segment from a packed
 sprite sheet using positions generated into `src/c/segments.h`. Only unlit digit/MISS registers have baked grey ghosts; the playfield stays
 clear of overlapping character silhouettes.
 `src/c/main.c` runs one `AppTimer` per step
-or recovery and none while paused, over or in the clock. Pausing keeps the
+or recovery and none while paused, over or in the clock. A separate presentation
+timer finishes a bounded 1.5-second feedback sequence, including after game over,
+then stops. It freezes while paused or hidden. Pausing keeps the
 elapsed part of the current interval. Losing focus pauses a running game.
 
 The clock uses all four digits, follows the watch's 12/24-hour preference,
-and cycles character poses every two seconds. With attract animation disabled,
+and demonstrates a complete throw/flight/catch sequence in two-second poses.
+All four food arcs appear over 48 seconds. With attract animation disabled,
 it shows static poses and a steady colon and updates once per minute. Clock
 ticks stop on other pages and while the app is out of focus.
 
@@ -98,9 +104,11 @@ failures are visible. The unchanged UUID preserves records across app updates.
 
 The game score still uses the right three digits without leading zeros. A
 catch lights its final cargo segment and a catch flash for one step; a miss
-keeps its feedback through recovery. M5 will add game-event vibration and
-flashing effects. Physical-watch alarm and Quiet Time behavior still need the
-owner's release play-test.
+blinks its splash/dizzy pose through recovery. Bonuses flash MISS, and game over
+flashes the score and any new-best HI. Misses/bonuses give a short pulse; game
+over gives a long pulse, followed by two short pulses for a new record. All
+flashing finishes after 1.5 active seconds. Physical-watch feel, alarm and
+Quiet Time behavior still need the owner's play-test.
 
 ## Handheld orientation
 
@@ -121,7 +129,9 @@ placeholders in the renderer.
 Character animation and cargo sources were created with the built-in image
 generation tool. Repeated positions and mirrored poses share those sources;
 small UI symbols use geometric artwork. Prompts and preparation instructions
-are in [art/source/README.md](art/source/README.md).
+are in [art/source/README.md](art/source/README.md). The 1981-style PT2 advert,
+store icons, source prompts and native screenshot set are linked from
+[art/store/README.md](art/store/README.md).
 
 ```sh
 # Only when changing source art; requires ImageMagick.
