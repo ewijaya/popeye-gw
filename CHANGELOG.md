@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.1 — Unreleased
+
+- Put Orientation first in Settings, with explicit Vertical and Horizontal choices.
+- Show a separate Buttons: Bottom / Top setting only in Horizontal mode.
+- Remember the horizontal button position when switching to Vertical and back, including after reopening the app.
+- Preserve existing Top/Bottom selections, alarms and scores when upgrading; default the first Horizontal selection to Bottom.
+- Add a short screen-setup page to on-watch Help.
+
 ## 1.0.0 — 2026-10-05
 
 A whole childhood on one small screen. The first release of Popeye G&W brings

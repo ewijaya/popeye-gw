@@ -44,10 +44,13 @@ is useful but does not establish a measured <50 ms input latency.
 7. During a round, cover the app with a notification/system screen if practical.
    On return it should be paused; no hidden play or continuing game vibration.
    Select resumes. Ordinary app exit ends the in-memory round.
-8. From clock: Down → Settings → View. Select cycles Portrait → Bottom → Top.
-   Try both landscape views with buttons above/below; the physical left/right
-   buttons should still move left/right. Menus and clock rotate too. Check that
-   Bottom survives reopening, then restore the preferred view.
+8. In 1.0.1, from clock open Menu → Settings → Orientation. Choose Vertical or
+   Horizontal and press Select. Back cancels. Confirm Buttons appears only in
+   Horizontal mode and Select changes Bottom/Top independently of orientation.
+   Try buttons above/below; physical left/right should still move left/right.
+   Switch to Vertical, quit/reopen, then return to Horizontal: the chosen button
+   position should return. Menus and clock rotate too. Restore the preferred view.
+   On store version 1.0.0, Settings → View cycles Portrait → Bottom → Top.
    Toggle Swap and Ghosts once; verify the change and restore
    the previous choices. Turn Demo Off: poses and colon become static.
 

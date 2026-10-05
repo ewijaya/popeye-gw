@@ -9,7 +9,13 @@
 #include "view.h"
 
 typedef enum { PAGE_CLOCK, PAGE_GAME, PAGE_MENU, PAGE_SCORES,
-               PAGE_RESET, PAGE_SETTINGS, PAGE_ALARM, PAGE_HELP, PAGE_ABOUT } Page;
+               PAGE_RESET, PAGE_SETTINGS, PAGE_ALARM, PAGE_HELP, PAGE_ABOUT,
+               PAGE_ORIENTATION } Page;
+
+typedef enum { SETTING_ORIENTATION, SETTING_BUTTONS, SETTING_SWAP,
+               SETTING_VIBRATION, SETTING_GHOSTS, SETTING_DEMO } SettingItem;
+
+#define HELP_PAGES 4u
 
 static Window *s_window;
 static Game s_game;
@@ -131,7 +137,7 @@ static void open_page(Page page) {
     vibes_cancel();
   }
   s_page = page;
-  s_row = 0u;
+  s_row = page == PAGE_ORIENTATION && s_data.settings.landscape ? 1u : 0u;
   s_editing = false;
   if (page == PAGE_CLOCK || page == PAGE_ALARM) alarm_refresh(&s_data.settings, time(NULL));
   sync_ticks();
@@ -204,6 +210,15 @@ static void sync_ticks(void) {
 
 static const char *on_off(bool value) { return value ? "On" : "Off"; }
 
+static unsigned settings_row_count(void) {
+  return s_data.settings.landscape ? 6u : 5u;
+}
+
+/* Button position has no visible row in Vertical mode. */
+static SettingItem settings_item(unsigned row) {
+  return (SettingItem)(row + (!s_data.settings.landscape && row > 0u ? 1u : 0u));
+}
+
 static void score_date(char *buffer, size_t size, uint32_t date) {
   if (date == 0) snprintf(buffer, size, "No score yet");
   else snprintf(buffer, size, "%04lu-%02lu-%02lu", (unsigned long)(date / 10000u),
@@ -225,18 +240,34 @@ static void render_panel(void) {
       snprintf(panel.rows[3], sizeof(panel.rows[3]), "Help");
       snprintf(panel.rows[4], sizeof(panel.rows[4]), "About");
       break;
-    case PAGE_SETTINGS:
-      panel.count = 5;
+    case PAGE_SETTINGS: {
+      unsigned row = 0;
+      panel.count = settings_row_count();
       panel.title = "Settings";
-      snprintf(panel.rows[4], sizeof(panel.rows[4]), "View: %s", !settings->landscape ? "Portrait" :
-               settings->buttons_bottom ? "Bottom" : "Top");
-      snprintf(panel.rows[0], sizeof(panel.rows[0]), "Swap: %s", on_off(settings->swap_buttons));
-      snprintf(panel.rows[1], sizeof(panel.rows[1]), "Vibrate: %s", on_off(settings->vibration));
-      snprintf(panel.rows[2], sizeof(panel.rows[2]), "Ghosts: %s", on_off(settings->ghosts));
-      snprintf(panel.rows[3], sizeof(panel.rows[3]), "Demo: %s", on_off(settings->attract));
+      snprintf(panel.rows[row++], sizeof(panel.rows[0]), "Orientation");
+      if (settings->landscape)
+        snprintf(panel.rows[row++], sizeof(panel.rows[0]), "Buttons: %s",
+                 settings->buttons_bottom ? "Bottom" : "Top");
+      snprintf(panel.rows[row++], sizeof(panel.rows[0]), "Swap: %s", on_off(settings->swap_buttons));
+      snprintf(panel.rows[row++], sizeof(panel.rows[0]), "Vibrate: %s", on_off(settings->vibration));
+      snprintf(panel.rows[row++], sizeof(panel.rows[0]), "Ghosts: %s", on_off(settings->ghosts));
+      snprintf(panel.rows[row], sizeof(panel.rows[0]), "Demo: %s", on_off(settings->attract));
       snprintf(panel.footer, sizeof(panel.footer), "Select: change  Back: menu");
-      if (s_row == 4u) snprintf(panel.footer, sizeof(panel.footer), "%s\nSelect: change  Back: menu",
-          !settings->landscape ? "Upright on wrist" : settings->buttons_bottom ? "Landscape: buttons below" : "Landscape: buttons above");
+      if (settings_item(s_row) == SETTING_ORIENTATION)
+        snprintf(panel.footer, sizeof(panel.footer), "%s\nSelect: open  Back: menu",
+                 settings->landscape ? "Horizontal" : "Vertical");
+      else if (settings_item(s_row) == SETTING_BUTTONS)
+        snprintf(panel.footer, sizeof(panel.footer), "Buttons %s screen\nSelect: change  Back: menu",
+                 settings->buttons_bottom ? "below" : "above");
+      break;
+    }
+    case PAGE_ORIENTATION:
+      panel.title = "Orientation";
+      panel.count = 2;
+      snprintf(panel.rows[0], sizeof(panel.rows[0]), "Vertical");
+      snprintf(panel.rows[1], sizeof(panel.rows[1]), "Horizontal");
+      snprintf(panel.footer, sizeof(panel.footer), "%s\nSelect: save  Back: cancel",
+               s_row == 0u ? "Upright on wrist" : "Hold watch sideways");
       break;
     case PAGE_SCORES:
       panel.title = "High scores";
@@ -281,7 +312,7 @@ static void render_panel(void) {
       panel.selected = -1;
       snprintf(panel.footer, sizeof(panel.footer), "Select: next  Back: menu");
       if (s_row == 0u) {
-        panel.title = "Help 1/3";
+        panel.title = "Help 1/4";
         snprintf(panel.rows[0], sizeof(panel.rows[0]), "Tap Select: A");
         snprintf(panel.rows[1], sizeof(panel.rows[1]), "Hold Select: B");
         snprintf(panel.rows[2], sizeof(panel.rows[2]), "%s: move",
@@ -289,20 +320,27 @@ static void render_panel(void) {
         snprintf(panel.rows[3], sizeof(panel.rows[3]), "Select: pause/play");
         snprintf(panel.footer, sizeof(panel.footer), "Start A/B from clock\nSelect: next  Back: menu");
       } else if (s_row == 1u) {
-        panel.title = "Help 2/3";
+        panel.title = "Help 2/4";
         snprintf(panel.rows[0], sizeof(panel.rows[0]), "Catch food: +1");
         snprintf(panel.rows[1], sizeof(panel.rows[1]), "Center can't catch");
         snprintf(panel.rows[2], sizeof(panel.rows[2]), "2 drops = 1 MISS");
         snprintf(panel.rows[3], sizeof(panel.rows[3]), "Hit = 1 MISS");
         snprintf(panel.footer, sizeof(panel.footer), "3 MISS ends game\nSelect: next  Back: menu");
-      } else {
-        panel.title = "Help 3/3";
+      } else if (s_row == 2u) {
+        panel.title = "Help 3/4";
         snprintf(panel.rows[0], sizeof(panel.rows[0]), "Quit play: 2x Back");
         snprintf(panel.rows[1], sizeof(panel.rows[1]), "Clock %s: scores",
                  settings->landscape ? "Left" : "Up");
         snprintf(panel.rows[2], sizeof(panel.rows[2]), "Clock %s: menu",
                  settings->landscape ? "Right" : "Down");
-        snprintf(panel.rows[3], sizeof(panel.rows[3]), "Settings: View/Swap");
+        snprintf(panel.rows[3], sizeof(panel.rows[3]), "Settings: screen");
+      } else {
+        panel.title = "Help 4/4";
+        snprintf(panel.rows[0], sizeof(panel.rows[0]), "Settings: Orientation");
+        snprintf(panel.rows[1], sizeof(panel.rows[1]), "Vertical / Horizontal");
+        snprintf(panel.rows[2], sizeof(panel.rows[2]), "Horizontal: Buttons");
+        snprintf(panel.rows[3], sizeof(panel.rows[3]), "Bottom / Top");
+        snprintf(panel.footer, sizeof(panel.footer), "Swap: reverse movement\nSelect: next  Back: menu");
       }
       break;
     case PAGE_ABOUT:
@@ -355,8 +393,9 @@ static void move_down_handler(ClickRecognizerRef recognizer, void *context) {
     s_edit_value = (uint8_t)((s_edit_value + (up ? 1u : limit - 1u)) % limit);
     render();
   } else if (s_page != PAGE_SCORES && s_page != PAGE_ABOUT) {
-    unsigned count = s_page == PAGE_RESET ? 2u : s_page == PAGE_HELP ? 3u :
-                     (s_page == PAGE_SETTINGS || s_page == PAGE_MENU) ? 5u : 4u;
+    unsigned count = (s_page == PAGE_RESET || s_page == PAGE_ORIENTATION) ? 2u :
+                     s_page == PAGE_HELP ? HELP_PAGES : s_page == PAGE_SETTINGS ? settings_row_count() :
+                     s_page == PAGE_MENU ? 5u : 4u;
     s_row = (s_row + (up ? count - 1u : 1u)) % count;
     render();
   }
@@ -402,16 +441,19 @@ static void select_handler(ClickRecognizerRef recognizer, void *context) {
       open_page(PAGE_SCORES);
       return;
     case PAGE_SETTINGS:
-      if (s_row == 0u) settings.swap_buttons = !settings.swap_buttons;
-      if (s_row == 1u) settings.vibration = !settings.vibration;
-      if (s_row == 2u) settings.ghosts = !settings.ghosts;
-      if (s_row == 3u) settings.attract = !settings.attract;
-      if (s_row == 4u) {
-        if (!settings.landscape) { settings.landscape = true; settings.buttons_bottom = true; }
-        else if (settings.buttons_bottom) settings.buttons_bottom = false;
-        else { settings.landscape = false; settings.buttons_bottom = false; }
+      switch (settings_item(s_row)) {
+        case SETTING_ORIENTATION: open_page(PAGE_ORIENTATION); return;
+        case SETTING_BUTTONS: settings.buttons_bottom = !settings.buttons_bottom; break;
+        case SETTING_SWAP: settings.swap_buttons = !settings.swap_buttons; break;
+        case SETTING_VIBRATION: settings.vibration = !settings.vibration; break;
+        case SETTING_GHOSTS: settings.ghosts = !settings.ghosts; break;
+        case SETTING_DEMO: settings.attract = !settings.attract; break;
       }
       save_settings(&settings);
+      break;
+    case PAGE_ORIENTATION:
+      settings.landscape = s_row == 1u;
+      if (save_settings(&settings)) { open_page(PAGE_SETTINGS); return; }
       break;
     case PAGE_ALARM:
       if (s_editing) {
@@ -429,7 +471,7 @@ static void select_handler(ClickRecognizerRef recognizer, void *context) {
         s_edit_value = s_row == 1u ? settings.alarm_hour : settings.alarm_minute;
       }
       break;
-    case PAGE_HELP: s_row = (s_row + 1u) % 3u; break;
+    case PAGE_HELP: s_row = (s_row + 1u) % HELP_PAGES; break;
     case PAGE_ABOUT: break;
   }
   render();
@@ -452,6 +494,7 @@ static void back_handler(ClickRecognizerRef recognizer, void *context) {
     else { flush_scores(); cancel_timer(); open_page(PAGE_CLOCK); }
   } else if (s_page == PAGE_MENU || s_page == PAGE_SCORES) open_page(PAGE_CLOCK);
   else if (s_page == PAGE_RESET) open_page(PAGE_SCORES);
+  else if (s_page == PAGE_ORIENTATION) open_page(PAGE_SETTINGS);
   else open_page(PAGE_MENU);
 }
 

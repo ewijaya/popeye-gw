@@ -7,7 +7,8 @@ from the left pier or a fist from the right ship. The PT2 scene uses crisp
 black segments, a white field, and vivid red, orange, blue and turquoise.
 
 **Status:** Version 1.0.0 is published and verified on the Pebble App Store and
-GitHub. M5 and Bottom landscape passed the owner's PT2 play-test; the owner
+GitHub. Version 1.0.1 adds separate Orientation and horizontal Buttons settings
+and is being tested before release. M5 and Bottom landscape passed the owner's PT2 play-test; the owner
 approved the exact final bundle and listing. M6 release is complete.
 
 **Download:** [Pebble App Store](https://apps.repebble.com/e9cb2950ca21440798fb1db8) ·
@@ -45,7 +46,9 @@ the middle of the three buttons above or below the screen.
 | Quit a running game | Back twice | First pause, then return to the clock. |
 | Clock: high scores | Up in portrait; Left in landscape | Show saved Game A/B scores. |
 | Clock: menu | Down in portrait; Right in landscape | Open High scores, Alarm, Settings, Help or About. |
-| Settings: View / Swap | Select the setting, then press Select | View cycles Portrait → Bottom → Top. Swap reverses game movement. |
+| Settings: Orientation (1.0.1) | Select Orientation, choose Vertical or Horizontal, then Select | Change screen orientation. Back cancels. |
+| Settings: Buttons (1.0.1, Horizontal only) | Select Buttons | Toggle Bottom / Top. The choice is remembered in Vertical mode. |
+| Settings: Swap | Select Swap | Reverse game movement. |
 | Help pages | Select; movement buttons; Back | Select advances, movement buttons browse both ways, Back returns to the menu. |
 
 ## Host tests
@@ -110,7 +113,8 @@ it shows static poses and a steady colon and updates once per minute. Clock
 ticks stop on other pages and while the app is out of focus.
 
 The menu contains High scores, Alarm, Settings, Help and About. **Menu → Help**
-provides three short screens for controls, catches/misses and clock shortcuts.
+provides four short screens for controls, catches/misses, clock shortcuts and
+screen setup in 1.0.1.
 Press Select for the next screen or Back to return to the menu; the movement
 buttons also browse Help in either direction. Direction labels adapt to the view.
 Settings toggle
@@ -147,11 +151,19 @@ controls, hit feedback, alarms and Quiet Time in the recorded PT2 play-test.
 
 ## Handheld orientation
 
-Open **Menu → Settings → View** and press Select to cycle **Portrait → Bottom →
-Top**. Top and Bottom are landscape views with the three buttons above or
-below the screen. Turn the watch counterclockwise for Top or clockwise for
-Bottom. In either view: left moves left, middle starts/pauses, right moves right
-(unless Swap is on). The saved view also rotates the clock, alarm and menus.
+In **1.0.1**, open **Menu → Settings → Orientation**. Choose **Vertical** or
+**Horizontal**, then press Select to save; Back cancels. Orientation is the first
+Settings item. **Buttons: Bottom / Top** appears beneath it only in Horizontal
+mode. Select toggles button position, which is remembered when switching to
+Vertical and back, including after reopening. Bottom is the initial horizontal
+preference; existing horizontal Top/Bottom selections are preserved on upgrade.
+
+Turn the watch clockwise for Bottom (buttons below) or counterclockwise for Top
+(buttons above). Left moves left, middle starts/pauses, right moves right
+(unless Swap is on). The clock, alarm and menus follow the chosen orientation.
+
+On the published **1.0.0**, use **Settings → View** and cycle
+**Portrait → Bottom → Top**. Portrait is vertical; Bottom and Top are horizontal.
 See [landscape mode](docs/landscape.md) for details and screenshots.
 
 ## Art

@@ -22,6 +22,7 @@ static void test_records(void) {
   settings_defaults(&settings);
   assert(!settings.swap_buttons && settings.vibration && settings.ghosts && settings.attract);
   assert(!settings.alarm_on && settings.alarm_hour == 7 && settings.alarm_minute == 0);
+  assert(!settings.landscape && settings.buttons_bottom);
   settings.landscape = true;
   settings.buttons_bottom = true;
   settings.swap_buttons = true; settings.ghosts = false; settings.attract = false;
@@ -201,7 +202,7 @@ static void test_orientation(void) {
   Settings settings;
   uint8_t source[200], target[200 * 52];
   assert(settings_decode(&settings, legacy, sizeof(legacy)));
-  assert(!settings.landscape && !settings.buttons_bottom && settings.swap_buttons && settings.alarm_on);
+  assert(!settings.landscape && settings.buttons_bottom && settings.swap_buttons && settings.alarm_on);
   assert(settings.alarm_hour == 23 && settings.alarm_minute == 59);
   assert(settings.vibration && settings.ghosts && settings.attract);
   assert(settings_decode(&settings, legacy_top, sizeof(legacy_top)));
@@ -231,6 +232,55 @@ static void test_orientation(void) {
   assert(target[50 * 52] == 0 && target[50 * 52 + 49] == 0);
 }
 
+static void test_saved_orientation_preferences(void) {
+  /* Actual earlier wire formats: v2 Vertical, then v3 Vertical/Top/Bottom.
+   * The first two have no saved horizontal side and should start at Bottom. */
+  const uint8_t legacy[][SETTINGS_RECORD_SIZE] = {
+    { 2, 31, 23, 59, 0, 14, 246, 123 },
+    { 3, 31, 23, 59, 33, 17, 8, 50 },
+    { 3, 63, 23, 59, 1, 67, 49, 21 },
+    { 3, 127, 23, 59, 193, 21, 222, 206 }
+  };
+  const uint8_t future[] = { 5, 0, 23, 59, 202, 123, 241, 253 };
+  Settings settings, restored;
+  uint8_t bytes[SETTINGS_RECORD_SIZE];
+  unsigned i, bottom;
+  for (i = 0; i < sizeof(legacy) / sizeof(legacy[0]); ++i) {
+    assert(settings_decode(&settings, legacy[i], sizeof(legacy[i])));
+    assert(settings.landscape == (i >= 2u));
+    assert(settings.buttons_bottom == (i != 2u));
+    assert(settings.swap_buttons && settings.vibration && settings.ghosts && settings.attract);
+    assert(settings.alarm_on && settings.alarm_hour == 23u && settings.alarm_minute == 59u);
+    settings_encode(&settings, bytes);
+    assert(settings_decode(&restored, bytes, sizeof(bytes)));
+    assert(restored.landscape == settings.landscape && restored.buttons_bottom == settings.buttons_bottom);
+    assert(restored.alarm_on && restored.alarm_hour == 23u && restored.alarm_minute == 59u);
+  }
+  /* A horizontal side survives Vertical, app exit/reload, and unrelated edits. */
+  for (bottom = 0; bottom < 2u; ++bottom) {
+    fake_reset();
+    settings_defaults(&settings);
+    settings.landscape = true;
+    settings.buttons_bottom = bottom != 0;
+    assert(storage_save_settings(&settings));
+    settings.landscape = false;
+    settings.ghosts = false;
+    assert(storage_save_settings(&settings));
+    {
+      SaveData loaded;
+      storage_load(&loaded);
+      assert(!loaded.settings.landscape && !loaded.settings.ghosts);
+      assert(loaded.settings.buttons_bottom == (bottom != 0));
+      loaded.settings.landscape = true;
+      assert(storage_save_settings(&loaded.settings));
+      storage_load(&loaded);
+      assert(loaded.settings.landscape && loaded.settings.buttons_bottom == (bottom != 0));
+    }
+  }
+  assert(!settings_decode(&settings, future, sizeof(future)));
+  assert(!settings.landscape && settings.buttons_bottom && !settings.alarm_on);
+}
+
 static void test_oriented_controls(void) {
   unsigned bottom, swapped;
   for (bottom = 0; bottom < 2; ++bottom) {
@@ -256,7 +306,7 @@ static void test_oriented_controls(void) {
 
 int main(void) {
   test_records(); test_storage(); test_clock(); test_alarm(); test_orientation();
-  test_oriented_controls();
+  test_saved_orientation_preferences(); test_oriented_controls();
   puts("M4 tests passed: versioned storage, corrupt records, clock, calendar/DST recurrence and wakeup lifecycle");
   return 0;
 }

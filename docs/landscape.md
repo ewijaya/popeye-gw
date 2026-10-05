@@ -1,9 +1,17 @@
 # Handheld landscape mode
 
-Open **Menu → Settings → View** and press Select to cycle **Portrait → Bottom →
-Top**. View is the fifth item, after Demo. Its footer explains where to hold
-the buttons. Bottom is the default when entering landscape from Portrait.
-The choice is saved and survives app updates.
+In **1.0.1**, open **Menu → Settings → Orientation**, the first Settings item.
+Choose **Vertical** or **Horizontal** with the movement buttons, then Select
+to save. Back cancels the choice. The chooser starts on the current orientation.
+
+When Horizontal is selected, **Buttons: Bottom / Top** appears as a separate
+Settings item below Orientation. Select switches button position immediately.
+The preference survives Vertical mode, unrelated setting changes, and reopening.
+Bottom is the initial horizontal preference; upgrades preserve an existing
+horizontal Top/Bottom selection.
+
+On store version **1.0.0**, the earlier **Settings → View** control cycles
+Portrait → Bottom → Top.
 
 | View | Hold the watch | Buttons from left to right |
 |---|---|---|
@@ -34,9 +42,36 @@ palette is transparent, black, white and dark green for menu title banners.
 Gameplay without overlays skips this UI conversion. No image allocation
 occurs per frame; assets change when orientation or ghosts change.
 
-Settings use version 3 of the existing eight-byte record, adding a bottom-buttons
-flag. Valid v1/v2 records retain preferences and alarms: v1 uses Portrait, and
-v2 landscape retains Top. High-score records are unchanged.
+Settings use version 4 of the existing eight-byte record. The bottom-buttons
+flag is now stored independently of screen orientation. Valid v1–v3 records
+retain preferences and alarms; existing horizontal Top/Bottom choices are
+preserved. Earlier vertical records start with Bottom as their horizontal
+preference. High-score records are unchanged.
+
+## 1.0.1 orientation settings verification — 5 October 2026
+
+Normal and ASan/UBSan host suites passed, including legacy record migration,
+both saved button positions through Vertical and a storage reload, and the
+existing game/control tests. A clean SDK 4.33.1 Emery build passed: app image
+20,400 / 61,440 bytes, resources 26,040 bytes. The playable game engine remains
+linked. Game A in Bottom mode retained 44,488 bytes free heap (40.2%).
+
+Actual emulator button navigation verified the chooser's current selection,
+Back cancellation, both orientations, the conditional Buttons row, Top/Bottom
+switching, all five/six Settings rows, and the fourth Help page. Quitting and
+reinstalling retained Vertical with a remembered Top preference; returning to
+Horizontal restored Top. Scores and other preferences survived unchanged.
+The emulator was restored to its original Bottom view and settings afterward.
+
+- [Vertical Settings](../art/previews/orientation-vertical-settings.png)
+- [Orientation chooser](../art/previews/orientation-choices.png)
+- [Screen setup Help](../art/previews/orientation-help.png)
+
+The test bundle's SHA-256 is
+`de4d11edf278c5abf0e2e93b581fb54e261e07c489e26bd4dda21d96b5717ede`.
+Physical PT2 acceptance is pending. This change has not been published; the
+store remains on 1.0.0. Phone Clay configuration is not required for these
+on-watch settings.
 
 ## Bottom-button follow-up
 

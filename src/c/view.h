@@ -15,7 +15,7 @@ typedef enum {
 
 typedef struct {
   const char *title;
-  char rows[5][32];
+  char rows[6][32];
   char footer[64];
   unsigned count;
   int selected; /* -1 for informational pages. */
