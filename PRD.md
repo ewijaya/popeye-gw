@@ -8,7 +8,7 @@
 
 | | |
 |---|---|
-| Status | M5 base accepted on PT2; requested bottom-button view in validation; M6 unreleased |
+| Status | M5 and bottom-button view accepted on PT2; M6 unreleased |
 | Date | 5 October 2026 |
 | Owner | Edward Wijaya |
 | Target | Pebble Time 2 (Emery, 200 × 228, 64 colours) |
@@ -280,8 +280,9 @@ up to 1,000 points and must record zero unavoidable misses.
   - Vibrate: vibration (on)
   - Ghosts: ghost segments (on)
   - Demo: attract animation (on)
-  - View: Portrait / Top / Bottom (Portrait); Top and Bottom are landscape
-    with buttons above or below. Rotate all game, clock and menu UI.
+  - View: Portrait / Bottom / Top (Portrait); Bottom is the first landscape
+    choice. Bottom and Top place buttons below or above. Rotate all game,
+    clock and menu UI.
 - **About:** version, licence, and a one-line note identifying this as a fan-made watch adaptation.
 - All settings and scores are saved on the watch and survive app updates.
 

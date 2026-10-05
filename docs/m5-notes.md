@@ -2,8 +2,9 @@
 
 M5 is accepted on the owner's PT2 as of 2026-10-05. The owner approved the final
 banner and confirmed the guided physical checks after the readability updates.
-The subsequent requested Bottom landscape view is implemented and locally
-verified; its focused physical follow-up is recorded separately from that sign-off.
+The subsequent requested Bottom landscape view also passed the owner's focused
+physical follow-up. At the owner's request, it is the first landscape choice
+when cycling from Portrait; Top remains selectable.
 Use the [guided checklist](pt2-playtest.md) and [results record](pt2-playtest-results.md).
 Nothing has been published to the store. [Validation](m5-audit.md) covers the
 local development build; [reference gaps](pp23-fidelity.md) remain explicit.
@@ -71,7 +72,7 @@ the final accepted build before publication; approved banner artwork is unchange
 
 ## Bottom-button landscape follow-up
 
-The View setting now cycles Portrait / Top / Bottom. Bottom turns the entire
+The View setting now cycles Portrait / Bottom / Top. Bottom turns the entire
 interface the opposite way, putting the three buttons underneath, and maps
 native Down/Up to physical left/right before menu/game input. Existing Swap
 behavior remains available. Settings v3 retains the eight-byte record size and

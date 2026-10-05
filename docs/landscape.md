@@ -1,8 +1,9 @@
 # Handheld landscape mode
 
-Open **Menu → Settings → View** and press Select to cycle **Portrait → Top →
-Bottom**. View is the fifth item, after Demo. Its footer explains where to hold
-the buttons. The choice is saved and survives app updates.
+Open **Menu → Settings → View** and press Select to cycle **Portrait → Bottom →
+Top**. View is the fifth item, after Demo. Its footer explains where to hold
+the buttons. Bottom is the default when entering landscape from Portrait.
+The choice is saved and survives app updates.
 
 | View | Hold the watch | Buttons from left to right |
 |---|---|---|

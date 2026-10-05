@@ -1,6 +1,6 @@
 # PT2 play-test results — 2026-10-05
 
-Status: **M5 base accepted; requested Bottom view installed for a focused follow-up**. The owner
+Status: **M5 and Bottom view accepted; Bottom-first View cycle requested**. The owner
 enabled the phone's Dev Connection. CloudPebble ping returned Pong, and the
 installer exited 0 with `App install succeeded.` Game A subsequently appeared
 in the physical-device log. Connection, installation and runtime logs do not
@@ -49,12 +49,14 @@ applied by the game. Clock, scene, menus and overlays rotate together.
 | Identity / icon | Correct name, UUID, version, Emery-only watchapp; unchanged launcher icon |
 | Emulator heap, Bottom A/B | Each **45,904 free / 66,184 used**, 40.95% free |
 | Visual checks | Five native captures: Bottom settings, clock after reopening, A movement left/right, B |
-| Physical follow-up | Installed; upright layout, left/right + Swap, persisted Bottom and prior scores/settings awaiting owner report |
+| Physical follow-up | Pass: owner answered “Perfect!” to upright/comfortable layout, left/right + Swap, persisted Bottom and retained scores/settings |
 | Cleanup | Environment locks removed; emulator logger stopped |
 
 Logs and native captures are under `.release/pt2-bottom/`. The earlier core M5
-acceptance remains attached to the prior candidate below; this follow-up does
-not assume that new orientation behavior has been physically accepted yet.
+acceptance remains attached to the prior candidate below. The owner accepted
+this Bottom-view follow-up and then requested that Bottom become the first
+landscape choice. That changes the cycle to Portrait → Bottom → Top;
+existing saved views remain intact.
 
 ## Accepted M5 base: green title banners
 

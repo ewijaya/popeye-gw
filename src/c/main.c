@@ -376,8 +376,8 @@ static void select_handler(ClickRecognizerRef recognizer, void *context) {
       if (s_row == 2u) settings.ghosts = !settings.ghosts;
       if (s_row == 3u) settings.attract = !settings.attract;
       if (s_row == 4u) {
-        if (!settings.landscape) { settings.landscape = true; settings.buttons_bottom = false; }
-        else if (!settings.buttons_bottom) settings.buttons_bottom = true;
+        if (!settings.landscape) { settings.landscape = true; settings.buttons_bottom = true; }
+        else if (settings.buttons_bottom) settings.buttons_bottom = false;
         else { settings.landscape = false; settings.buttons_bottom = false; }
       }
       save_settings(&settings);
