@@ -268,6 +268,8 @@ up to 1,000 points and must record zero unavoidable misses.
 - **Menu** (Down in clock mode): High scores, Alarm, Settings, About.
 - Menu titles and rows use 28-pixel bold text with compact, single-line labels;
   unusually long values use a smaller font to fit. Footers use 18-pixel text.
+- A dark green banner with white lettering distinguishes page titles from
+  black-on-white menu content and the black selected row in both orientations.
 - **High scores:** best score and date for Game A and Game B, plus a reset
   option with confirmation.
 - **Settings:**

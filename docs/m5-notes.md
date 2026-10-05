@@ -54,6 +54,10 @@ report, menu titles/rows now use 28-pixel bold text, compact one-line settings
 labels and 18-pixel footers. Long values step down in font size to stay readable
 without wrapping. The four-row viewport still scrolls to the fifth setting;
 portrait and landscape share the layout.
+The owner accepted the larger text and clock clearance, then requested a
+clearer title hierarchy. White title text now sits on a dark green banner,
+recalling the handheld casing. Landscape retains the green in the existing
+fourth palette slot, without enlarging the reusable UI bitmap.
 
 The clock/score register moved down six pixels to an eight-pixel top inset;
 AM/PM and both ghost backdrops move with it. Clock hints now say “Tap Select: A”

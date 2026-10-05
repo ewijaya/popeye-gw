@@ -204,11 +204,14 @@ static void test_orientation(void) {
   memset(source, 0xf3, sizeof(source)); /* Magenta -> transparent. */
   memset(target, 0, sizeof(target));
   source[0] = 0xc0; source[199] = 0xff;
+  source[100] = 0xc4; /* Menu header green must survive landscape rotation. */
   orientation_pack_row(target, 52, source, 0);
   assert(target[49] == 1 && target[199 * 52 + 49] == 2);
+  assert(target[100 * 52 + 49] == 3);
   assert(target[50] == 0 && target[51] == 0); /* Row padding untouched. */
   orientation_pack_row(target, 52, source, 199);
   assert(target[0] == 0x40 && target[199 * 52] == 0x80);
+  assert(target[100 * 52] == 0xc0);
   assert(target[50 * 52] == 0 && target[50 * 52 + 49] == 0);
 }
 

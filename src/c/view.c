@@ -54,10 +54,10 @@ static void draw_panel(GContext *ctx) {
   int spacing = s_landscape ? 30 : 34;
   graphics_context_set_fill_color(ctx, GColorWhite);
   graphics_fill_rect(ctx, GRect(0, 0, 200, s_landscape ? 200 : 228), 0, GCornerNone);
-  graphics_context_set_text_color(ctx, GColorBlack);
+  graphics_context_set_fill_color(ctx, GColorDarkGreen);
+  graphics_fill_rect(ctx, GRect(0, 0, 200, 35), 0, GCornerNone);
+  graphics_context_set_text_color(ctx, GColorWhite);
   draw_panel_line(ctx, s_panel.title, GRect(4, -2, 192, 36), GTextAlignmentCenter);
-  graphics_context_set_stroke_color(ctx, GColorBlack);
-  graphics_draw_line(ctx, GPoint(6, 34), GPoint(194, 34));
   for (row = first; row < s_panel.count && row < first + 4u; ++row) {
     bool selected = (int)row == s_panel.selected;
     GRect box = GRect(4, start + (row - first) * spacing, 192, spacing - 1);
@@ -220,9 +220,10 @@ static void load_scene(void) {
 
 void view_init(Layer *parent, bool ghosts) {
   s_show_ghosts = ghosts;
-  s_ui_palette[0] = s_ui_palette[3] = GColorClear;
+  s_ui_palette[0] = GColorClear;
   s_ui_palette[1] = GColorBlack;
   s_ui_palette[2] = GColorWhite;
+  s_ui_palette[3] = GColorDarkGreen;
   s_ui = gbitmap_create_blank_with_palette(GSize(200, 200), GBitmapFormat2BitPalette, s_ui_palette, false);
   if (s_ui == NULL) APP_LOG(APP_LOG_LEVEL_ERROR, "Unable to allocate rotated UI");
   load_scene();

@@ -1,6 +1,6 @@
 # PT2 play-test results — 2026-10-05
 
-Status: **readability update installed; owner recheck pending**. The owner is available and
+Status: **menu size and clock clearance accepted; title styling update in progress**. The owner is available and
 enabled the phone's Dev Connection. CloudPebble ping returned Pong, and the
 installer exited 0 with `App install succeeded.` Game A subsequently appeared
 in the physical-device log. Connection, installation and runtime logs do not
@@ -12,6 +12,9 @@ control feedback, not a separate pass for every requested check. The owner
 requested larger, more compact menus, a fix for the clock's top clearance and
 an explanation of the A/B hint. Those changes are installed in the new
 candidate below; the menu/clock readability recheck has been requested.
+The owner subsequently confirmed “Both looks good” for larger menu text and
+clock clearance, and requested a vibrant title background to distinguish it
+from menu content. That additional styling is being prepared.
 
 ## Current candidate: larger menus and clock clearance
 
@@ -71,7 +74,8 @@ This frozen play-test candidate is not a store publication approval.
 |---|---|
 | CloudPebble connection | Pass: phone/watch connection responded to ping |
 | Frozen PBW installed | Pass: updated candidate's CloudPebble install exited 0; initial candidate also ran Game A on watch |
-| Larger menus and clock top clearance | Updated candidate installed; owner recheck pending |
+| Larger menus and clock top clearance | Pass: owner confirmed “Both looks good” on candidate `d27d095` |
+| Colored title banner | Requested after readability acceptance; update in progress |
 | Clock food demonstration | Owner observation pending |
 | Up/Down controls | Owner reports controls feel fine on initial build; <50 ms latency remains unmeasured |
 | Catches and miss feedback | Detailed owner observation pending |

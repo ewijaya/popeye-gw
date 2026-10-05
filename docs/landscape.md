@@ -18,11 +18,12 @@ selected orientation. Portrait remains the default.
 The original approved art remains the source. `tools/build_art.py` generates a
 228 × 200 logical landscape composition with nearest-neighbour sampling, then
 rotates it clockwise into the native 200 × 228 framebuffer. Both orientations
-have complete 88-segment atlases and matching ghost/plain backdrops. No new
+have complete 82-segment atlases and matching ghost/plain backdrops. No new
 image generation or network request is needed to rebuild these assets.
 
 Only the selected atlas and backdrop are loaded. A reusable 10 KB palette
-bitmap rotates native-font UI text, centred within the landscape width.
+bitmap rotates native-font UI text, centred within the landscape width. Its
+palette is transparent, black, white and dark green for menu title banners.
 Gameplay without overlays skips this UI conversion. No image allocation
 occurs per frame; assets change when orientation or ghosts change.
 
