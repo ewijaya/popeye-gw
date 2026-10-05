@@ -1,6 +1,6 @@
 # PT2 play-test results — 2026-10-05
 
-Status: **green title banners installed; attack/feedback play-test pending**. The owner is available and
+Status: **M5 accepted by the owner on PT2, 2026-10-05**. The owner
 enabled the phone's Dev Connection. CloudPebble ping returned Pong, and the
 installer exited 0 with `App install succeeded.` Game A subsequently appeared
 in the physical-device log. Connection, installation and runtime logs do not
@@ -11,12 +11,19 @@ I think the controls is fine... so far so good.” This is positive subjective
 control feedback, not a separate pass for every requested check. The owner
 requested larger, more compact menus, a fix for the clock's top clearance and
 an explanation of the A/B hint. Those changes are installed in the new
-candidate below; the menu/clock readability recheck has been requested.
+candidate below and were rechecked by the owner.
 The owner subsequently confirmed “Both looks good” for larger menu text and
 clock clearance, and requested a vibrant title background to distinguish it
 from menu content. That additional styling is installed. The next requested
-observations cover deliberate Brutus hits, dizzy/MISS/vibration feedback and
-Game B's side changes.
+observations covered deliberate Brutus hits, dizzy/MISS/vibration feedback and
+Game B's side changes. The owner answered “yes everythig loooks good”; those
+specific requested checks are passed. Silent alarm previews (Vibrate Off and
+Quiet Time) and a scheduled alarm with the app closed were also confirmed:
+“yes... all looks good.” The owner answered **“All pass”** to in-game alarms,
+pause/resume and notification focus handling. For at least ten minutes across
+both modes, landscape and scores/settings after updates and reopening, the
+owner answered **“yes all looks good”**. These reports establish M5 acceptance
+for the installed build, not publication approval or timing-accurate PP-23 fidelity.
 
 ## Current candidate: green title banners
 
@@ -36,7 +43,7 @@ Game B's side changes.
 | Emulator heap, A and B | **47,548 free / 65,948 used**, 41.89% free after visiting menus |
 | Physical heap | Not yet sampled on this candidate |
 | Visual checks | Two native captures confirm green titles and white lettering in portrait and landscape |
-| Cleanup | Build environment locks removed; emulator logger stopped |
+| Cleanup | Build environment locks removed; emulator and watch loggers stopped after testing |
 
 Logs and captures: `.release/pt2-header/`. The title accent uses the existing
 fourth palette slot; the UI bitmap remains 10 KB. The owner-accepted font size
@@ -101,22 +108,23 @@ This frozen play-test candidate is not a store publication approval.
 | CloudPebble connection | Pass: phone/watch connection responded to ping |
 | Frozen PBW installed | Pass: updated candidate's CloudPebble install exited 0; initial candidate also ran Game A on watch |
 | Larger menus and clock top clearance | Pass: owner confirmed “Both looks good” on candidate `d27d095` |
-| Colored title banner | Installed in `15ea674`; native portrait/landscape checks pass; owner observation pending |
-| Brutus hit feedback and B side changes | Guided test requested; owner observation pending |
-| Clock food demonstration | Owner observation pending |
+| Colored title banner | Installed in accepted `15ea674`; native portrait/landscape checks pass |
+| Brutus hit feedback and B side changes | Pass: owner confirmed dizzy Popeye, one MISS, short vibration and both sides in B look good on `15ea674` |
+| Clock food demonstration | Overall play-test accepted; individual routes in the full 48-second cycle were not separately reported |
 | Up/Down controls | Owner reports controls feel fine on initial build; <50 ms latency remains unmeasured |
-| Catches and miss feedback | Detailed owner observation pending |
-| Game A and B, ten minutes total | Owner observation pending |
-| Pause/resume and focus loss | Owner observation pending |
-| Portrait/landscape and readability | Owner observation pending |
-| Vibration On/Off and Quiet Time | Owner observation pending |
-| Alarm while app closed | Owner observation pending |
-| Alarm during gameplay | Owner observation pending |
-| Settings/scores after reopening | Owner observation pending |
-| Settings/scores after app update | Owner observation pending |
-| 200/500 bonus on watch | Not yet reached; host coverage is separate |
+| Catches and miss feedback | Overall play-test accepted; Brutus miss/dizzy/pulse explicitly confirmed |
+| Game A and B, ten minutes total | Pass: owner confirmed at least ten minutes across both modes; scores not provided |
+| Pause/resume and focus loss | Pass: owner answered “All pass” to Select pause/resume and paused return from notification |
+| Portrait/landscape and readability | Pass: larger text/clock clearance and final landscape check confirmed |
+| Vibration On/Off and Quiet Time | Pass: hit vibration and silent alarm previews confirmed by owner |
+| Alarm while app closed | Pass: owner confirmed scheduled alarm launches and rings |
+| Alarm during gameplay | Pass: owner confirmed alarm leaves gameplay running |
+| Settings/scores after reopening | Pass: owner confirmed retention |
+| Settings/scores after app update | Pass: owner confirmed retention after the installed updates |
+| 200/500 bonus on watch | Not separately reported; host coverage is separate |
 | <50 ms physical input latency | Unmeasured |
-| Overall M5 acceptance | Pending owner report |
+| Overall M5 acceptance | **Accepted** on installed candidate `15ea674`, PBW SHA-256 above |
 
-The owner approved the final store banner with “A whole childhood on one small
-screen.” Artwork approval does not imply completion of the physical checks.
+The owner also approved the final store banner with “A whole childhood on one
+small screen.” M6 still needs final-build store screenshots and separately
+approved GitHub/store publication. No release tag or store listing was published.

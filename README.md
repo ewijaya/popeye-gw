@@ -6,10 +6,10 @@ left; Popeye catches it in his boat while Brutus threatens him with a hammer
 from the left pier or a fist from the right ship. The PT2 scene uses crisp
 black segments, a white field, and vivid red, orange, blue and turquoise.
 
-**Status:** M5 software and store artwork are implemented: 82 segments, Game A/B,
+**Status:** M5 accepted on the owner's PT2 on 2026-10-05: 82 segments, Game A/B,
 clock with a food-catching demo, daily alarm, saved settings/high scores,
-portrait/landscape, and finite visual/haptic feedback. Physical-watch play-test
-sign-off and M6 release remain pending. Use the [PT2 play-test checklist](docs/pt2-playtest.md)
+portrait/landscape, and finite visual/haptic feedback. M6 release remains pending.
+See the [PT2 play-test checklist](docs/pt2-playtest.md)
 and [results record](docs/pt2-playtest-results.md). This is a watch adaptation, not an exact ROM recreation.
 [Reference observations and remaining fidelity gaps](docs/pp23-fidelity.md)
 distinguish confirmed rules from provisional timing, paths and input behavior.
@@ -108,8 +108,8 @@ catch lights its final cargo segment and a catch flash for one step; a miss
 blinks its splash/dizzy pose through recovery. Bonuses flash MISS, and game over
 flashes the score and any new-best HI. Misses/bonuses give a short pulse; game
 over gives a long pulse, followed by two short pulses for a new record. All
-flashing finishes after 1.5 active seconds. Physical-watch feel, alarm and
-Quiet Time behavior still need the owner's play-test.
+flashing finishes after 1.5 active seconds. The owner confirmed physical-watch
+controls, hit feedback, alarms and Quiet Time in the recorded PT2 play-test.
 
 ## Handheld orientation
 

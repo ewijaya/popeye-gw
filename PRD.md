@@ -8,7 +8,7 @@
 
 | | |
 |---|---|
-| Status | M5 watch validation; implementation and store art ready, M6 unreleased |
+| Status | M5 accepted on PT2 on 2026-10-05; M6 unreleased |
 | Date | 5 October 2026 |
 | Owner | Edward Wijaya |
 | Target | Pebble Time 2 (Emery, 200 × 228, 64 colours) |

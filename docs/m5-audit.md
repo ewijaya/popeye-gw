@@ -1,5 +1,8 @@
 # M5 development audit — 2026-10-05
 
+Historical development audit. The subsequent clean frozen builds and the
+owner's completed PT2 acceptance are recorded in [play-test results](pt2-playtest-results.md).
+
 **Unreleased development build.** Audited as the M5 working-tree changes on
 base `cfc88b9573ef75e7216d135e949f05400c7f0361`; the tree was dirty during the
 build, so these results are **unreleasable**, not a frozen release approval.

@@ -33,6 +33,9 @@ values and default to portrait. High-score records are unchanged.
 
 ## Validation — 5 October 2026
 
+The notes below describe the original M4 build. The later large-menu/green-title
+build passed the owner's landscape check in the [PT2 acceptance](pt2-playtest-results.md).
+
 Implemented and tested in an isolated copy of the ongoing M4 work, with a
 separate emulator and persistent storage. The main thread's emulator was
 not installed into, stopped or changed.

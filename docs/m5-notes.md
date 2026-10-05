@@ -1,7 +1,7 @@
 # M5 implementation notes
 
-M5's software and store-art work is implemented; the owner approved the final
-banner. Physical PT2 play-testing and final timing/input tuning remain open.
+M5 is accepted on the owner's PT2 as of 2026-10-05. The owner approved the final
+banner and confirmed the guided physical checks after the readability updates.
 Use the [guided checklist](pt2-playtest.md) and [results record](pt2-playtest-results.md).
 Nothing has been published to the store. [Validation](m5-audit.md) covers the
 local development build; [reference gaps](pp23-fidelity.md) remain explicit.
@@ -81,25 +81,18 @@ The master and store export now use those lines, preserving the liked design.
 - [Masters, complete prompts and references](../art/store/README.md)
 - [Draft listing description](releases/store-description.txt)
 
-## Owner PT2 play-test remaining
+## Owner PT2 acceptance
 
-Use the frozen PBW identified in [the results record](pt2-playtest-results.md),
-not a later rebuild in `build/`. It has been installed through the phone's
-CloudPebble connection; physical acceptance is still pending. The owner needs
-to check:
+The accepted frozen PBW is identified in [the results record](pt2-playtest-results.md),
+including its source commit and SHA-256. The owner confirmed at least ten minutes
+across A/B, controls, larger menus and clock clearance, landscape, Brutus hits
+and side changes, vibration suppression, alarms while closed and playing,
+pause/focus behavior and settings/scores across restarts and app updates.
 
-- Play at least ten minutes total across both modes, including busy food sequences and
-  Brutus side changes; report unfair or unreadable moments and the score.
-- Try portrait and landscape, swapped controls, press/hold/release and rapid
-  direction changes; verify the catch window and vibration comfort on a wrist.
-- Catch, drop twice, take a hit, cross 200/500 and beat a high score; verify
-  the short, long and long-then-double cues, with Vibration Off and Quiet Time.
-- Pause during feedback, resume, lose/regain focus, quit and restart; check
-  that neither a round nor its pulses continue in the background.
-- Leave the idle screen long enough to see all food routes; toggle Attract Off.
-- Test alarm closed/idle/playing and dismiss it; restart the app and check
-  settings/high scores. Compare screen contrast indoors and outdoors.
-- Review the banner/icon treatment and native screenshot selection.
+Physical input latency, per-route clock observations and 200/500 bonus events
+were not separately measured or reported. Existing host coverage remains
+separate from those physical observations. Exact original PP-23 timing/input
+questions remain in the fidelity ledger; the play-test does not resolve them.
 
-Do not call M5 accepted until this sign-off. M6 still covers the frozen release
-build, owner-approved destinations and store/GitHub publication.
+M6 covers final-build store screenshots, the frozen release build,
+owner-approved destinations and store/GitHub publication. None was published.
