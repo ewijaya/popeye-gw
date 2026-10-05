@@ -2,6 +2,7 @@
 #include "scene.h"
 #include "segments.h"
 #include "segments_landscape.h"
+#include "segments_landscape_bottom.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -37,9 +38,9 @@ static void test_inventory_and_bits(void) {
   assert(SEGMENT_ART_COUNT == SEG_COUNT);
   {
     unsigned orientation;
-    for (orientation = 0; orientation < 2; ++orientation) {
-      const SegmentArt *table = orientation ? landscape_art : segment_art;
-      int sheet_height = orientation ? LANDSCAPE_SHEET_HEIGHT : SEGMENT_SHEET_HEIGHT;
+    for (orientation = 0; orientation < 3; ++orientation) {
+      const SegmentArt *table = orientation == 2 ? landscape_bottom_art : orientation ? landscape_art : segment_art;
+      int sheet_height = orientation == 2 ? LANDSCAPE_BOTTOM_SHEET_HEIGHT : orientation ? LANDSCAPE_SHEET_HEIGHT : SEGMENT_SHEET_HEIGHT;
   for (seg = 0u; seg < SEG_COUNT; ++seg) {
     const SegmentArt *art = &table[seg];
     unsigned other;
@@ -55,6 +56,12 @@ static void test_inventory_and_bits(void) {
       assert(art->sheet_x + art->w <= b->sheet_x || b->sheet_x + b->w <= art->sheet_x ||
              art->sheet_y + art->h <= b->sheet_y || b->sheet_y + b->h <= art->sheet_y);
     }
+  }
+  for (seg = 0; seg < SEG_COUNT; ++seg) {
+    const SegmentArt *top = &landscape_art[seg], *bottom = &landscape_bottom_art[seg];
+    assert(bottom->w == top->w && bottom->h == top->h);
+    assert(bottom->x == 200 - top->x - top->w);
+    assert(bottom->y == 228 - top->y - top->h);
   }
     }
   }

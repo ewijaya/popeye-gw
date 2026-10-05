@@ -9,7 +9,7 @@
 #define SCORES_RECORD_SIZE 21u
 
 typedef struct {
-  bool swap_buttons, vibration, ghosts, attract, alarm_on, landscape;
+  bool swap_buttons, vibration, ghosts, attract, alarm_on, landscape, buttons_bottom;
   uint8_t alarm_hour, alarm_minute;
 } Settings;
 

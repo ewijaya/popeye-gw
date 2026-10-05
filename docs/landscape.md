@@ -1,14 +1,19 @@
 # Handheld landscape mode
 
-Open **Menu → Settings → View** and press Select to switch between
-Portrait and Landscape. Orientation is the fifth settings item; scroll past
-Demo to reach it. The setting is saved and survives app updates.
+Open **Menu → Settings → View** and press Select to cycle **Portrait → Top →
+Bottom**. View is the fifth item, after Demo. Its footer explains where to hold
+the buttons. The choice is saved and survives app updates.
 
-For Landscape, turn the watch counterclockwise until the three buttons are
-along the top edge. They become **left / select / right**. The left and right
-buttons move Popeye; the middle button starts or pauses a game. Hold the middle
-button for Game B from the clock. Back is on the opposite edge. The existing
-Swap controls preference continues to reverse the movement buttons if enabled.
+| View | Hold the watch | Buttons from left to right |
+|---|---|---|
+| Top | Turn counterclockwise; buttons above the display | Up / Select / Down |
+| Bottom | Turn clockwise; buttons below the display | Down / Select / Up |
+
+In both landscape views, the physical left/right buttons move Popeye left/right
+and navigate menus backward/forward. Select starts or pauses; holding it starts
+Game B from the clock. Back is on the opposite edge. Swap reverses game movement
+as before. The platform adapter maps both press and release; game rules and
+one-press movement are unchanged.
 
 The clock, gameplay, pause/game-over cards, alarm and menus all follow the
 selected orientation. Portrait remains the default.
@@ -17,7 +22,8 @@ selected orientation. Portrait remains the default.
 
 The original approved art remains the source. `tools/build_art.py` generates a
 228 × 200 logical landscape composition with nearest-neighbour sampling, then
-rotates it clockwise into the native 200 × 228 framebuffer. Both orientations
+rotates it clockwise for Top and counterclockwise for Bottom into the native
+200 × 228 framebuffer. All three orientations
 have complete 82-segment atlases and matching ghost/plain backdrops. No new
 image generation or network request is needed to rebuild these assets.
 
@@ -27,9 +33,19 @@ palette is transparent, black, white and dark green for menu title banners.
 Gameplay without overlays skips this UI conversion. No image allocation
 occurs per frame; assets change when orientation or ghosts change.
 
-Settings use version 2 of the existing eight-byte record, adding the
-landscape flag. Valid version 1 records retain all preferences and alarm
-values and default to portrait. High-score records are unchanged.
+Settings use version 3 of the existing eight-byte record, adding a bottom-buttons
+flag. Valid v1/v2 records retain preferences and alarms: v1 uses Portrait, and
+v2 landscape retains Top. High-score records are unchanged.
+
+## Bottom-button follow-up
+
+Host and sanitizer suites pass, covering v1/v2 migration, bottom-view persistence,
+both UI rotations including the green palette entry, and left/right press/release
+with Swap on/off. All three atlases pass bounds/overlap checks; every bottom
+segment is the exact 180-degree counterpart of its top-view segment.
+Five native captures check settings, clock after reopening, A movement left/right
+and Game B. Both modes retain over 40% free emulator heap. The exact build and
+physical follow-up are recorded in [PT2 results](pt2-playtest-results.md).
 
 ## Validation — 5 October 2026
 

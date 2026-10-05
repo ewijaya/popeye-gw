@@ -113,11 +113,12 @@ controls, hit feedback, alarms and Quiet Time in the recorded PT2 play-test.
 
 ## Handheld orientation
 
-Choose **Menu → Settings → View → Landscape** for a miniature
-Game & Watch layout. Turn the watch so the three buttons sit along the top:
-left to move left, middle to start/pause, right to move right. The preference
-is saved, and clock, alarm and menus rotate too. Switch back to Portrait for
-wrist use. See [landscape mode](docs/landscape.md) for details and screenshots.
+Open **Menu → Settings → View** and press Select to cycle **Portrait → Top →
+Bottom**. Top and Bottom are landscape views with the three buttons above or
+below the screen. Turn the watch counterclockwise for Top or clockwise for
+Bottom. In either view: left moves left, middle starts/pauses, right moves right
+(unless Swap is on). The saved view also rotates the clock, alarm and menus.
+See [landscape mode](docs/landscape.md) for details and screenshots.
 
 ## Art
 

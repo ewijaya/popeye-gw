@@ -2,6 +2,7 @@
 
 #include "segments.h"
 #include "segments_landscape.h"
+#include "segments_landscape_bottom.h"
 #include "orientation.h"
 
 /* Pixel placement is generated from the complete art/segments inventory. */
@@ -12,6 +13,7 @@ static GBitmap *s_backdrop;
 static GBitmap *s_ui;
 static GColor s_ui_palette[4];
 static bool s_landscape, s_loaded_landscape, s_loaded_ghosts;
+static bool s_buttons_bottom, s_loaded_bottom;
 static GBitmap *s_sheet;
 static GBitmap *s_art[SEG_COUNT];
 static Scene s_scene;
@@ -74,7 +76,8 @@ static void draw_panel(GContext *ctx) {
 }
 
 static void draw_segment(GContext *ctx, unsigned seg) {
-  const SegmentArt *art = s_loaded_landscape ? &landscape_art[seg] : &segment_art[seg];
+  const SegmentArt *art = s_loaded_bottom ? &landscape_bottom_art[seg] :
+                         s_loaded_landscape ? &landscape_art[seg] : &segment_art[seg];
   graphics_draw_bitmap_in_rect(ctx, s_art[seg], GRect(art->x, art->y, art->w, art->h));
 }
 
@@ -138,7 +141,7 @@ static bool capture_ui(Layer *layer, GContext *ctx) {
         if (screen_x >= info.min_x && screen_x <= info.max_x) row[x] = info.data[screen_x];
       }
     }
-    orientation_pack_row(out, stride, row, y);
+    orientation_pack_row(out, stride, row, y, s_buttons_bottom);
   }
   graphics_release_frame_buffer(ctx, frame);
   return true;
@@ -199,17 +202,23 @@ static void unload_scene(void) {
 static void load_scene(void) {
   unsigned seg;
   uint32_t backdrop_id;
+  uint32_t sheet_id;
   unload_scene();
   s_loaded_landscape = s_landscape;
+  s_loaded_bottom = s_buttons_bottom;
   s_loaded_ghosts = s_show_ghosts;
-  backdrop_id = s_landscape ? (s_show_ghosts ? RESOURCE_ID_BACKDROP_GHOSTS_LANDSCAPE : RESOURCE_ID_BACKDROP_LANDSCAPE)
+  backdrop_id = s_buttons_bottom ? (s_show_ghosts ? RESOURCE_ID_BACKDROP_GHOSTS_LANDSCAPE_BOTTOM : RESOURCE_ID_BACKDROP_LANDSCAPE_BOTTOM) :
+                s_landscape ? (s_show_ghosts ? RESOURCE_ID_BACKDROP_GHOSTS_LANDSCAPE : RESOURCE_ID_BACKDROP_LANDSCAPE)
                             : (s_show_ghosts ? RESOURCE_ID_BACKDROP_GHOSTS : RESOURCE_ID_BACKDROP);
+  sheet_id = s_buttons_bottom ? RESOURCE_ID_SEGMENTS_LANDSCAPE_BOTTOM :
+             s_landscape ? RESOURCE_ID_SEGMENTS_LANDSCAPE : RESOURCE_ID_SEGMENTS;
   s_backdrop = gbitmap_create_with_resource(backdrop_id);
-  s_sheet = gbitmap_create_with_resource(s_landscape ? RESOURCE_ID_SEGMENTS_LANDSCAPE : RESOURCE_ID_SEGMENTS);
+  s_sheet = gbitmap_create_with_resource(sheet_id);
   s_art_ready = s_backdrop != NULL && s_sheet != NULL;
   if (s_art_ready) {
     for (seg = 0; seg < SEG_COUNT; ++seg) {
-      const SegmentArt *art = s_loaded_landscape ? &landscape_art[seg] : &segment_art[seg];
+      const SegmentArt *art = s_loaded_bottom ? &landscape_bottom_art[seg] :
+                             s_loaded_landscape ? &landscape_art[seg] : &segment_art[seg];
       s_art[seg] = gbitmap_create_as_sub_bitmap(s_sheet,
                       GRect(art->sheet_x, art->sheet_y, art->w, art->h));
       if (s_art[seg] == NULL) s_art_ready = false;
@@ -244,14 +253,16 @@ void view_deinit(void) {
   s_ui = NULL;
 }
 
-void view_set_landscape(bool landscape) {
+void view_set_landscape(bool landscape, bool buttons_bottom) {
   s_landscape = landscape;
+  s_buttons_bottom = landscape && buttons_bottom;
 }
 
 void view_show(const Scene *scene, ViewOverlay overlay, bool ghosts, bool save_error) {
   s_panel_visible = false;
   s_show_ghosts = ghosts;
-  if (s_loaded_landscape != s_landscape || s_loaded_ghosts != ghosts) load_scene();
+  if (s_loaded_landscape != s_landscape || s_loaded_bottom != s_buttons_bottom ||
+      s_loaded_ghosts != ghosts) load_scene();
   s_save_error = save_error;
   s_scene = *scene;
   s_overlay = overlay;

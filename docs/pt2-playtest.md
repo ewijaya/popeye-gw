@@ -44,8 +44,10 @@ is useful but does not establish a measured <50 ms input latency.
 7. During a round, cover the app with a notification/system screen if practical.
    On return it should be paused; no hidden play or continuing game vibration.
    Select resumes. Ordinary app exit ends the in-memory round.
-8. From clock: Down → Settings → View. Try Landscape with the three
-   buttons along the top, then return to Portrait. Menus and clock rotate too.
+8. From clock: Down → Settings → View. Select cycles Portrait → Top → Bottom.
+   Try both landscape views with buttons above/below; the physical left/right
+   buttons should still move left/right. Menus and clock rotate too. Check that
+   Bottom survives reopening, then restore the preferred view.
    Toggle Swap and Ghosts once; verify the change and restore
    the previous choices. Turn Demo Off: poses and colon become static.
 

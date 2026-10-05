@@ -8,7 +8,7 @@
 
 | | |
 |---|---|
-| Status | M5 accepted on PT2 on 2026-10-05; M6 unreleased |
+| Status | M5 base accepted on PT2; requested bottom-button view in validation; M6 unreleased |
 | Date | 5 October 2026 |
 | Owner | Edward Wijaya |
 | Target | Pebble Time 2 (Emery, 200 × 228, 64 colours) |
@@ -128,6 +128,9 @@ Pebble Time 2 buttons are Up, Select and Down on the right, and Back on the left
 - Provisional watch input: one press moves one pose, without hold repeat.
   Original hold/release and recenter behavior still requires measurement.
 - A setting swaps Up and Down for players who think of Up as "right".
+- Landscape can place the buttons above or below the screen. Platform input
+  mapping keeps the physical left button moving left in either view; Swap
+  still reverses movement. Menus follow the same physical left/right ordering.
 - Input takes effect immediately and redraws at once, not on the next game step.
 
 ### 5.4 Core loop
@@ -277,7 +280,8 @@ up to 1,000 points and must record zero unavoidable misses.
   - Vibrate: vibration (on)
   - Ghosts: ghost segments (on)
   - Demo: attract animation (on)
-  - View: Portrait / Landscape (Portrait); rotate all game, clock and menu UI
+  - View: Portrait / Top / Bottom (Portrait); Top and Bottom are landscape
+    with buttons above or below. Rotate all game, clock and menu UI.
 - **About:** version, licence, and a one-line note identifying this as a fan-made watch adaptation.
 - All settings and scores are saved on the watch and survive app updates.
 
@@ -364,7 +368,7 @@ the Emery-only platform target.
 | `src/c/tuning.h` | All tunable numbers (section 5.8) | none |
 | `src/c/scene.c/.h` | Pure game state → active segment bitset | none |
 | `src/c/view.c/.h` | Backdrop, segments, menus, overlays and orientation | Graphics |
-| `src/c/segments.h`, `segments_landscape.h` | Generated portrait/landscape segment tables | none |
+| `src/c/segments.h`, `segments_landscape*.h` | Generated portrait/top/bottom landscape segment tables | none |
 | `src/c/orientation.c/.h` | Pack the reusable rotated UI buffer | none |
 | `src/c/clock.c/.h` | Pure clock/attract scene and local-calendar alarm calculation | none |
 | `src/c/alarm.c/.h` | Daily alarm scheduling and wakeup lifecycle | Wakeup, Persist |
@@ -402,12 +406,12 @@ the Emery-only platform target.
 
 | Key | Record | Fields |
 |---|---|---|
-| 1 | Settings, version 2, 8 bytes | swap buttons, vibration, ghosts, attract, alarm on, landscape, alarm hour/minute, checksum |
+| 1 | Settings, version 3, 8 bytes | swap buttons, vibration, ghosts, attract, alarm on, landscape, buttons bottom, alarm hour/minute, checksum |
 | 2 | High scores, version 1, 21 bytes | Game A/B full 32-bit best totals and local dates, checksum |
 | 3 | Wakeup ID, signed integer | OS wakeup identifier for the daily alarm; reconciled on launch |
 
-Settings and score records have a version byte and checksum. Settings v1
-remains readable, with Portrait as the orientation default. Unknown/corrupt
+Settings and score records have a version byte and checksum. Settings v1/v2
+remain readable: v1 defaults to Portrait and existing v2 landscape uses Top. Unknown/corrupt
 records fall back independently without crashing. Writes occur at pause,
 game over, focus loss and exit; failures stay visible. Wakeup scheduling
 verifies its persisted ID against the OS rather than trusting stale data.

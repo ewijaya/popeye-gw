@@ -253,23 +253,25 @@ def header_text(segments, sheet_height):
     return "\n".join(lines)
 
 
-def landscape(rows):
+def landscape(rows, buttons_bottom=False):
     """228 x 200 handheld canvas, turned clockwise into the native framebuffer.
 
     Nearest-neighbour sampling keeps binary LCD segments crisp. Holding the
     watch counterclockwise puts Up/Select/Down along the top, left to right.
     """
-    return [[rows[(WIDTH - 1 - x) * HEIGHT // WIDTH][y * WIDTH // HEIGHT]
-             for x in range(WIDTH)] for y in range(HEIGHT)]
+    turned = [[rows[(WIDTH - 1 - x) * HEIGHT // WIDTH][y * WIDTH // HEIGHT]
+               for x in range(WIDTH)] for y in range(HEIGHT)]
+    # The opposite holding direction uses exactly the same sampled pixels.
+    return [row[::-1] for row in turned[::-1]] if buttons_bottom else turned
 
 
-def landscape_segments(segments):
+def landscape_segments(segments, buttons_bottom=False):
     result = []
     for segment in segments:
         rows = [[CLEAR] * WIDTH for _ in range(HEIGHT)]
         for x, y in segment["lit"]:
             rows[y][x] = LIT
-        rows = landscape(rows)
+        rows = landscape(rows, buttons_bottom)
         lit = [(x, y) for y in range(HEIGHT) for x in range(WIDTH) if rows[y][x][3]]
         if not lit:
             raise ArtError(segment["name"] + ": lost in landscape conversion")
@@ -304,21 +306,24 @@ def build(out_root):
     write_png(os.path.join(images, "segments.png"), sheet)
     write_png(os.path.join(images, "backdrop.png"), backdrop)
     write_png(os.path.join(images, "backdrop-ghosts.png"), ghosts)
-    turned = landscape_segments(segments)
-    turned_sheet = pack(turned)
-    write_png(os.path.join(images, "segments-landscape.png"), turned_sheet)
-    write_png(os.path.join(images, "backdrop-landscape.png"), landscape(backdrop))
-    # Transform the same ghost composite, so lit segments and ghosts stay aligned.
-    write_png(os.path.join(images, "backdrop-ghosts-landscape.png"), landscape(ghosts))
-    turned_header = header_text(turned, len(turned_sheet))
-    turned_header = turned_header.replace("POPEYE_GW_SEGMENTS_H", "POPEYE_GW_SEGMENTS_LANDSCAPE_H")
-    turned_header = turned_header.replace("#include \"scene.h\"", "#include \"segments.h\"")
-    turned_header = turned_header.replace("typedef struct {\n  int16_t sheet_x, sheet_y, x, y, w, h;\n} SegmentArt;\n", "")
-    turned_header = turned_header.replace("SEGMENT_ART_COUNT", "LANDSCAPE_ART_COUNT")
-    turned_header = turned_header.replace("SEGMENT_SHEET_", "LANDSCAPE_SHEET_")
-    turned_header = turned_header.replace("segment_art[", "landscape_art[")
-    with open(os.path.join(out_root, "src", "c", "segments_landscape.h"), "w", newline="\n") as handle:
-        handle.write(turned_header)
+    for bottom in (False, True):
+        slug = "landscape-bottom" if bottom else "landscape"
+        symbol = slug.replace("-", "_")
+        turned = landscape_segments(segments, bottom)
+        turned_sheet = pack(turned)
+        write_png(os.path.join(images, f"segments-{slug}.png"), turned_sheet)
+        write_png(os.path.join(images, f"backdrop-{slug}.png"), landscape(backdrop, bottom))
+        # Transform the same ghost composite, so lit segments and ghosts stay aligned.
+        write_png(os.path.join(images, f"backdrop-ghosts-{slug}.png"), landscape(ghosts, bottom))
+        turned_header = header_text(turned, len(turned_sheet))
+        turned_header = turned_header.replace("POPEYE_GW_SEGMENTS_H", f"POPEYE_GW_SEGMENTS_{symbol.upper()}_H")
+        turned_header = turned_header.replace("#include \"scene.h\"", "#include \"segments.h\"")
+        turned_header = turned_header.replace("typedef struct {\n  int16_t sheet_x, sheet_y, x, y, w, h;\n} SegmentArt;\n", "")
+        turned_header = turned_header.replace("SEGMENT_ART_COUNT", f"{symbol.upper()}_ART_COUNT")
+        turned_header = turned_header.replace("SEGMENT_SHEET_", f"{symbol.upper()}_SHEET_")
+        turned_header = turned_header.replace("segment_art[", f"{symbol}_art[")
+        with open(os.path.join(out_root, "src", "c", f"segments_{symbol}.h"), "w", newline="\n") as handle:
+            handle.write(turned_header)
     icon_w, icon_h, icon = read_png(os.path.join(art_dir, "menu-icon.png"))
     if (icon_w, icon_h) != (25, 25):
         raise ArtError("art/menu-icon.png: must be 25 x 25")
@@ -342,6 +347,10 @@ OUTPUTS = [
     "resources/images/segments-landscape.png",
     "resources/images/backdrop-landscape.png",
     "resources/images/backdrop-ghosts-landscape.png",
+    "src/c/segments_landscape_bottom.h",
+    "resources/images/segments-landscape-bottom.png",
+    "resources/images/backdrop-landscape-bottom.png",
+    "resources/images/backdrop-ghosts-landscape-bottom.png",
 ]
 
 

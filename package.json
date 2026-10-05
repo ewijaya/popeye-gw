@@ -57,6 +57,22 @@
           "name": "SEGMENTS_LANDSCAPE",
           "file": "images/segments-landscape.png",
           "memoryFormat": "1BitPalette"
+        },
+        {
+          "type": "bitmap",
+          "name": "BACKDROP_LANDSCAPE_BOTTOM",
+          "file": "images/backdrop-landscape-bottom.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BACKDROP_GHOSTS_LANDSCAPE_BOTTOM",
+          "file": "images/backdrop-ghosts-landscape-bottom.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "SEGMENTS_LANDSCAPE_BOTTOM",
+          "file": "images/segments-landscape-bottom.png",
+          "memoryFormat": "1BitPalette"
         }
       ]
     }

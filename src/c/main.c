@@ -4,6 +4,7 @@
 #include "clock.h"
 #include "game.h"
 #include "feedback_service.h"
+#include "orientation.h"
 #include "storage.h"
 #include "view.h"
 
@@ -225,12 +226,15 @@ static void render_panel(void) {
     case PAGE_SETTINGS:
       panel.count = 5;
       panel.title = "Settings";
-      snprintf(panel.rows[4], sizeof(panel.rows[4]), "View: %s", settings->landscape ? "Landscape" : "Portrait");
+      snprintf(panel.rows[4], sizeof(panel.rows[4]), "View: %s", !settings->landscape ? "Portrait" :
+               settings->buttons_bottom ? "Bottom" : "Top");
       snprintf(panel.rows[0], sizeof(panel.rows[0]), "Swap: %s", on_off(settings->swap_buttons));
       snprintf(panel.rows[1], sizeof(panel.rows[1]), "Vibrate: %s", on_off(settings->vibration));
       snprintf(panel.rows[2], sizeof(panel.rows[2]), "Ghosts: %s", on_off(settings->ghosts));
       snprintf(panel.rows[3], sizeof(panel.rows[3]), "Demo: %s", on_off(settings->attract));
       snprintf(panel.footer, sizeof(panel.footer), "Select: change  Back: menu");
+      if (s_row == 4u) snprintf(panel.footer, sizeof(panel.footer), "%s\nSelect: change  Back: menu",
+          !settings->landscape ? "Upright on wrist" : settings->buttons_bottom ? "Landscape: buttons below" : "Landscape: buttons above");
       break;
     case PAGE_SCORES:
       panel.title = "High scores";
@@ -292,7 +296,7 @@ static void render(void) {
   time_t now = time(NULL);
   struct tm local = *localtime(&now);
   bool full_alarm = s_ringing && !s_passive_ring;
-  view_set_landscape(s_data.settings.landscape);
+  view_set_landscape(s_data.settings.landscape, s_data.settings.buttons_bottom);
   if (s_page != PAGE_CLOCK && s_page != PAGE_GAME && !full_alarm) { render_panel(); return; }
   if (s_page == PAGE_CLOCK || full_alarm) {
     clock_scene(&scene, &local, clock_is_24h_style(), s_data.settings.attract,
@@ -309,7 +313,8 @@ static void render(void) {
 }
 
 static void move_down_handler(ClickRecognizerRef recognizer, void *context) {
-  bool up = click_recognizer_get_button_id(recognizer) == BUTTON_ID_UP;
+  bool up = orientation_logical_up(click_recognizer_get_button_id(recognizer) == BUTTON_ID_UP,
+      s_data.settings.landscape && s_data.settings.buttons_bottom);
   if (dismiss_ring()) return;
   if (s_page == PAGE_GAME) {
     if (game_input(&s_game, up ? GAME_UP : GAME_DOWN, true)) render();
@@ -327,7 +332,9 @@ static void move_down_handler(ClickRecognizerRef recognizer, void *context) {
 }
 
 static void move_up_handler(ClickRecognizerRef recognizer, void *context) {
-  GameButton button = click_recognizer_get_button_id(recognizer) == BUTTON_ID_UP ? GAME_UP : GAME_DOWN;
+  bool up = orientation_logical_up(click_recognizer_get_button_id(recognizer) == BUTTON_ID_UP,
+      s_data.settings.landscape && s_data.settings.buttons_bottom);
+  GameButton button = up ? GAME_UP : GAME_DOWN;
   if (s_page == PAGE_GAME) game_input(&s_game, button, false);
 }
 
@@ -368,7 +375,11 @@ static void select_handler(ClickRecognizerRef recognizer, void *context) {
       if (s_row == 1u) settings.vibration = !settings.vibration;
       if (s_row == 2u) settings.ghosts = !settings.ghosts;
       if (s_row == 3u) settings.attract = !settings.attract;
-      if (s_row == 4u) settings.landscape = !settings.landscape;
+      if (s_row == 4u) {
+        if (!settings.landscape) { settings.landscape = true; settings.buttons_bottom = false; }
+        else if (!settings.buttons_bottom) settings.buttons_bottom = true;
+        else { settings.landscape = false; settings.buttons_bottom = false; }
+      }
       save_settings(&settings);
       break;
     case PAGE_ALARM:

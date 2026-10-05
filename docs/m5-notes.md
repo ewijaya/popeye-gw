@@ -2,6 +2,8 @@
 
 M5 is accepted on the owner's PT2 as of 2026-10-05. The owner approved the final
 banner and confirmed the guided physical checks after the readability updates.
+The subsequent requested Bottom landscape view is implemented and locally
+verified; its focused physical follow-up is recorded separately from that sign-off.
 Use the [guided checklist](pt2-playtest.md) and [results record](pt2-playtest-results.md).
 Nothing has been published to the store. [Validation](m5-audit.md) covers the
 local development build; [reference gaps](pp23-fidelity.md) remain explicit.
@@ -66,6 +68,14 @@ hints and MISS cans. These are presentation changes; game rules are unchanged.
 Native captures cover clock, menu, settings, landscape settings and alarm.
 Store screenshots predate this readability update and need refreshing against
 the final accepted build before publication; approved banner artwork is unchanged.
+
+## Bottom-button landscape follow-up
+
+The View setting now cycles Portrait / Top / Bottom. Bottom turns the entire
+interface the opposite way, putting the three buttons underneath, and maps
+native Down/Up to physical left/right before menu/game input. Existing Swap
+behavior remains available. Settings v3 retains the eight-byte record size and
+migrates v1/v2 preferences and alarms. See [landscape mode](landscape.md).
 
 ## Store artwork
 

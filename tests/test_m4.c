@@ -23,11 +23,12 @@ static void test_records(void) {
   assert(!settings.swap_buttons && settings.vibration && settings.ghosts && settings.attract);
   assert(!settings.alarm_on && settings.alarm_hour == 7 && settings.alarm_minute == 0);
   settings.landscape = true;
+  settings.buttons_bottom = true;
   settings.swap_buttons = true; settings.ghosts = false; settings.attract = false;
   settings.alarm_on = true; settings.alarm_hour = 23; settings.alarm_minute = 59;
   settings_encode(&settings, settings_bytes);
   assert(settings_decode(&restored, settings_bytes, sizeof(settings_bytes)));
-  assert(restored.landscape);
+  assert(restored.landscape && restored.buttons_bottom);
   assert(restored.swap_buttons && !restored.ghosts && !restored.attract && restored.alarm_on);
   assert(restored.vibration && restored.alarm_hour == 23 && restored.alarm_minute == 59);
   for (i = 0; i < sizeof(settings_bytes); ++i) {
@@ -71,12 +72,13 @@ static void test_storage(void) {
   fake_reset(); storage_load(&first);
   assert(first.settings.ghosts && !first.settings.alarm_on && first.scores.best[0] == 0);
   first.settings.landscape = true;
+  first.settings.buttons_bottom = true;
   first.settings.swap_buttons = true; first.settings.alarm_on = true;
   first.settings.alarm_minute = 31;
   assert(scores_record(&first.scores, 1, 5000, 20261005));
   assert(storage_save_settings(&first.settings) && storage_save_scores(&first.scores));
   memset(&second, 0, sizeof(second)); storage_load(&second);
-  assert(second.settings.landscape);
+  assert(second.settings.landscape && second.settings.buttons_bottom);
   assert(second.settings.swap_buttons && second.settings.alarm_minute == 31);
   assert(second.scores.best[1] == 5000 && second.scores.date[1] == 20261005);
   fake_write_fail = true;
@@ -195,28 +197,66 @@ static void test_alarm(void) {
 static void test_orientation(void) {
   /* Existing v1 settings migrate without losing alarms or other preferences. */
   const uint8_t legacy[] = { 1, 31, 23, 59, 179, 178, 236, 216 };
+  const uint8_t legacy_top[] = { 2, 63, 23, 59, 32, 220, 204, 152 };
   Settings settings;
   uint8_t source[200], target[200 * 52];
   assert(settings_decode(&settings, legacy, sizeof(legacy)));
-  assert(!settings.landscape && settings.swap_buttons && settings.alarm_on);
+  assert(!settings.landscape && !settings.buttons_bottom && settings.swap_buttons && settings.alarm_on);
+  assert(settings.alarm_hour == 23 && settings.alarm_minute == 59);
+  assert(settings.vibration && settings.ghosts && settings.attract);
+  assert(settings_decode(&settings, legacy_top, sizeof(legacy_top)));
+  assert(settings.landscape && !settings.buttons_bottom && settings.swap_buttons && settings.alarm_on);
   assert(settings.alarm_hour == 23 && settings.alarm_minute == 59);
   assert(settings.vibration && settings.ghosts && settings.attract);
   memset(source, 0xf3, sizeof(source)); /* Magenta -> transparent. */
   memset(target, 0, sizeof(target));
   source[0] = 0xc0; source[199] = 0xff;
   source[100] = 0xc4; /* Menu header green must survive landscape rotation. */
-  orientation_pack_row(target, 52, source, 0);
+  orientation_pack_row(target, 52, source, 0, false);
   assert(target[49] == 1 && target[199 * 52 + 49] == 2);
   assert(target[100 * 52 + 49] == 3);
   assert(target[50] == 0 && target[51] == 0); /* Row padding untouched. */
-  orientation_pack_row(target, 52, source, 199);
+  orientation_pack_row(target, 52, source, 199, false);
   assert(target[0] == 0x40 && target[199 * 52] == 0x80);
   assert(target[100 * 52] == 0xc0);
   assert(target[50 * 52] == 0 && target[50 * 52 + 49] == 0);
+  memset(target, 0, sizeof(target));
+  orientation_pack_row(target, 52, source, 0, true);
+  assert(target[0] == 0x80 && target[199 * 52] == 0x40);
+  assert(target[99 * 52] == 0xc0);
+  orientation_pack_row(target, 52, source, 199, true);
+  assert(target[49] == 2 && target[199 * 52 + 49] == 1);
+  assert(target[99 * 52 + 49] == 3);
+  assert(target[50] == 0 && target[51] == 0);
+  assert(target[50 * 52] == 0 && target[50 * 52 + 49] == 0);
+}
+
+static void test_oriented_controls(void) {
+  unsigned bottom, swapped;
+  for (bottom = 0; bottom < 2; ++bottom) {
+    for (swapped = 0; swapped < 2; ++swapped) {
+      Game game;
+      bool physical_left_is_up = !bottom;
+      GameButton left = orientation_logical_up(physical_left_is_up, bottom) ? GAME_UP : GAME_DOWN;
+      GameButton right = orientation_logical_up(!physical_left_is_up, bottom) ? GAME_UP : GAME_DOWN;
+      game_init(&game, GAME_A, 3u);
+      game.controls_swapped = swapped != 0;
+      assert(game_input(&game, left, true));
+      assert(game.popeye_pose == (swapped ? 3u : 1u));
+      assert(!game_input(&game, left, true)); /* Holding still never repeats. */
+      game_input(&game, left, false);
+      assert(game.held_buttons == 0u);
+      assert(game_input(&game, right, true));
+      assert(game.popeye_pose == 2u);
+      game_input(&game, right, false);
+      assert(game.held_buttons == 0u);
+    }
+  }
 }
 
 int main(void) {
   test_records(); test_storage(); test_clock(); test_alarm(); test_orientation();
+  test_oriented_controls();
   puts("M4 tests passed: versioned storage, corrupt records, clock, calendar/DST recurrence and wakeup lifecycle");
   return 0;
 }
