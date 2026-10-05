@@ -113,7 +113,7 @@ Quiet Time behavior still need the owner's play-test.
 
 ## Handheld orientation
 
-Choose **Menu → Settings → Orientation → Landscape** for a miniature
+Choose **Menu → Settings → View → Landscape** for a miniature
 Game & Watch layout. Turn the watch so the three buttons sit along the top:
 left to move left, middle to start/pause, right to move right. The preference
 is saved, and clock, alarm and menus rotate too. Switch back to Portrait for

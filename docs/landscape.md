@@ -1,8 +1,8 @@
 # Handheld landscape mode
 
-Open **Menu → Settings → Orientation** and press Select to switch between
+Open **Menu → Settings → View** and press Select to switch between
 Portrait and Landscape. Orientation is the fifth settings item; scroll past
-Attract animation to reach it. The setting is saved and survives app updates.
+Demo to reach it. The setting is saved and survives app updates.
 
 For Landscape, turn the watch counterclockwise until the three buttons are
 along the top edge. They become **left / select / right**. The left and right

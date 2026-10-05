@@ -101,6 +101,23 @@ poses on the right, with only one active rival. The score and MISS cans occupy
 the upper right. Ghosts are confined to the digit/miss registers for PT2 clarity.
 These are newly authored drawings, not the original SVG shapes.
 
+The owner requested an explicit sprite/catch audit during the PT2 play-test.
+The rule mapping, scene mapping and source-art composite agree:
+
+| Catch pose | Final cargo segment |
+|---|---|
+| `popeye-0.png` | `cargo-0-4.png` |
+| `popeye-1.png` | `cargo-1-4.png` |
+| `popeye-3.png` | `cargo-2-4.png` |
+| `popeye-4.png` | `cargo-3-4.png` |
+
+`popeye-2.png` is the neutral, non-catching pose. The dizzy images and
+`popeye-catch.png` sparkle are feedback effects, not extra catch positions.
+All four final cargo images sit at the corresponding raised hands in the
+art composite. Stages 0–3 are flight segments. The existing unit test explicitly
+covers the neutral drop, and both fairness runs exercise every catch path in
+every seed. This validates the watch implementation, not the original pose count.
+
 Known rule corrections: one point per catch, no Lucky Tide/double-score mode,
 food difficulty reset every 100 points, one side-changing Brutus in B, movement
 after game over. Saved settings, UUID and high-score record format are unchanged;
