@@ -79,7 +79,11 @@ All four food arcs appear over 48 seconds. With attract animation disabled,
 it shows static poses and a steady colon and updates once per minute. Clock
 ticks stop on other pages and while the app is out of focus.
 
-The menu contains High scores, Alarm, Settings and About. Settings toggle
+The menu contains High scores, Alarm, Settings, Help and About. **Menu → Help**
+provides three short screens for controls, catches/misses and clock shortcuts.
+Press Select for the next screen or Back to return to the menu; the movement
+buttons also browse Help in either direction. Direction labels adapt to the view.
+Settings toggle
 swapped controls, vibration, ghost segments and attract animation. The renderer
 holds one backdrop at a time and swaps it only when the ghost preference
 changes, keeping free heap above the project budget.

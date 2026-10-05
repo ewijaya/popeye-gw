@@ -78,6 +78,15 @@ native Down/Up to physical left/right before menu/game input. Existing Swap
 behavior remains available. Settings v3 retains the eight-byte record size and
 migrates v1/v2 preferences and alarms. See [landscape mode](landscape.md).
 
+## On-watch Help
+
+The owner's requested Help entry sits between Settings and About. Three screens
+cover starting A/B from the clock, movement and pause, catches and misses, and
+clock/menu shortcuts. Select advances and wraps to the first screen; movement
+buttons browse both directions. Back returns to the menu. Up/Down labels become
+Left/Right in either landscape view. Help uses the existing large-text panel,
+green title banner and rotation buffer without adding timers or saved state.
+
 ## Store artwork
 
 The owner's revised brief is implemented as a 1981-style green/gold/ivory advert

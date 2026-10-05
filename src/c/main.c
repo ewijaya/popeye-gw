@@ -9,7 +9,7 @@
 #include "view.h"
 
 typedef enum { PAGE_CLOCK, PAGE_GAME, PAGE_MENU, PAGE_SCORES,
-               PAGE_RESET, PAGE_SETTINGS, PAGE_ALARM, PAGE_ABOUT } Page;
+               PAGE_RESET, PAGE_SETTINGS, PAGE_ALARM, PAGE_HELP, PAGE_ABOUT } Page;
 
 static Window *s_window;
 static Game s_game;
@@ -217,11 +217,13 @@ static void render_panel(void) {
   snprintf(panel.footer, sizeof(panel.footer), "Select: open  Back: clock");
   switch (s_page) {
     case PAGE_MENU:
+      panel.count = 5;
       panel.title = "Popeye G&W";
       snprintf(panel.rows[0], sizeof(panel.rows[0]), "High scores");
       snprintf(panel.rows[1], sizeof(panel.rows[1]), "Alarm");
       snprintf(panel.rows[2], sizeof(panel.rows[2]), "Settings");
-      snprintf(panel.rows[3], sizeof(panel.rows[3]), "About");
+      snprintf(panel.rows[3], sizeof(panel.rows[3]), "Help");
+      snprintf(panel.rows[4], sizeof(panel.rows[4]), "About");
       break;
     case PAGE_SETTINGS:
       panel.count = 5;
@@ -275,6 +277,34 @@ static void render_panel(void) {
       } else snprintf(panel.footer, sizeof(panel.footer), "Select: edit  Back: menu");
       break;
     }
+    case PAGE_HELP:
+      panel.selected = -1;
+      snprintf(panel.footer, sizeof(panel.footer), "Select: next  Back: menu");
+      if (s_row == 0u) {
+        panel.title = "Help 1/3";
+        snprintf(panel.rows[0], sizeof(panel.rows[0]), "Tap Select: A");
+        snprintf(panel.rows[1], sizeof(panel.rows[1]), "Hold Select: B");
+        snprintf(panel.rows[2], sizeof(panel.rows[2]), "%s: move",
+                 settings->landscape ? "Left/Right" : "Up/Down");
+        snprintf(panel.rows[3], sizeof(panel.rows[3]), "Select: pause/play");
+        snprintf(panel.footer, sizeof(panel.footer), "Start A/B from clock\nSelect: next  Back: menu");
+      } else if (s_row == 1u) {
+        panel.title = "Help 2/3";
+        snprintf(panel.rows[0], sizeof(panel.rows[0]), "Catch food: +1");
+        snprintf(panel.rows[1], sizeof(panel.rows[1]), "Center can't catch");
+        snprintf(panel.rows[2], sizeof(panel.rows[2]), "2 drops = 1 MISS");
+        snprintf(panel.rows[3], sizeof(panel.rows[3]), "Hit = 1 MISS");
+        snprintf(panel.footer, sizeof(panel.footer), "3 MISS ends game\nSelect: next  Back: menu");
+      } else {
+        panel.title = "Help 3/3";
+        snprintf(panel.rows[0], sizeof(panel.rows[0]), "Quit play: 2x Back");
+        snprintf(panel.rows[1], sizeof(panel.rows[1]), "Clock %s: scores",
+                 settings->landscape ? "Left" : "Up");
+        snprintf(panel.rows[2], sizeof(panel.rows[2]), "Clock %s: menu",
+                 settings->landscape ? "Right" : "Down");
+        snprintf(panel.rows[3], sizeof(panel.rows[3]), "Settings: View/Swap");
+      }
+      break;
     case PAGE_ABOUT:
       panel.title = "About";
       panel.selected = -1;
@@ -325,7 +355,8 @@ static void move_down_handler(ClickRecognizerRef recognizer, void *context) {
     s_edit_value = (uint8_t)((s_edit_value + (up ? 1u : limit - 1u)) % limit);
     render();
   } else if (s_page != PAGE_SCORES && s_page != PAGE_ABOUT) {
-    unsigned count = s_page == PAGE_RESET ? 2u : s_page == PAGE_SETTINGS ? 5u : 4u;
+    unsigned count = s_page == PAGE_RESET ? 2u : s_page == PAGE_HELP ? 3u :
+                     (s_page == PAGE_SETTINGS || s_page == PAGE_MENU) ? 5u : 4u;
     s_row = (s_row + (up ? count - 1u : 1u)) % count;
     render();
   }
@@ -354,7 +385,7 @@ static void select_handler(ClickRecognizerRef recognizer, void *context) {
       else pause_game();
       break;
     case PAGE_MENU: {
-      static const Page destinations[] = { PAGE_SCORES, PAGE_ALARM, PAGE_SETTINGS, PAGE_ABOUT };
+      static const Page destinations[] = { PAGE_SCORES, PAGE_ALARM, PAGE_SETTINGS, PAGE_HELP, PAGE_ABOUT };
       open_page(destinations[s_row]);
       return;
     }
@@ -398,6 +429,7 @@ static void select_handler(ClickRecognizerRef recognizer, void *context) {
         s_edit_value = s_row == 1u ? settings.alarm_hour : settings.alarm_minute;
       }
       break;
+    case PAGE_HELP: s_row = (s_row + 1u) % 3u; break;
     case PAGE_ABOUT: break;
   }
   render();

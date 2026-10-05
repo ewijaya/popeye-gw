@@ -268,7 +268,7 @@ up to 1,000 points and must record zero unavoidable misses.
 
 ## 7. Menu, settings and high scores
 
-- **Menu** (Down in clock mode): High scores, Alarm, Settings, About.
+- **Menu** (Down in clock mode): High scores, Alarm, Settings, Help, About.
 - Menu titles and rows use 28-pixel bold text with compact, single-line labels;
   unusually long values use a smaller font to fit. Footers use 18-pixel text.
 - A dark green banner with white lettering distinguishes page titles from
@@ -283,6 +283,9 @@ up to 1,000 points and must record zero unavoidable misses.
   - View: Portrait / Bottom / Top (Portrait); Bottom is the first landscape
     choice. Bottom and Top place buttons below or above. Rotate all game,
     clock and menu UI.
+- **Help:** three short screens covering A/B controls, catches and misses, and
+  clock/menu shortcuts. Select advances; movement buttons browse both ways;
+  Back returns to the menu. Direction labels follow the selected orientation.
 - **About:** version, licence, and a one-line note identifying this as a fan-made watch adaptation.
 - All settings and scores are saved on the watch and survive app updates.
 
