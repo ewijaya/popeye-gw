@@ -4,11 +4,12 @@ Created with the built-in image generation tool on 2026-10-05. The owner's
 brief was a charming, vibrant, high-contrast 1981 advert, with a Pebble Time 2
 showing this game on its screen. These assets are local listing drafts. The owner selected copy option 1:
 **BACK TO GAME & WATCH** / **Olive throws. Popeye catches. Brutus waits.**
-The banner master and 720 × 320 export now use that copy.
+The banner master and 720 × 320 export now use that copy. The tagline uses
+large, heavy vintage slab-serif lettering with no flanking lines or separators.
 
 | Master | Prompt | Export |
 |---|---|---|
-| [banner-master.png](banner-master.png) | [Original generation](banner-prompt.txt), [selected copy edit](banner-edit-prompt.txt) | [720 × 320 banner](../../docs/releases/listing/banner-720x320.png) |
+| [banner-master.png](banner-master.png) | [Original generation](banner-prompt.txt), [selected copy edit](banner-edit-prompt.txt), [larger footer](banner-footer-prompt.txt) | [720 × 320 banner](../../docs/releases/listing/banner-720x320.png) |
 | [icon-master.png](icon-master.png) | [icon-prompt.txt](icon-prompt.txt) | [144 × 144](../../docs/releases/listing/icon-144.png), [48 × 48](../../docs/releases/listing/icon-48.png) |
 
 The banner uses warm ivory, deep green, gold and red stripes, retro display
@@ -24,7 +25,11 @@ The copy edit also used the built-in image generator, with the previous
 approved banner as its sole input. The exact input is preserved in git at
 `a6e3c52:art/store/banner-master.png`; [banner-edit-prompt.txt](banner-edit-prompt.txt)
 records the two replacements and the composition-preservation instructions.
-Both lines were visually checked at master and 720 × 320 export sizes.
+The subsequent typography edit used `d052b81:art/store/banner-master.png`
+as its input and [banner-footer-prompt.txt](banner-footer-prompt.txt) as its
+instructions: enlarge the tagline, use a 1981 toy-box lettering style and
+remove both decorative horizontal rules. It also used the built-in generator.
+The final text was visually checked at master and 720 × 320 export sizes.
 
 The banner is generated marketing artwork, including its rendered screen;
 it is not a photograph of physical-watch brightness. The five separate
