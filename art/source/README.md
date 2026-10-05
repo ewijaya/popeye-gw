@@ -2,7 +2,7 @@
 
 Popeye G&W uses the approved Popeye, Olive Oyl and Brutus designs, with fixed black LCD segments inspired by the original wide-screen handheld.
 
-The complete runtime set has **88 segments**, including every gameplay pose and the clock/alarm indicators. Character variants, cargo and the backdrop were made with the built-in image generation tool. The tool does not expose a model selector or identifier. Source PNGs preserve generated transparency. Runtime segments are strictly opaque black or transparent at 200 × 228.
+The complete runtime set has **82 segments**, including every gameplay pose and the clock/alarm indicators. Character variants, cargo and the backdrop were made with the built-in image generation tool. The tool does not expose a model selector or identifier. Source PNGs preserve generated transparency. Runtime segments are strictly opaque black or transparent at 200 × 228.
 
 ## Reproduce the art
 
@@ -19,7 +19,7 @@ python3 tools/build_art.py --check
 
 `tools/prepare_art.py` defines the layout and rasterizes geometric UI symbols. It crops alpha bounds, resizes using area averaging, thresholds coverage, mirrors right-facing variants, and positions segments on full-screen canvases. Character feet align with the new backdrop; catching hands align with the four cargo lanes. The backdrop is reduced to Emery's four levels per RGB channel without dithering.
 
-The renderer loads the packed atlas once with a black/transparent 1-bit palette. Sub-bitmaps reference it without duplicating pixel storage. Faint ghosts use 1-in-8 grey pixel coverage so mutually exclusive poses do not become a solid grey mass.
+The renderer loads the packed atlas once with a black/transparent 1-bit palette. Sub-bitmaps reference it without duplicating pixel storage. Ghosts appear only in the score/MISS registers at half grey coverage. Character and food ghosts are omitted to keep the field clear on Emery.
 
 ## Source mapping
 
@@ -29,19 +29,22 @@ The renderer loads the packed atlas once with a black/transparent 1-bit palette.
 | `popeye-near-left.png` | Near-left / mirrored near-right catch |
 | `popeye-far-left.png` | Far-left / mirrored far-right catch |
 | `popeye-dizzy.png` | Left / mirrored right dizzy |
-| `olive.png` | Ready at four throw spots |
-| `olive-throw.png` | Throw at four throw spots |
+| `olive.png` | Ready beside the left car |
+| `olive-throw.png` | Throw from the fixed left ledge |
 | `olive-bell-0.png`, `olive-bell-1.png` | Two alarm ringing frames |
-| `brutus.png`, `brutus-windup.png`, `brutus-strike.png` | Left rival phases / mirrored right rival phases |
-| `cargo.png`, `fish.png`, `lantern.png`, `barrel.png` | One cargo drawing per lane, five stages per lane |
-| `backdrop-lcd.png` | Printed deck, piers, boat and water |
-| Geometric artwork in `tools/prepare_art.py` | Seven-segment digits, text indicators, splashes, rings, bell, gull, catch flash and anchor launcher icon |
+| `brutus.png`, `brutus-windup.png`, `brutus-strike.png` | Mirrored right fist phases |
+| `brutus-hammer-idle.png`, `brutus-hammer-windup.png`, `brutus-hammer-strike.png` | Left hammer phases |
+| `food-bottle.png`, `fish.png`, `food-can.png` | Four food arcs, five stages each; angled/upright bottles distinguish their launch frames |
+| `backdrop-vibrant.png` | Bright red car, brick ledge, orange boat, blue ship and water |
+| Geometric artwork in `tools/prepare_art.py` | Seven-segment digits, text indicators, splashes, MISS cans, bell, catch flash and anchor launcher icon |
 
 Runtime filenames and engine identifiers use `popeye`, `olive` and `brutus` consistently.
 
 ## Generation prompts
 
-Animation, cargo and backdrop prompts are recorded verbatim in [m3-prompts.json](m3-prompts.json). Original approved character prompts follow.
+The new backdrop, left hammer poses and food prompts are recorded verbatim in
+[pp23-prompts.json](pp23-prompts.json), generated using the built-in `image_gen`
+tool. Historical animation, cargo and backdrop prompts are recorded verbatim in [m3-prompts.json](m3-prompts.json). Original approved character prompts follow.
 
 
 ### Popeye

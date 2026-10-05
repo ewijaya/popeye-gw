@@ -1,25 +1,16 @@
 #ifndef POPEYE_GW_TUNING_H
 #define POPEYE_GW_TUNING_H
 
-/* PRD 5.8: keep the complete play-testing curve in this one header. */
-#define PGW_A_START_STEP_MS 560u
-#define PGW_B_START_STEP_MS 440u
+/* Provisional watch timing, NOT recovered PP-23 timing. See docs/pp23-fidelity.md.
+ * The manual establishes increasing food speed/quantity and a reset every 100
+ * points. It does not supply these durations or thresholds. Same food curve in
+ * A/B; B's extra challenge is Brutus changing sides. */
+#define PGW_FOOD_STEP_MS { 560u, 440u, 340u, 240u }
 #define PGW_SPEED_POINTS 25u
-#define PGW_SPEED_DECREMENT_MS 16u
-#define PGW_A_MIN_STEP_MS 240u
-#define PGW_B_MIN_STEP_MS 200u
-#define PGW_A_FIRST_CARGO_THRESHOLD 10u
-#define PGW_A_SECOND_CARGO_THRESHOLD 60u
-#define PGW_A_INITIAL_CARGO_LIMIT 1u
-#define PGW_A_MIDDLE_CARGO_LIMIT 2u
-#define PGW_A_FINAL_CARGO_LIMIT 3u
-#define PGW_B_CARGO_THRESHOLD 30u
-#define PGW_B_INITIAL_CARGO_LIMIT 2u
-#define PGW_B_FINAL_CARGO_LIMIT 3u
-#define PGW_A_IDLE_MIN_MS 4000u
-#define PGW_A_IDLE_MAX_MS 9000u
-#define PGW_B_IDLE_MIN_MS 3000u
-#define PGW_B_IDLE_MAX_MS 7000u
+#define PGW_FIRST_CARGO_THRESHOLD 10u
+#define PGW_SECOND_CARGO_THRESHOLD 60u
+#define PGW_IDLE_MIN_MS 4000u
+#define PGW_IDLE_MAX_MS 9000u
 #define PGW_WINDUP_STEPS 2u
 #define PGW_STRIKE_STEPS 1u
 #define PGW_MISS_RECOVERY_MS 1500u

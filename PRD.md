@@ -1,5 +1,11 @@
 # Popeye G&W — Product Requirements Document
 
+> PP-23 correction approved by the owner's 2026-10-05 scene and reference
+> requests. Target: Wide Screen PP-23 (1981), not Table Top/Panorama or arcade.
+> [Source observations and fidelity gaps](docs/pp23-fidelity.md) distinguish
+> documented rules from this app's provisional timing, paths and controls.
+> This document specifies the watch implementation, not recovered Nintendo code.
+
 | | |
 |---|---|
 | Status | Draft 1.0 for owner review |
@@ -14,7 +20,7 @@
 Popeye G&W is a fan-made single-screen LCD-style catch game for Pebble
 Time 2, inspired by Nintendo’s Popeye Game & Watch wide-screen handheld.
 Popeye stands in a rowboat and catches cargo that Olive Oyl tosses from a
-freighter’s deck. His rival Brutus lurks on the piers at the screen edges and
+left ledge beside her car. His rival Brutus lurks on a left pier or right ship and
 strikes when Popeye leans too far. Standing upright in the middle of the boat is
 always safe from Brutus, but Popeye cannot catch anything there.
 
@@ -32,7 +38,7 @@ to be an official Nintendo release or an exact hardware emulation.
 | Game model | One-screen catch-and-dodge game with two modes, Game A and Game B |
 | Theme | Popeye G&W: Popeye (hero), Olive Oyl (thrower), Brutus (rival) |
 | Platform | Pebble Time 2 (Emery) only for version 1 |
-| Look | Authentic LCD: dark segments on a pale LCD panel, faint "ghosts" of unlit segments, colour backdrop |
+| Look | LCD-inspired black segments on white, vivid printed scenery, restrained score/MISS ghosts |
 | Version 1 scope | Game A and Game B, idle clock and alarm, saved high scores, RePebble store release |
 | Repository | Public on GitHub, fresh history, MIT licence |
 | Quality bar | Lean: host unit tests for game logic, emulator screenshots, a play-test on the owner's watch before each store release |
@@ -78,32 +84,31 @@ to be an official Nintendo release or an exact hardware emulation.
 | Element | Description |
 |---|---|
 | Popeye | Recognizable sailor with cap, pipe and oversized forearms in a rowboat at the centre of the harbour. Five poses: far-left reach, near-left reach, upright centre, near-right reach, far-right reach. |
-| Olive Oyl | Tall, slender figure with a hair bun and long skirt on a freighter along the top of the screen. Walks between four throw spots and tosses cargo. |
+| Olive Oyl | Tall, slender figure beside her car on the left ledge; fixed ready/throw poses launch food along authored arcs. |
 | Cargo | Falls along one of four lanes, one per catch pose. Each lane has its own fixed drawing (lane 1 crates, lane 2 fish, lane 3 lanterns, lane 4 barrels), as LCD segments cannot change shape. |
-| Brutus | Burly, bearded rival with a sailor cap. Game A: punches from the left pier. Game B: also attacks from the right pier. |
+| Brutus | Burly, bearded rival with a sailor cap. Game A: hammer from the left pier. Game B: one Brutus changes between the left pier and right ship (fist). |
 | Splash | Shown at the bottom of a lane when cargo hits the water. |
-| Life rings | Miss counter, up to three. A half-ring marks one dropped cargo (see 5.6). |
-| Gull | Lights up during Lucky Tide (double points, see 5.7). |
+| MISS cans | Upper-right miss counter, up to three empty cans. A half-can marks one pending dropped food (watch affordance, see 5.6). |
 
 ### 5.2 Screen layout (200 × 228)
 
 ```
-+----------------------------------------+  y=0
-| GAME A   (bell)(gull)        8 8 8 8    |  status: mode, alarm, Lucky Tide, digits
-|----------------------------------------|  y≈24
-|  ====== freighter deck / rail ======   |
-|     Olive ->  T1    T2    T3    T4       |  throw spots above lanes 1–4
-|----------------------------------------|  y≈72
-|        .     .     .     .             |
-|       .      .     .      .            |  4 lanes × 5 steps each
-|      .       .     .       .           |
-|----------------------------------------|  y≈150
-| [pier]  Popeye poses: L2 L1  C  R1 R2 [pier]|  Brutus on piers
-|  Brutus   \______rowboat______/  Brutus|
-| ~~~~ splash1  splash2  splash3  splash4 ~~|  y≈196
-|  (ring)(ring)(ring)(half)                |  misses
-+----------------------------------------+  y=228
++----------------------------------------+
+| GAME A   (bell)              8 8 8 8   |
+|                         MISS [ ][ ][ ] |
+| [car] Olive -> .  .                    |
+| [ledge]           .   .               |
+|                         .             |
+| Brutus (A/B left)       Brutus (B right)|
+|       Popeye: L2 L1 C R1 R2      [ship] |
+|          \____orange boat____/         |
+| ~~~~~~~ blue/turquoise water ~~~~~~~~~~ |
++----------------------------------------+
 ```
+
+Only one Brutus is visible. Left and right positions in this diagram show
+available states, not simultaneous opponents. Portrait and rotated landscape
+share segment IDs, with pixel coordinates owned by the art pipeline.
 
 Band positions are indicative. The art pipeline (section 9) fixes exact pixel
 positions, and the game logic never depends on pixels.
@@ -117,23 +122,23 @@ Pebble Time 2 buttons are Up, Select and Down on the right, and Back on the left
 | Clock | High scores | Menu | Start Game A | Start Game B | Exit app |
 | Playing | Move Popeye one pose left | Move Popeye one pose right | Pause | — | Pause |
 | Paused | — | — | Resume | — | Quit to clock |
-| Game over | — | — | Play again (same mode) | Switch mode and play | Clock |
+| Game over | Move left | Move right | Play again (same mode) | Switch mode and play | Clock |
 | Alarm ringing | Stop | Stop | Stop | — | Stop |
 
-- One press moves exactly one pose. Holding a button does not auto-repeat,
-  as on the original hardware.
+- Provisional watch input: one press moves one pose, without hold repeat.
+  Original hold/release and recenter behavior still requires measurement.
 - A setting swaps Up and Down for players who think of Up as "right".
 - Input takes effect immediately and redraws at once, not on the next game step.
 
 ### 5.4 Core loop
 
 1. The game advances in **steps** at a set interval (section 5.8).
-2. Each step, every airborne piece of cargo moves down one position in its lane.
+2. Each step, every airborne piece of food advances one fixed position along its arc.
 3. On its fifth step a piece reaches catch height. If Popeye is in that lane's
    pose, it is **caught** (+1 point). Otherwise it **drops** into the water
    with a splash.
-4. Olive walks between throw spots and launches new cargo according to the
-   scheduler (section 5.9).
+4. Olive stays beside the car and throws along one of four food arcs according
+   to the scheduler (section 5.9).
 5. Brutus runs an independent attack cycle (section 5.5).
 
 ### 5.5 Brutus's attacks
@@ -144,13 +149,14 @@ Pebble Time 2 buttons are Up, Select and Down on the right, and Back on the left
   pier, far-right for the right pier) on the strike step, he is hit: a miss.
 - **Safety:** near-left, near-right and centre poses are always safe from
   strikes.
-- **Game A:** left pier only. **Game B:** both piers, each with its own cycle.
-  The two never strike on the same step.
+- **Game A:** left hammer only. **Game B:** one rival changes sides after a
+  strike. The exact original switch schedule is unmeasured; this cadence is
+  provisional, as are the phase durations and vulnerable poses.
 
 ### 5.6 Drops and misses
 
-- The **first** dropped cargo shows a half-ring. The **second** drop turns it
-  into a full miss and clears the half-ring. Being hit by Brutus is always a
+- The **first** dropped cargo shows a half-can. The **second** drop turns it
+  into a full miss and clears the half-can. Being hit by Brutus is always a
   full miss.
 - After a miss, play pauses about 1.5 seconds: Popeye shows a dizzy pose (hit)
   or the splash flashes (drop), all airborne cargo is cleared, and play resumes.
@@ -160,28 +166,27 @@ Pebble Time 2 buttons are Up, Select and Down on the right, and Back on the left
 
 | Event | Effect |
 |---|---|
-| Catch | +1 point (+2 during Lucky Tide) |
-| Reach 200 or 500 points | If there are misses, all misses and the half-ring are cleared. If there are none, **Lucky Tide** starts: the gull lights up and catches score double until the next miss or drop. |
-| Score passes 999 | The display wraps to 000 and play continues. The 200 and 500 milestones repeat in each 1,000. |
+| Catch | +1 point |
+| Reach 200 or 500 points | Miss marks clear. Pending-drop clearing is provisional. No invented double-point bonus. |
+| Score passes 999 | Display wraps to 000; watch high scores retain the true total. |
 
-The high score stores the true total (it can exceed 999). The game display
-shows three digits, like the original handhelds; the high-score screen shows
-the full number.
+The manual confirms displayed rollover; exact internal restart behavior above
+999 still needs observation. The app repeats bonuses in each displayed 1,000.
 
 ### 5.8 Difficulty and pacing
 
-All values are initial and tunable in one header (`src/c/tuning.h`), set by
-play-testing.
+The PP-23 manual establishes food quantity/speed resets every 100 points.
+Numeric values below are **provisional watch tuning**, not original timings.
+They live in `src/c/tuning.h`. Existing airborne food finishes across a reset;
+the smaller cap applies to new launches.
 
-| Parameter | Game A | Game B |
-|---|---|---|
-| Starting step interval | 560 ms | 440 ms |
-| Speed-up | −16 ms per 25 points | −16 ms per 25 points |
-| Fastest step interval | 240 ms | 200 ms |
-| Cargo in the air at once | 1 below 10 points, 2 below 60, then 3 | 2 below 30, then 3 |
-| Brutus idle time | 4–9 s | 3–7 s per pier |
-| Wind-up warning | 2 steps | 2 steps |
-| Pause after a miss | 1.5 s | 1.5 s |
+| Parameter | Both modes |
+|---|---|
+| Food step at cycle scores 0 / 25 / 50 / 75 | 560 / 440 / 340 / 240 ms |
+| Food capacity within each 100 points | 1 below 10, 2 below 60, then 3 |
+| Brutus idle | 4–9 s |
+| Wind-up / strike | 2 steps / 1 step |
+| Miss recovery | 1.5 s |
 
 ### 5.9 Fairness guarantees
 
@@ -195,8 +200,9 @@ The scheduler never creates a situation a perfect player cannot survive.
    strike window is the strike step plus the step before it.
 3. **Escape time:** a wind-up always gives at least two steps' warning, enough
    to move from a far pose to a safe pose.
-4. **Throw timing:** Olive only launches from a lane's throw spot after she has
-   walked there, so throws are visible before the cargo moves.
+4. **Throw timing:** Olive shows a ready frame before switching food arcs. A
+   launch lights its first segment immediately. Distinct silhouettes identify
+   destinations at launch; no continuous gravity or interpolated movement.
 
 A host test runs a perfect-player bot over 10,000 random seeds in both modes
 up to 1,000 points and must record zero unavoidable misses.
@@ -205,9 +211,9 @@ up to 1,000 points and must record zero unavoidable misses.
 
 | | Game A | Game B |
 |---|---|---|
-| Brutus | Left pier | Left and right piers |
-| Tempo | Normal | Faster start and floor |
-| Cargo in the air at once | Ramps from 1 | Ramps from 2 |
+| Brutus | Left pier, hammer | Switches left hammer / right fist |
+| Tempo | Same provisional food table | Same provisional food table |
+| Cargo in the air at once | 1–3, resets every 100 | 1–3, resets every 100 |
 | High score | Separate | Separate |
 
 ### 5.11 States
@@ -270,9 +276,9 @@ up to 1,000 points and must record zero unavoidable misses.
 | Event | Visual | Vibration |
 |---|---|---|
 | Catch | Popeye's catch pose flashes | none |
-| Drop (first) | Splash, then half-ring | none |
-| Miss | Dizzy Popeye or flashing splash, ring lights | short pulse |
-| Lucky Tide starts | Gull lights, flashes three times | double pulse |
+| Drop (first) | Splash, then half-can | none |
+| Miss | Dizzy Popeye or flashing splash, MISS can lights | short pulse |
+| Bonus threshold | MISS marks clear | short pulse (planned) |
 | New high score | "HI" indicator flashes on game over | double pulse |
 | Game over | Score flashes | long pulse |
 
@@ -282,27 +288,25 @@ Every vibration respects the Vibration setting and Quiet Time.
 
 ### 9.1 LCD look
 
-- **Panel:** pale grey-green LCD background with a thin dark frame, inside a
-  coloured "printed backdrop" (sea, sky, freighter hull) in muted colours
-  from the Emery palette.
-- **Lit segments:** near-black.
-- **Ghost segments:** when the setting is on, every segment shows faintly in a
-  colour one shade darker than the panel. Ghosts are baked into the backdrop
-  image at build time, so the watch only draws lit segments.
+- **Panel:** clean white field with vivid red car, orange ledge/boat and
+  cobalt/turquoise ship/water. Use Emery's 64-colour palette at high contrast.
+- **Lit segments:** opaque black. Fixed character poses and discrete food arcs.
+- **Ghost segments:** optional sparse grey score/MISS registers, baked at build
+  time. Omit overlapping character/food ghosts for PT2 readability.
 - **No in-between frames:** a segment is either on or off.
 
-### 9.2 Segment inventory (estimate ~90)
+### 9.2 Segment inventory (82)
 
 | Group | Segments |
 |---|---|
-| Olive: 4 throw spots × ready/throw, plus 2 bell-ringing poses | 10 |
-| Cargo: 4 lanes × 5 steps | 20 |
+| Olive: fixed ready/throw, 2 bell poses | 4 |
+| Food: 4 arcs × 5 steps | 20 |
 | Popeye: 5 poses, 2 dizzy poses, 1 catch flash | 8 |
 | Splashes | 4 |
-| Brutus: left idle/wind-up/strike; right idle/wind-up/strike | 6 |
-| Life rings 3 + half-ring | 4 |
+| Brutus: left hammer / right fist, 3 phases each | 6 |
+| MISS: 3 cans, half-can, label | 5 |
 | Digits: 4 × 7-segment, colon, AM, PM | 31 |
-| Indicators: GAME A, GAME B, bell, gull, HI | 5 |
+| Indicators: GAME A, GAME B, bell, HI | 4 |
 
 ### 9.3 Art pipeline
 
@@ -390,9 +394,9 @@ The release build checks the app image size and fails above budget.
 ## 12. Testing and quality (lean)
 
 1. **Host unit tests** (`tests/test_game.c`, built with the system C compiler):
-   - catch and drop rules, the half-ring and misses;
+   - catch and drop rules, the half-can and misses;
    - Brutus cycle and hits;
-   - milestone clearing and Lucky Tide;
+   - milestone clearing and one-point catches;
    - score wrap and high-score total;
    - speed curve and cargo limits;
    - pause and resume;
@@ -429,7 +433,7 @@ The release build checks the app image size and fails above budget.
 - Use Popeye, Olive Oyl and Brutus in artwork, documentation and internal
   identifiers. Preserve their approved recognizable character designs.
 - Follow the wide-screen LCD reference: fixed black segment poses, restrained
-  printed nautical colours, pale panel, faint unlit ghosts, seven-segment
+  vivid printed nautical colours, white panel, restrained HUD ghosts, seven-segment
   numerals and Game A / Game B labels. Avoid smooth animation and gradients.
 - Describe the app as a fan-made adaptation, without official affiliation
   claims. Reference: [Popeye (Game & Watch)](https://nintendo.fandom.com/wiki/Popeye_(Game_%26_Watch)).
@@ -444,7 +448,7 @@ The release build checks the app image size and fails above budget.
 | M2 Playable prototype | `view.c` with placeholder rectangles for every segment, buttons, pause, game over | Both modes playable start to finish in the emulator; app image within budget |
 | M3 Art | Approved character segment art, backdrop, ghosts, art pipeline and test | Owner approves the art; screenshots match the LCD look |
 | M4 Clock, alarm, menu | Clock mode, attract animation, alarm with wakeup, menu, settings, high scores, saved data | Alarm rings with the app closed and during play; settings and scores survive an app update |
-| M5 Polish | Vibration, Lucky Tide effects, tuning from play-tests, store artwork | Owner play-test sign-off on the watch |
+| M5 Polish | Vibration, bonus feedback, reference timing and play-test tuning, store artwork | Owner play-test sign-off on the watch |
 | M6 Release 1.0.0 | GitHub release, RePebble listing | Listing live and verified; PBW hash matches the GitHub release |
 
 ## 16. Risks
@@ -477,5 +481,4 @@ The release build checks the app image size and fails above budget.
 | Step | One tick of the game clock; all movement happens on steps |
 | Pose | One of Popeye's five positions |
 | Lane | One of the four paths cargo falls along |
-| Half-ring | Shown after one dropped cargo; the second drop becomes a miss |
-| Lucky Tide | Double points earned by reaching a milestone with no misses |
+| Pending drop | Shown after one dropped cargo; the second drop becomes a miss |

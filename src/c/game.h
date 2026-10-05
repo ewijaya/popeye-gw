@@ -9,13 +9,13 @@
 #define GAME_MAX_CARGO 3u
 #define GAME_MAX_MISSES 3u
 #define GAME_POSES 5u
-#define GAME_SIDES 2u
 
 typedef enum { GAME_A = 0, GAME_B = 1 } GameMode;
 typedef enum {
   GAME_PLAYING, GAME_RECOVERING, GAME_PAUSED, GAME_OVER
 } GameStatus;
 typedef enum { GAME_UP = 0, GAME_DOWN = 1 } GameButton;
+typedef enum { GAME_LEFT, GAME_RIGHT } GameSide;
 typedef enum { GAME_ATTACK_IDLE, GAME_ATTACK_WINDUP, GAME_ATTACK_STRIKE } GameAttackPhase;
 typedef enum { GAME_MISS_NONE, GAME_MISS_DROP, GAME_MISS_HIT } GameMissCause;
 
@@ -23,7 +23,7 @@ enum {
   GAME_EVENT_CATCH = 1u << 0,
   GAME_EVENT_DROP = 1u << 1,
   GAME_EVENT_MISS = 1u << 2,
-  GAME_EVENT_LUCKY_TIDE = 1u << 3,
+  GAME_EVENT_BONUS = 1u << 3,
   GAME_EVENT_HIGH_SCORE = 1u << 4,
   GAME_EVENT_OVER = 1u << 5,
   GAME_EVENT_LAUNCH = 1u << 6
@@ -39,6 +39,7 @@ typedef struct {
 } GameCargo;
 
 typedef struct {
+  GameSide side;
   GameAttackPhase phase;
   uint8_t steps_left;
   uint32_t idle_ms_left;
@@ -60,13 +61,13 @@ typedef struct {
  * milliseconds, not a random number of steps. A blocked wind-up remains idle
  * until its full warning and strike can coexist with all launched cargo.
  *
- * A hit adds one full ring without consuming a previously earned half-ring.
- * A second drop consumes the half-ring. Milestones test full rings: zero full
- * misses starts Lucky Tide even with a half-ring; otherwise both are cleared.
- * These distinguish the PRD's separately named misses and half-ring. Every drop
- * and hit ends Lucky Tide. Speed uses true score and stays fast across 999.
- * Milestones trigger when crossed, including a +2 catch from 199 to 201.
- * Scores saturate at UINT32_MAX rather than wrap the stored true high score.
+ * A hit adds one miss without consuming a pending dropped food item. A
+ * second drop consumes that pending item. Each catch scores one point. At
+ * 200/500 displayed points full miss marks clear; pending-drop clearing is
+ * provisional (the PP-23 manual does not specify that edge case).
+ * Score is a true total for saved records, displayed modulo 1000. Food tempo
+ * and capacity reset each 100 points; exact tables remain unmeasured.
+ * Scores saturate at UINT32_MAX rather than wrap the saved high score.
  *
  * Recovery freezes cargo/attack/step time; pause freezes recovery too. A third
  * miss ends immediately. Resume preserves the exact remaining interval. Each
@@ -80,7 +81,6 @@ typedef struct {
   uint8_t popeye_pose; /* left far=0, left near=1, centre=2, right near=3, far=4 */
   uint8_t misses;
   bool half_ring;
-  bool lucky_tide;
   bool controls_swapped;
   uint8_t held_buttons;
   uint32_t score;
@@ -92,9 +92,8 @@ typedef struct {
   uint32_t recovery_ms_left;
   uint32_t next_cargo_id;
   GameCargo cargo[GAME_MAX_CARGO];
-  GameAttack attacks[GAME_SIDES]; /* left, right; right stays idle in A */
-  uint8_t olive_lane;
-  uint8_t olive_target;
+  GameAttack attack; /* One Brutus: left in A, changes sides in B. */
+  uint8_t olive_target; /* Next cargo arc; Olive stays beside her car. */
   bool olive_ready;
   bool olive_throwing;
   int8_t catch_pose;
@@ -112,9 +111,10 @@ typedef struct {
 void game_init(Game *game, GameMode mode, uint32_t seed);
 void game_start(Game *game, GameMode mode, uint32_t seed);
 /* A repeated pressed=true for a held button does nothing. Release it before
- * another press. Input moves and clamps immediately; paused/recovery/over input
- * records button edges but cannot move Popeye. The app maps Select/Back to the
- * separate pause/resume functions. */
+ * another press. Input moves and clamps immediately; paused/recovery input
+ * records button edges but cannot move Popeye. Movement remains active after
+ * game over, as documented in MAME; it cannot resume scoring or timers.
+ * The app maps Select/Back to separate pause/resume functions. */
 bool game_input(Game *game, GameButton button, bool pressed);
 bool game_pause(Game *game);
 bool game_resume(Game *game);

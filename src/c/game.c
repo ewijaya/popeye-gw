@@ -23,13 +23,10 @@ uint8_t game_lane_pose(uint8_t lane) {
 }
 
 uint32_t game_step_interval(const Game *game) {
-  uint32_t start = game->mode == GAME_A ? PGW_A_START_STEP_MS : PGW_B_START_STEP_MS;
-  uint32_t floor = game->mode == GAME_A ? PGW_A_MIN_STEP_MS : PGW_B_MIN_STEP_MS;
-  uint32_t levels = game->score / PGW_SPEED_POINTS;
-  if (levels >= (start - floor + PGW_SPEED_DECREMENT_MS - 1u) / PGW_SPEED_DECREMENT_MS) {
-    return floor;
-  }
-  return start - levels * PGW_SPEED_DECREMENT_MS;
+  /* PP-23 manual: food speed returns to normal every 100 points. These four
+   * durations are watch tuning, not measurements of the Nintendo ROM. */
+  static const uint16_t steps[] = PGW_FOOD_STEP_MS;
+  return steps[(game->score % 100u) / PGW_SPEED_POINTS];
 }
 
 uint16_t game_display_score(const Game *game) {
@@ -37,18 +34,16 @@ uint16_t game_display_score(const Game *game) {
 }
 
 uint8_t game_cargo_limit(const Game *game) {
-  if (game->mode == GAME_A) {
-    if (game->score < PGW_A_FIRST_CARGO_THRESHOLD) return PGW_A_INITIAL_CARGO_LIMIT;
-    if (game->score < PGW_A_SECOND_CARGO_THRESHOLD) return PGW_A_MIDDLE_CARGO_LIMIT;
-    return PGW_A_FINAL_CARGO_LIMIT;
-  }
-  return game->score < PGW_B_CARGO_THRESHOLD ? PGW_B_INITIAL_CARGO_LIMIT : PGW_B_FINAL_CARGO_LIMIT;
+  uint32_t cycle_score = game->score % 100u;
+  if (cycle_score < PGW_FIRST_CARGO_THRESHOLD) return 1u;
+  if (cycle_score < PGW_SECOND_CARGO_THRESHOLD) return 2u;
+  return 3u;
 }
 
-static uint32_t next_idle(Game *game, unsigned side) {
-  uint32_t lo = game->mode == GAME_A ? PGW_A_IDLE_MIN_MS : PGW_B_IDLE_MIN_MS;
-  uint32_t hi = game->mode == GAME_A ? PGW_A_IDLE_MAX_MS : PGW_B_IDLE_MAX_MS;
-  return lo + random_next(&game->attacks[side].rng) % (hi - lo + 1u);
+static uint32_t next_idle(Game *game) {
+  uint32_t lo = PGW_IDLE_MIN_MS;
+  uint32_t hi = PGW_IDLE_MAX_MS;
+  return lo + random_next(&game->attack.rng) % (hi - lo + 1u);
 }
 
 void game_init(Game *game, GameMode mode, uint32_t seed) {
@@ -59,7 +54,6 @@ void game_init(Game *game, GameMode mode, uint32_t seed) {
 void game_start(Game *game, GameMode mode, uint32_t seed) {
   uint32_t highs[2] = { game->high_scores[0], game->high_scores[1] };
   bool swapped = game->controls_swapped;
-  unsigned i;
   memset(game, 0, sizeof(*game));
   game->high_scores[0] = highs[0];
   game->high_scores[1] = highs[1];
@@ -73,10 +67,8 @@ void game_start(Game *game, GameMode mode, uint32_t seed) {
   game->catch_pose = -1;
   game->splash_lane = -1;
   game->olive_target = (uint8_t)(random_next(&game->rng) % GAME_LANES);
-  for (i = 0u; i < GAME_SIDES; ++i) {
-    game->attacks[i].rng = seed_nonzero(seed ^ (i == 0u ? UINT32_C(0xa341316c) : UINT32_C(0xc8013ea4)));
-    game->attacks[i].idle_ms_left = next_idle(game, i);
-  }
+  game->attack.rng = seed_nonzero(seed ^ UINT32_C(0xc8013ea4));
+  game->attack.idle_ms_left = next_idle(game);
   game->step_ms_left = game_step_interval(game);
 }
 
@@ -92,12 +84,17 @@ bool game_input(Game *game, GameButton button, bool pressed) {
   }
   if ((game->held_buttons & mask) != 0u) return false;
   game->held_buttons |= mask;
-  if (game->status != GAME_PLAYING) return false;
+  if (game->status != GAME_PLAYING && game->status != GAME_OVER) return false;
   direction = button == GAME_UP ? -1 : 1;
   if (game->controls_swapped) direction = -direction;
   old_pose = game->popeye_pose;
   if (direction < 0 && game->popeye_pose > 0u) --game->popeye_pose;
   if (direction > 0 && game->popeye_pose + 1u < GAME_POSES) ++game->popeye_pose;
+  if (game->status == GAME_OVER && game->popeye_pose != old_pose) {
+    game->miss_cause = GAME_MISS_NONE;
+    game->catch_pose = -1;
+    game->splash_lane = -1;
+  }
   return game->popeye_pose != old_pose;
 }
 
@@ -120,9 +117,8 @@ uint32_t game_take_events(Game *game) {
   return events;
 }
 
-static bool attack_strike_time(const Game *game, unsigned side, uint64_t *when) {
-  const GameAttack *attack = &game->attacks[side];
-  if (game->mode == GAME_A && side == 1u) return false;
+static bool attack_strike_time(const Game *game, uint64_t *when) {
+  const GameAttack *attack = &game->attack;
   if (attack->phase == GAME_ATTACK_WINDUP) {
     *when = game->step + attack->steps_left;
     return true;
@@ -134,56 +130,43 @@ static bool attack_strike_time(const Game *game, unsigned side, uint64_t *when) 
   return false;
 }
 
-static bool strike_conflicts_cargo(const Game *game, unsigned side, uint64_t strike) {
+static bool strike_conflicts_cargo(const Game *game, uint64_t strike) {
   unsigned i;
-  uint8_t lane = side == 0u ? 0u : 3u;
   for (i = 0u; i < GAME_MAX_CARGO; ++i) {
     const GameCargo *cargo = &game->cargo[i];
-    if (cargo->active && cargo->lane == lane &&
+    if (cargo->active && cargo->lane == (game->attack.side == GAME_LEFT ? 0u : 3u) &&
         (cargo->landing_step == strike || cargo->landing_step + 1u == strike)) return true;
   }
   return false;
 }
 
-/* Attack commitment must obey the same reservations as cargo commitment. This
- * check is essential: looking only at attacks while throwing cannot protect
- * cargo already in flight when an idle timer expires. Each pier's elapsed-ms
- * timer and random stream remain independent; only unsafe starts are deferred.
- */
-static bool can_windup(const Game *game, unsigned side) {
-  uint64_t strike = game->step + PGW_WINDUP_STEPS;
-  uint64_t other_strike;
-  if (strike_conflicts_cargo(game, side, strike)) return false;
-  if (attack_strike_time(game, 1u - side, &other_strike) && other_strike == strike) return false;
-  return true;
+/* A punch must respect cargo already in flight. Unsafe wind-ups wait until
+ * their full two-step warning and strike fit the vulnerable-side reservations. */
+static bool can_windup(const Game *game) {
+  return !strike_conflicts_cargo(game, game->step + PGW_WINDUP_STEPS);
 }
 
-static void update_attacks(Game *game) {
-  unsigned side;
-  unsigned sides = game->mode == GAME_A ? 1u : 2u;
-  /* Advance both existing phases before considering new commitments, so side
-   * iteration cannot turn one side's old phase into a false collision. */
-  for (side = 0u; side < sides; ++side) {
-    GameAttack *attack = &game->attacks[side];
-    if (attack->phase == GAME_ATTACK_WINDUP) {
-      --attack->steps_left;
-      if (attack->steps_left == 0u) {
-        attack->phase = GAME_ATTACK_STRIKE;
-        attack->steps_left = PGW_STRIKE_STEPS;
+static void update_attack(Game *game) {
+  GameAttack *attack = &game->attack;
+  if (attack->phase == GAME_ATTACK_WINDUP) {
+    if (--attack->steps_left == 0u) {
+      attack->phase = GAME_ATTACK_STRIKE;
+      attack->steps_left = PGW_STRIKE_STEPS;
+    }
+  } else if (attack->phase == GAME_ATTACK_STRIKE) {
+    if (--attack->steps_left == 0u) {
+      attack->phase = GAME_ATTACK_IDLE;
+      if (game->mode == GAME_B) {
+        /* Alternating after each strike is provisional until a trace supplies
+         * the original side-switch schedule. Never show two rivals at once. */
+        attack->side = attack->side == GAME_LEFT ? GAME_RIGHT : GAME_LEFT;
       }
-    } else if (attack->phase == GAME_ATTACK_STRIKE) {
-      if (--attack->steps_left == 0u) {
-        attack->phase = GAME_ATTACK_IDLE;
-        attack->idle_ms_left = next_idle(game, side);
-      }
+      attack->idle_ms_left = next_idle(game);
     }
   }
-  for (side = 0u; side < sides; ++side) {
-    GameAttack *attack = &game->attacks[side];
-    if (attack->phase == GAME_ATTACK_IDLE && attack->idle_ms_left == 0u && can_windup(game, side)) {
-      attack->phase = GAME_ATTACK_WINDUP;
-      attack->steps_left = PGW_WINDUP_STEPS;
-    }
+  if (attack->phase == GAME_ATTACK_IDLE && attack->idle_ms_left == 0u && can_windup(game)) {
+    attack->phase = GAME_ATTACK_WINDUP;
+    attack->steps_left = PGW_WINDUP_STEPS;
   }
 }
 
@@ -191,7 +174,6 @@ static void miss(Game *game, GameMissCause cause) {
   unsigned i;
   ++game->misses;
   ++game->total_misses;
-  game->lucky_tide = false;
   game->miss_cause = cause;
   game->events |= GAME_EVENT_MISS;
   for (i = 0u; i < GAME_MAX_CARGO; ++i) game->cargo[i].active = false;
@@ -206,8 +188,7 @@ static void miss(Game *game, GameMissCause cause) {
 
 static void caught(Game *game, uint8_t lane) {
   uint32_t before = game->score;
-  uint32_t points = game->lucky_tide ? 2u : 1u;
-  uint64_t after = (uint64_t)before + points;
+  uint64_t after = (uint64_t)before + 1u;
   uint64_t block = (uint64_t)before / 1000u * 1000u;
   uint64_t milestones[2] = { block + 200u, block + 500u };
   unsigned i;
@@ -217,13 +198,9 @@ static void caught(Game *game, uint8_t lane) {
   game->events |= GAME_EVENT_CATCH;
   for (i = 0u; i < 2u; ++i) {
     if (before < milestones[i] && game->score >= milestones[i]) {
-      if (game->misses != 0u) {
-        game->misses = 0u;
-        game->half_ring = false;
-      } else {
-        game->lucky_tide = true;
-        game->events |= GAME_EVENT_LUCKY_TIDE;
-      }
+      game->misses = 0u;
+      game->half_ring = false;
+      game->events |= GAME_EVENT_BONUS;
     }
   }
   if (game->score > game->high_scores[game->mode]) {
@@ -236,7 +213,6 @@ static void caught(Game *game, uint8_t lane) {
 static void dropped(Game *game, uint8_t lane) {
   ++game->drops;
   game->splash_lane = (int8_t)lane;
-  game->lucky_tide = false;
   game->events |= GAME_EVENT_DROP;
   if (game->half_ring) {
     game->half_ring = false;
@@ -251,12 +227,12 @@ static void dropped(Game *game, uint8_t lane) {
  * initial centre pose enough time to reach any lane. Consecutive reservations
  * therefore form a feasible one-move-per-step route; the all-pairs test also
  * rejects nonconsecutive incompatibilities. Misses clear the route. A strike
- * prevents far cargo landing on its strike tick or the tick before the strike,
+ * prevents cargo on its side landing on its strike tick or the tick before the strike,
  * whether the attack or cargo was committed first. Between two far catches on the same side,
  * an intervening strike needs a single move out and back; the excluded previous
  * tick supplies this time. Travel between different lanes never needs a far
  * pose except at its endpoint. Wind-ups always provide two visible intervals.
- * Olive takes at most three walking ticks; capacity/spacing can only delay a
+ * Olive prepares a changed arc for one tick; capacity/spacing can only delay a
  * target until existing cargo resolves (at most four ticks), so no target can
  * stall permanently. Random choices affect variety, never these invariants.
  */
@@ -278,10 +254,9 @@ static bool can_launch(const Game *game, uint8_t lane) {
     if (separation < distance) return false;
   }
   if (active >= game_cargo_limit(game)) return false;
-  for (i = 0u; i < GAME_SIDES; ++i) {
+  {
     uint64_t strike;
-    uint8_t far_lane = i == 0u ? 0u : 3u;
-    if (lane == far_lane && attack_strike_time(game, i, &strike) &&
+    if (lane == (game->attack.side == GAME_LEFT ? 0u : 3u) && attack_strike_time(game, &strike) &&
         (landing == strike || landing + 1u == strike)) return false;
   }
   return true;
@@ -289,31 +264,25 @@ static bool can_launch(const Game *game, uint8_t lane) {
 
 static void update_olive(Game *game) {
   unsigned i;
-  if (game->olive_lane != game->olive_target) {
-    if (game->olive_lane < game->olive_target) ++game->olive_lane;
-    else --game->olive_lane;
-    game->olive_ready = game->olive_lane == game->olive_target;
-    return; /* The arrival must be visible before a throw. */
-  }
   if (!game->olive_ready) {
     game->olive_ready = true;
     return;
   }
-  if (!can_launch(game, game->olive_lane)) return;
+  if (!can_launch(game, game->olive_target)) return;
   for (i = 0u; i < GAME_MAX_CARGO; ++i) {
     GameCargo *cargo = &game->cargo[i];
     if (cargo->active) continue;
     cargo->active = true;
-    cargo->lane = game->olive_lane;
+    cargo->lane = game->olive_target;
     cargo->stage = 0u;
     cargo->id = game->next_cargo_id++;
     cargo->launch_step = game->step;
     cargo->landing_step = game->step + GAME_CARGO_STEPS - 1u;
     game->olive_throwing = true;
     game->olive_target = (uint8_t)(random_next(&game->rng) % GAME_LANES);
-    /* Already visible at this spot: consecutive throws are permitted here.
-     * A different spot still requires a visible walking/arrival tick. */
-    game->olive_ready = game->olive_target == game->olive_lane;
+    /* Repeated arcs may follow immediately; a changed arc gets one ready
+     * frame at the same fixed ledge before its next throw. */
+    game->olive_ready = game->olive_target == cargo->lane;
     game->events |= GAME_EVENT_LAUNCH;
     return;
   }
@@ -326,14 +295,12 @@ static void tick(Game *game) {
   game->splash_lane = -1;
   game->miss_cause = GAME_MISS_NONE;
   game->olive_throwing = false;
-  update_attacks(game);
-  for (i = 0u; i < GAME_SIDES; ++i) {
-    if (game->attacks[i].phase == GAME_ATTACK_STRIKE &&
-        game->popeye_pose == (i == 0u ? 0u : 4u)) {
-      ++game->hits;
-      miss(game, GAME_MISS_HIT);
-      return;
-    }
+  update_attack(game);
+  if (game->attack.phase == GAME_ATTACK_STRIKE &&
+      game->popeye_pose == (game->attack.side == GAME_LEFT ? 0u : 4u)) {
+    ++game->hits;
+    miss(game, GAME_MISS_HIT);
+    return;
   }
   for (i = 0u; i < GAME_MAX_CARGO; ++i) {
     GameCargo *cargo = &game->cargo[i];
@@ -351,13 +318,9 @@ static void tick(Game *game) {
 }
 
 static void elapse_idle(Game *game, uint32_t elapsed) {
-  unsigned side;
-  unsigned sides = game->mode == GAME_A ? 1u : 2u;
-  for (side = 0u; side < sides; ++side) {
-    GameAttack *attack = &game->attacks[side];
-    if (attack->phase == GAME_ATTACK_IDLE) {
-      attack->idle_ms_left = elapsed >= attack->idle_ms_left ? 0u : attack->idle_ms_left - elapsed;
-    }
+  GameAttack *attack = &game->attack;
+  if (attack->phase == GAME_ATTACK_IDLE) {
+    attack->idle_ms_left = elapsed >= attack->idle_ms_left ? 0u : attack->idle_ms_left - elapsed;
   }
 }
 

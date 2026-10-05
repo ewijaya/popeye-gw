@@ -1,21 +1,20 @@
 # Popeye G&W
 
-A fan-made LCD-style catch game for the **Pebble Time 2**, inspired by
-[Nintendo’s Popeye Game & Watch](https://nintendo.fandom.com/wiki/Popeye_(Game_%26_Watch)).
-Fixed black segments, faint LCD ghosts and a printed nautical backdrop bring
-the wide-screen handheld feel to the watch.
+A fan-made LCD catch game for **Pebble Time 2**, based on Nintendo's
+**Popeye Wide Screen PP-23 (1981)**. Olive throws food beside her car on the
+left; Popeye catches it in his boat while Brutus threatens him with a hammer
+from the left pier or a fist from the right ship. The PT2 scene uses crisp
+black segments, a white field, and vivid red, orange, blue and turquoise.
 
-Popeye catches cargo that Olive Oyl tosses from a freighter's deck while
-Brutus strikes from the piers. The app is named **Popeye G&W**; the repository,
-package and build artifact use `popeye-gw`.
-
-**Status:** M4 implemented. Game A and Game B share an 88-segment LCD art set
-with an idle clock, daily alarm, watch menus, saved settings and dated high
-scores. M5 adds game-event vibration, flashing effects and play-test tuning.
-Build measurements and emulator evidence are in the [M4 audit](docs/m4-audit.md)
-and the earlier [M3 art audit](docs/m3-art-audit.md).
-See the
-[Product Requirements Document](PRD.md) and [repository conventions](CLAUDE.md).
+**Status:** M4 features plus the PP-23 scene/rules correction are implemented:
+82 segments, Game A/B, clock, daily alarm, menus, saved settings/high scores,
+and portrait/landscape. This is a watch adaptation, not an exact ROM recreation.
+[Reference observations and remaining fidelity gaps](docs/pp23-fidelity.md)
+distinguish confirmed rules from provisional timing, paths and input behavior.
+The app name is **Popeye G&W**; repository/package/build slug is `popeye-gw`.
+See the [PRD](PRD.md), [repository conventions](CLAUDE.md), and the
+[scene audit](docs/pp23-scene-audit.md). Earlier M3/M4 audits describe their
+historical builds.
 
 ## Host tests
 
@@ -40,25 +39,13 @@ consumes active milliseconds. Pause/resume preserves partial timers, and
 `game_step` advances to the next boundary for simulation. State and feedback
 feed the segment renderer. Pacing values live in `src/c/tuning.h`.
 
-The PRD leaves a few details open. The engine uses these interpretations:
-
-- A launch displays cargo segment 1; four later steps advance through segments
-  2–5, with the catch or drop on segment 5. Olive's arrival at a throw spot is
-  visible for a step before launching.
-- Milestones trigger when the true score crosses 200 or 500 within each 1,000,
-  including a double-point catch that skips the exact value. Difficulty and
-  cargo limits use the true total, so wrapping the display does not slow play.
-- A half-ring alone is not a full miss: a milestone starts Lucky Tide and keeps
-  that half-ring. A hit adds a full miss without consuming a half-ring. Every
-  drop or hit ends Lucky Tide.
-- Brutus's idle countdown uses active milliseconds, with transitions on step
-  boundaries. A due attack waits if its warning/strike would conflict with
-  cargo already in flight or the other pier's strike.
-- Hits resolve before cargo on a step. A full miss ends that step and clears
-  all cargo; attacks freeze during the 1,500 ms recovery. The third miss ends
-  the round immediately. Manual pause also freezes recovery.
-- True scores and mode-specific high scores use 32-bit unsigned totals and
-  saturate at their maximum representable value.
+The [PP-23 ledger](docs/pp23-fidelity.md) records the manual and recording
+observations. Catches score one point, two dropped foods or a Brutus hit make
+one miss, and misses clear at 200/500. Food pace and quantity reset every 100
+points. Game A keeps Brutus on the left; B has a single Brutus changing sides.
+The numeric timing table, five player poses, four food arcs, spawn scheduler
+and precise miss/input behavior remain provisional. The fairness bot verifies
+20,000 seeded games through 1,000 points, including side changes and resets.
 
 ## Playing
 
@@ -67,16 +54,15 @@ The PRD leaves a few details open. The engine uses these interpretations:
 | Clock | High scores / Menu | Game A | Game B | Exit |
 | Playing | Move Popeye one pose | Pause | — | Pause |
 | Paused | — | Resume | — | Quit to clock |
-| Game over | — | Play again | Other mode | Clock |
+| Game over | Move Popeye | Play again | Other mode | Clock |
 | Menu | Move selection | Choose / toggle | Choose | Return |
 | Alarm time editing | Increase / decrease | Save | Save | Cancel |
 | Alarm ringing while idle | Stop | Stop | Stop | Stop |
 
-`src/c/scene.c` turns game state into the PRD 9.2 set of 88 lit segments; it
+`src/c/scene.c` turns game state into the PRD 9.2 set of 82 lit segments; it
 is pure C99 and host-tested. `src/c/view.c` draws each segment from a packed
-sprite sheet using positions generated into `src/c/segments.h`. Inactive
-segments are baked into the backdrop with sparse grey pixels, keeping the
-overlapping poses faint on Emery's limited palette.
+sprite sheet using positions generated into `src/c/segments.h`. Only unlit digit/MISS registers have baked grey ghosts; the playfield stays
+clear of overlapping character silhouettes.
 `src/c/main.c` runs one `AppTimer` per step
 or recovery and none while paused, over or in the clock. Pausing keeps the
 elapsed part of the current interval. Losing focus pauses a running game.
@@ -127,9 +113,9 @@ wrist use. See [landscape mode](docs/landscape.md) for details and screenshots.
 ## Art
 
 The complete inventory includes five player poses, two dizzy poses, catching
-feedback, four throw positions with ready/throw frames, two bell frames,
-both rivals' idle/wind-up/strike phases, four cargo types with five positions
-each, splashes, life rings, digits and indicators. There are no rectangle
+feedback, fixed Olive ready/throw poses, two bell frames, one rival with
+left-hammer/right-fist phases, four food arcs with five positions each,
+splashes, MISS cans, digits and indicators. There are no rectangle
 placeholders in the renderer.
 
 Character animation and cargo sources were created with the built-in image
@@ -146,7 +132,7 @@ python3 tools/build_art.py --check
 ```
 
 The art check rejects missing, unexpected, empty or opaque full-screen
-segments, and validates the 25 × 25 launcher icon. Host tests check all 88
+segments, and validates the 25 × 25 launcher icon. Host tests check all 82
 generated entries, screen bounds, atlas bounds and non-overlapping atlas crops.
 
 ## Build

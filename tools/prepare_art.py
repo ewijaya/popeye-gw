@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Prepare all 88 LCD segments from approved imagegen art and geometric UI.
+"""Prepare all 80 LCD segments from approved imagegen art and geometric UI.
 
 Maintainer-only tool: requires ImageMagick. Normal builds and CI consume the
 committed PNGs and use build_art.py, which needs only Python's standard library.
@@ -16,18 +16,27 @@ SOURCE = ROOT / "art" / "source"
 SEGMENTS = ROOT / "art" / "segments"
 MAGICK = shutil.which("magick")
 LANES = (50, 75, 125, 150)
+# Five visible points along each throw arc; coordinates are sprite centres.
+ARCS = (
+    ((56, 77), (68, 66), (76, 82), (65, 111), (50, 137)),
+    ((56, 77), (78, 61), (94, 80), (86, 110), (75, 137)),
+    ((56, 77), (87, 56), (113, 76), (126, 107), (125, 137)),
+    ((56, 77), (91, 53), (127, 70), (146, 103), (150, 137)),
+)
 
 
 def run(*args):
     subprocess.run([MAGICK, *map(str, args)], check=True)
 
 
-def sprite(source, name, box, mirror=False):
+def sprite(source, name, box, mirror=False, angle=0):
     x, y, w, h = box
     args = [SOURCE / (source + ".png"), "-alpha", "extract", "-threshold", "10%",
             "-trim", "+repage"]
     if mirror:
         args += ["-flop"]
+    if angle:
+        args += ["-background", "black", "-rotate", str(angle), "-trim", "+repage"]
     args += ["-filter", "Box", "-resize", f"{w}x{h}", "-threshold", "45%",
              "-trim", "+repage", "-background", "black", "-gravity", "south",
              "-extent", f"{w}x{h}", "-alpha", "copy", "-channel", "RGB",
@@ -62,6 +71,7 @@ FONT = {
     "H": ("101", "101", "111", "101", "101"),
     "I": ("111", "010", "010", "010", "111"),
     "M": ("10001", "11011", "10101", "10001", "10001"),
+    "S": ("111", "100", "111", "001", "111"),
     "P": ("110", "101", "110", "100", "100"),
     " ": ("0", "0", "0", "0", "0"),
 }
@@ -80,33 +90,32 @@ def lettering(text, x, y):
 
 
 def characters():
-    sprite("popeye", "popeye-2", (78, 130, 44, 62))
+    sprite("popeye", "popeye-2", (78, 125, 44, 62))
     for pose, source, box, mirror in (
-        (0, "popeye-far-left", (43, 134, 45, 58), False),
-        (1, "popeye-near-left", (67, 134, 38, 58), False),
-        (3, "popeye-near-left", (95, 134, 38, 58), True),
-        (4, "popeye-far-left", (112, 134, 45, 58), True),
+        (0, "popeye-far-left", (43, 129, 45, 58), False),
+        (1, "popeye-near-left", (67, 129, 38, 58), False),
+        (3, "popeye-near-left", (95, 129, 38, 58), True),
+        (4, "popeye-far-left", (112, 129, 45, 58), True),
     ):
         sprite(source, f"popeye-{pose}", box, mirror)
     for side, x, mirror in (("left", 30, False), ("right", 130, True)):
-        sprite("popeye-dizzy", "popeye-dizzy-" + side, (x, 136, 40, 56), mirror)
-    for lane, x in enumerate(LANES):
-        sprite("olive", f"olive-ready-{lane}", (x - 12, 19, 24, 51))
-        sprite("olive-throw", f"olive-throw-{lane}", (x - 13, 21, 27, 49))
+        sprite("popeye-dizzy", "popeye-dizzy-" + side, (x, 131, 40, 56), mirror)
+    sprite("olive", "olive-ready", (24, 52, 30, 57))
+    sprite("olive-throw", "olive-throw", (24, 54, 33, 55))
     for frame in range(2):
-        sprite(f"olive-bell-{frame}", f"olive-bell-{frame}", (7, 21, 28, 49))
-    for side, mirror in (("left", False), ("right", True)):
-        for phase, source, w, h in (("idle", "brutus", 44, 62),
-                                    ("windup", "brutus-windup", 44, 66),
-                                    ("strike", "brutus-strike", 60, 59)):
-            sprite(source, f"brutus-{side}-{phase}",
-                   (200 - w if mirror else 0, 154 - h, w, h), mirror)
+        sprite(f"olive-bell-{frame}", f"olive-bell-{frame}", (24, 54, 31, 55))
+    for phase, w, h in (("idle", 35, 39), ("windup", 46, 52), ("strike", 59, 43)):
+        sprite("brutus-hammer-" + phase, "brutus-left-" + phase, (0, 173-h, w, h))
+    for phase, source, w, h in (("idle", "brutus", 44, 62),
+                                ("windup", "brutus-windup", 44, 66),
+                                ("strike", "brutus-strike", 60, 59)):
+        sprite(source, f"brutus-right-{phase}", (200 - w, 156 - h, w, h), True)
 
 
 def cargo():
-    for lane, (x, source) in enumerate(zip(LANES, ("cargo", "fish", "lantern", "barrel"))):
-        for stage in range(5):
-            sprite(source, f"cargo-{lane}-{stage}", (x - 7, 79 + stage * 13, 14, 14))
+    for lane, source in enumerate(("food-bottle", "fish", "food-bottle", "food-can")):
+        for stage, (x, y) in enumerate(ARCS[lane]):
+            sprite(source, f"cargo-{lane}-{stage}", (x - 7, y - 7, 14, 14), angle=-35 if lane == 0 else 0)
 
 
 def ui(temp):
@@ -115,14 +124,12 @@ def ui(temp):
                    ' -2 5 5 1 -4 2 h -12 Z"/>')
         vector(f"splash-{lane}", drawing, temp)
     vector("popeye-catch", '<path d="M 94 128 l 4 -3 2 -5 2 5 4 3 -4 2 -2 5 -2 -5 Z"/>', temp)
+    # Empty cans echo the PP-23 MISS display; half can is a watch affordance.
     for i in range(3):
-        x = 12 + 16 * i
-        drawing = (f'<circle cx="{x}" cy="220" r="5" fill="none" stroke="black" '
-                   f'stroke-width="2"/>{rect(x-1,214,2,3)}{rect(x-1,223,2,3)}'
-                   f'{rect(x-6,219,3,2)}{rect(x+3,219,3,2)}')
-        vector(f"ring-{i}", drawing, temp)
-    vector("ring-half", '<path d="M 60 215 A 5 5 0 0 0 60 225" fill="none" '
-           'stroke="black" stroke-width="2"/>' + rect(59,214,2,3) + rect(59,223,2,3), temp)
+        x = 139 + 13 * i
+        vector(f"miss-{i}", rect(x,30,7,2) + rect(x,39,7,2) + rect(x,31,2,9) + rect(x+5,31,2,9), temp)
+    vector("miss-half", rect(178,30,4,2) + rect(178,39,4,2) + rect(178,31,2,9), temp)
+    vector("miss-label", lettering("MISS", 114, 35), temp)
     # True seven-segment bars with clipped corners, shared by game score and clock.
     bars = (
         "2,0 12,0 10,2 4,2", "12,1 14,3 14,8 12,9 11,8 11,3",
@@ -137,13 +144,11 @@ def ui(temp):
     vector("colon", rect(145,7,2,2) + rect(145,14,2,2), temp)
     for name, label, x, y in (("am","AM",186,4), ("pm","PM",186,14),
                               ("game-a","GAME A",5,4), ("game-b","GAME B",5,14),
-                              ("hi","HI",88,7)):
+                              ("hi","HI",80,7)):
         vector(name, lettering(label, x, y), temp)
     vector("bell", '<path d="M 50 16 L 52 13 V 9 Q 52 5 56 5 Q 60 5 60 9 V 13 '
            'L 62 16 Z M 54 18 H 58" fill="none" stroke="black" stroke-width="2"/>'
            + rect(55,3,2,2), temp)
-    vector("gull", '<path d="M 67 10 Q 72 4 76 11 Q 80 4 85 10 '
-           'Q 80 8 76 14 Q 72 8 67 10 Z"/>', temp)
 
 
 def main():
@@ -159,10 +164,10 @@ def main():
                'stroke="black" stroke-width="2"/>' + rect(11,8,2,13) + rect(6,10,13,2)
                + '<path d="M 3 14 L 3 19 Q 12 29 21 19 L 21 14 L 16 18 H 19 '
                'Q 12 24 5 18 H 8 Z"/>', temp, (25,25), ROOT / "art" / "menu-icon.png")
-    run(SOURCE / "backdrop-lcd.png", "-alpha", "off", "-filter", "Box",
+    run(SOURCE / "backdrop-vibrant.png", "-alpha", "off", "-filter", "Box",
         "-resize", "200x228!", "+dither", "-channel", "RGB", "-posterize", "4",
         "+channel", "PNG32:" + str(ROOT / "art" / "backdrop.png"))
-    print("Prepared 88 segments, backdrop, and 25 x 25 launcher icon")
+    print("Prepared 82 segments, backdrop, and 25 x 25 launcher icon")
 
 
 if __name__ == "__main__":

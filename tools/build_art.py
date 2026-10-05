@@ -29,24 +29,23 @@ CLEAR = (0, 0, 0, 0)
 GHOST = (0xAA, 0xAA, 0xAA, 0xFF)
 
 # Complete inventory: missing animation frames must fail instead of silently
-# rendering prototype rectangles. Keep in sync with scene.h's 88 segment IDs.
+# rendering prototype rectangles. Keep in sync with scene.h's 82 segment IDs.
 EXPECTED_SEGMENTS = {
-    *[f"olive-{pose}-{lane}" for pose in ("ready", "throw") for lane in range(4)],
+    "olive-ready", "olive-throw",
     *[f"olive-bell-{pose}" for pose in range(2)],
     *[f"cargo-{lane}-{stage}" for lane in range(4) for stage in range(5)],
     *[f"popeye-{pose}" for pose in range(5)],
     "popeye-dizzy-left", "popeye-dizzy-right", "popeye-catch",
     *[f"splash-{lane}" for lane in range(4)],
-    *[f"brutus-{side}-{phase}" for side in ("left", "right")
-      for phase in ("idle", "windup", "strike")],
-    *[f"ring-{ring}" for ring in range(3)], "ring-half",
+    *[f"brutus-{side}-{phase}" for side in ("left", "right") for phase in ("idle", "windup", "strike")],
+    *[f"miss-{mark}" for mark in range(3)], "miss-half", "miss-label",
     *[f"digit-{digit}-{bar}" for digit in range(4) for bar in "abcdefg"],
-    "colon", "am", "pm", "game-a", "game-b", "bell", "gull", "hi",
+    "colon", "am", "pm", "game-a", "game-b", "bell", "hi",
 }
 
 SEGMENT_NAMES = [
-    (r"olive-ready-([0-3])", lambda m: "SEG_OLIVE_READY + {}".format(m[0])),
-    (r"olive-throw-([0-3])", lambda m: "SEG_OLIVE_THROW + {}".format(m[0])),
+    (r"olive-ready", lambda m: "SEG_OLIVE_READY"),
+    (r"olive-throw", lambda m: "SEG_OLIVE_THROW"),
     (r"olive-bell-([01])", lambda m: "SEG_OLIVE_BELL + {}".format(m[0])),
     (r"cargo-([0-3])-([0-4])", lambda m: "SEG_CARGO + {} * 5 + {}".format(m[0], m[1])),
     (r"popeye-([0-4])", lambda m: "SEG_POPEYE + {}".format(m[0])),
@@ -55,10 +54,11 @@ SEGMENT_NAMES = [
     (r"splash-([0-3])", lambda m: "SEG_SPLASH + {}".format(m[0])),
     (r"brutus-(left|right)-(idle|windup|strike)", lambda m: "SEG_BRUTUS + {} * 3 + {}".format(
         ["left", "right"].index(m[0]), ["idle", "windup", "strike"].index(m[1]))),
-    (r"ring-([0-2])", lambda m: "SEG_RING + {}".format(m[0])),
-    (r"ring-half", lambda m: "SEG_RING_HALF"),
+    (r"miss-([0-2])", lambda m: "SEG_MISS + {}".format(m[0])),
+    (r"miss-half", lambda m: "SEG_MISS_HALF"),
+    (r"miss-label", lambda m: "SEG_MISS_LABEL"),
     (r"digit-([0-3])-([a-g])", lambda m: "SEG_DIGIT + {} * 7 + {}".format(m[0], "abcdefg".index(m[1]))),
-    (r"(colon|am|pm|bell|gull|hi)", lambda m: "SEG_" + m[0].upper()),
+    (r"(colon|am|pm|bell|hi)", lambda m: "SEG_" + m[0].upper()),
     (r"game-(a|b)", lambda m: "SEG_GAME_" + m[0].upper()),
 ]
 
@@ -197,6 +197,11 @@ def load_segments(art_dir):
     ids = [s["id"] for s in segments]
     if len(set(ids)) != len(ids):
         raise ArtError("duplicate segment art")
+    # The scheduler/bot assumes a throw's destination is readable immediately.
+    # Shared launch coordinates therefore require distinct food silhouettes.
+    launches = [next(s for s in segments if s["name"] == f"cargo-{lane}-0") for lane in range(4)]
+    if len({tuple(s["lit"]) for s in launches}) != 4:
+        raise ArtError("each food path must be distinguishable on its launch frame")
     return segments
 
 
@@ -286,10 +291,12 @@ def build(out_root):
     sheet = pack(segments)
     ghosts = [list(row) for row in backdrop]
     for seg in segments:
+        # Restrict unlit ghosts to the score and MISS register. Full character
+        # and cargo unions make a speckled mass on Emery's four grey levels.
+        if not (seg["name"].startswith("digit-") or re.fullmatch(r"miss-[0-2]", seg["name"])):
+            continue
         for x, y in seg["lit"]:
-            # Emery has only four levels per channel. Sparse 1-in-8 coverage
-            # keeps overlapping LCD ghosts legible without a dark grey mass.
-            if (x + 3 * y) % 8 == 0:
+            if (x + y) % 2 == 0:
                 ghosts[y][x] = GHOST
     images = os.path.join(out_root, "resources", "images")
     os.makedirs(images, exist_ok=True)

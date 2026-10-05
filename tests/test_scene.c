@@ -26,15 +26,14 @@ static uint8_t digit_bits(const Scene *scene, unsigned digit) {
 static Game quiet_game(GameMode mode) {
   Game game;
   game_init(&game, mode, 7u);
-  game.olive_lane = 1u;
   return game;
 }
 
 static void test_inventory_and_bits(void) {
   Scene scene;
   unsigned seg;
-  /* PRD 9.2: 10 + 20 + 8 + 4 + 6 + 4 + 31 + 5 segments. */
-  assert(SEG_COUNT == 88);
+  /* PRD 9.2: 4 + 20 + 8 + 4 + 6 + 5 + 31 + 4 segments. */
+  assert(SEG_COUNT == 82);
   assert(SEGMENT_ART_COUNT == SEG_COUNT);
   {
     unsigned orientation;
@@ -103,23 +102,25 @@ static void test_static_scenes(void) {
   assert(scene_lit(&scene, SEG_GAME_A) && !scene_lit(&scene, SEG_GAME_B));
   assert(scene_lit(&scene, SEG_POPEYE + 2u));
   assert(count_lit(&scene, SEG_POPEYE, 8u) == 1u);
-  assert(scene_lit(&scene, SEG_OLIVE_READY + 1u));
-  assert(count_lit(&scene, SEG_OLIVE_READY, 10u) == 1u);
+  assert(scene_lit(&scene, SEG_OLIVE_READY));
+  assert(count_lit(&scene, SEG_OLIVE_READY, 4u) == 1u);
   assert(scene_lit(&scene, SEG_BRUTUS + GAME_ATTACK_IDLE));
   assert(count_lit(&scene, SEG_BRUTUS, 6u) == 1u);
   assert(digit_bits(&scene, 3u) == 0x3Fu);
-  assert(count_lit(&scene, SEG_RING, 4u) == 0u);
-  assert(!scene_lit(&scene, SEG_GULL) && !scene_lit(&scene, SEG_HI));
+  assert(count_lit(&scene, SEG_MISS, 4u) == 0u);
+  assert(scene_lit(&scene, SEG_MISS_LABEL));
+  assert(!scene_lit(&scene, SEG_HI));
 
   game = quiet_game(GAME_B);
-  game.attacks[1].phase = GAME_ATTACK_WINDUP;
+  game.attack.side = GAME_RIGHT;
+  game.attack.phase = GAME_ATTACK_WINDUP;
   game.olive_throwing = true;
   scene_game(&scene, &game);
   assert(scene_lit(&scene, SEG_GAME_B) && !scene_lit(&scene, SEG_GAME_A));
-  assert(scene_lit(&scene, SEG_BRUTUS + GAME_ATTACK_IDLE));
+  assert(!scene_lit(&scene, SEG_BRUTUS + GAME_ATTACK_IDLE));
   assert(scene_lit(&scene, SEG_BRUTUS + 3u + GAME_ATTACK_WINDUP));
-  assert(count_lit(&scene, SEG_BRUTUS, 6u) == 2u);
-  assert(scene_lit(&scene, SEG_OLIVE_THROW + 1u) && !scene_lit(&scene, SEG_OLIVE_READY + 1u));
+  assert(count_lit(&scene, SEG_BRUTUS, 6u) == 1u);
+  assert(scene_lit(&scene, SEG_OLIVE_THROW) && !scene_lit(&scene, SEG_OLIVE_READY));
 }
 
 static void test_cargo_and_feedback(void) {
@@ -142,26 +143,25 @@ static void test_cargo_and_feedback(void) {
   game = quiet_game(GAME_A);
   game.popeye_pose = 0u;
   game.miss_cause = GAME_MISS_HIT;
-  game.attacks[0].phase = GAME_ATTACK_STRIKE;
+  game.attack.phase = GAME_ATTACK_STRIKE;
   game.misses = 2u;
   game.half_ring = true;
   scene_game(&scene, &game);
   assert(scene_lit(&scene, SEG_POPEYE_DIZZY_LEFT));
   assert(count_lit(&scene, SEG_POPEYE, 8u) == 1u);
   assert(scene_lit(&scene, SEG_BRUTUS + GAME_ATTACK_STRIKE));
-  assert(scene_lit(&scene, SEG_RING) && scene_lit(&scene, SEG_RING + 1u));
-  assert(!scene_lit(&scene, SEG_RING + 2u) && scene_lit(&scene, SEG_RING_HALF));
+  assert(scene_lit(&scene, SEG_MISS) && scene_lit(&scene, SEG_MISS + 1u));
+  assert(!scene_lit(&scene, SEG_MISS + 2u) && scene_lit(&scene, SEG_MISS_HALF));
 
   game.popeye_pose = 4u;
   scene_game(&scene, &game);
   assert(scene_lit(&scene, SEG_POPEYE_DIZZY_RIGHT) && !scene_lit(&scene, SEG_POPEYE_DIZZY_LEFT));
 
   game = quiet_game(GAME_A);
-  game.lucky_tide = true;
   game.new_high_score = true;
   game.score = 1234u;
   scene_game(&scene, &game);
-  assert(scene_lit(&scene, SEG_GULL) && !scene_lit(&scene, SEG_HI));
+  assert(!scene_lit(&scene, SEG_HI));
   assert(digit_bits(&scene, 0u) == 0u && digit_bits(&scene, 1u) == 0x5Bu);
   game.status = GAME_OVER;
   scene_game(&scene, &game);
@@ -183,13 +183,13 @@ static void test_rounds_to_game_over(void) {
       assert(++steps < 100000u);
       scene_game(&scene, &game);
       assert(count_lit(&scene, SEG_POPEYE, 8u) == 1u);
-      assert(count_lit(&scene, SEG_OLIVE_READY, 8u) == 1u);
+      assert(count_lit(&scene, SEG_OLIVE_READY, 2u) == 1u);
       assert(count_lit(&scene, SEG_CARGO, 20u) <= GAME_MAX_CARGO + 1u);
-      assert(count_lit(&scene, SEG_RING, 3u) == game.misses);
-      assert(scene_lit(&scene, SEG_RING_HALF) == game.half_ring);
-      assert(count_lit(&scene, SEG_BRUTUS, 6u) == (mode == GAME_A ? 1u : 2u));
+      assert(count_lit(&scene, SEG_MISS, 3u) == game.misses);
+      assert(scene_lit(&scene, SEG_MISS_HALF) == game.half_ring);
+      assert(count_lit(&scene, SEG_BRUTUS, 6u) == 1u);
     }
-    assert(count_lit(&scene, SEG_RING, 3u) == 3u);
+    assert(count_lit(&scene, SEG_MISS, 3u) == 3u);
     assert(scene_lit(&scene, SEG_HI) == game.new_high_score);
   }
 }
@@ -200,6 +200,6 @@ int main(void) {
   test_static_scenes();
   test_cargo_and_feedback();
   test_rounds_to_game_over();
-  puts("Scene tests passed: 88 segments, digits, feedback and 200 rounds to game over");
+  puts("Scene tests passed: 82 segments, digits, feedback and 200 rounds to game over");
   return 0;
 }

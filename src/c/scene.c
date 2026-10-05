@@ -47,11 +47,10 @@ static unsigned lane_for_pose(int8_t pose) {
 
 void scene_game(Scene *scene, const Game *game) {
   unsigned i;
-  unsigned sides = game->mode == GAME_A ? 1u : 2u;
   scene_clear(scene);
   scene_light(scene, game->mode == GAME_A ? SEG_GAME_A : SEG_GAME_B);
   scene_number(scene, game_display_score(game));
-  scene_light(scene, (game->olive_throwing ? SEG_OLIVE_THROW : SEG_OLIVE_READY) + game->olive_lane);
+  scene_light(scene, game->olive_throwing ? SEG_OLIVE_THROW : SEG_OLIVE_READY);
   for (i = 0u; i < GAME_MAX_CARGO; ++i) {
     const GameCargo *cargo = &game->cargo[i];
     if (cargo->active) scene_light(scene, SEG_CARGO + cargo->lane * GAME_CARGO_STEPS + cargo->stage);
@@ -68,11 +67,9 @@ void scene_game(Scene *scene, const Game *game) {
   } else {
     scene_light(scene, SEG_POPEYE + game->popeye_pose);
   }
-  for (i = 0u; i < sides; ++i) {
-    scene_light(scene, SEG_BRUTUS + i * 3u + (unsigned)game->attacks[i].phase);
-  }
-  for (i = 0u; i < game->misses && i < GAME_MAX_MISSES; ++i) scene_light(scene, SEG_RING + i);
-  if (game->half_ring) scene_light(scene, SEG_RING_HALF);
-  if (game->lucky_tide) scene_light(scene, SEG_GULL);
+  scene_light(scene, SEG_BRUTUS + (unsigned)game->attack.side * 3u + (unsigned)game->attack.phase);
+  scene_light(scene, SEG_MISS_LABEL);
+  for (i = 0u; i < game->misses && i < GAME_MAX_MISSES; ++i) scene_light(scene, SEG_MISS + i);
+  if (game->half_ring) scene_light(scene, SEG_MISS_HALF);
   if (game->status == GAME_OVER && game->new_high_score) scene_light(scene, SEG_HI);
 }

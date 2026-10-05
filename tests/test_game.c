@@ -13,13 +13,11 @@ static void press(Game *game, GameButton button) {
 
 static Game fixture(GameMode mode) {
   Game game;
-  unsigned side;
   game_init(&game, mode, 1u);
   game.step = 10u;
-  game.olive_lane = 0u;
   game.olive_target = 0u;
   game.olive_ready = false;
-  for (side = 0u; side < GAME_SIDES; ++side) game.attacks[side].idle_ms_left = UINT32_MAX;
+  game.attack.idle_ms_left = UINT32_MAX;
   return game;
 }
 
@@ -114,9 +112,8 @@ static void test_cargo_and_feedback(void) {
 static void test_drops_misses_and_recovery(void) {
   Game game = fixture(GAME_A);
   unsigned i;
-  game.lucky_tide = true;
   drop_next(&game);
-  assert(!game.lucky_tide && game.half_ring && game.misses == 0u);
+  assert(game.half_ring && game.misses == 0u);
   memset(game.cargo, 0, sizeof(game.cargo));
   cargo_at(&game, 0u, 0u, 3u);
   cargo_at(&game, 1u, 2u, 0u);
@@ -149,71 +146,64 @@ static void test_drops_misses_and_recovery(void) {
     Game ended = game;
     assert(!game_advance(&game, UINT32_MAX));
     assert(!game_pause(&game) && !game_resume(&game));
-    press(&game, GAME_DOWN);
     assert(memcmp(&game, &ended, sizeof(game)) == 0);
   }
 }
 
 static void test_attacks(void) {
   Game game = fixture(GAME_A);
-  unsigned pose;
-  game.attacks[0].idle_ms_left = 561u;
+  unsigned pose, mode, side;
+  game.attack.idle_ms_left = 561u;
   assert(game_step(&game));
-  assert(game.attacks[0].phase == GAME_ATTACK_IDLE);
-  assert(game.attacks[0].idle_ms_left == 1u); /* milliseconds, not step counts */
+  assert(game.attack.phase == GAME_ATTACK_IDLE && game.attack.idle_ms_left == 1u);
   assert(!game_advance(&game, 1u));
-  assert(game.attacks[0].phase == GAME_ATTACK_IDLE);
+  assert(game.attack.phase == GAME_ATTACK_IDLE);
   assert(game_step(&game));
-  assert(game.attacks[0].phase == GAME_ATTACK_WINDUP && game.attacks[0].steps_left == 2u);
+  assert(game.attack.phase == GAME_ATTACK_WINDUP && game.attack.steps_left == 2u);
   assert(game_step(&game));
-  assert(game.attacks[0].phase == GAME_ATTACK_WINDUP && game.attacks[0].steps_left == 1u);
+  assert(game.attack.phase == GAME_ATTACK_WINDUP && game.attack.steps_left == 1u);
   assert(game_step(&game));
-  assert(game.attacks[0].phase == GAME_ATTACK_STRIKE && game.hits == 0u);
+  assert(game.attack.phase == GAME_ATTACK_STRIKE && game.hits == 0u);
   assert(game_step(&game));
-  assert(game.attacks[0].phase == GAME_ATTACK_IDLE);
-  assert(game.attacks[0].idle_ms_left >= 4000u && game.attacks[0].idle_ms_left <= 9000u);
-  assert(game.attacks[1].phase == GAME_ATTACK_IDLE); /* disabled A pier */
-  game = fixture(GAME_A);
-  game.attacks[1].idle_ms_left = 0u;
-  assert(game_step(&game));
-  assert(game.attacks[1].phase == GAME_ATTACK_IDLE && game.attacks[1].idle_ms_left == 0u);
-  for (pose = 0u; pose < GAME_POSES; ++pose) {
-    game = fixture(GAME_B);
-    game.olive_target = 2u;
-    game.popeye_pose = (uint8_t)pose;
-    game.attacks[pose == 4u ? 1u : 0u].phase = GAME_ATTACK_WINDUP;
-    game.attacks[pose == 4u ? 1u : 0u].steps_left = 1u;
-    game.half_ring = true;
-    game.lucky_tide = true;
-    assert(game_step(&game));
-    if (pose == 0u || pose == 4u) {
-      assert(game.status == GAME_RECOVERING && game.misses == 1u && game.hits == 1u);
-      assert(game.half_ring && !game.lucky_tide && game.miss_cause == GAME_MISS_HIT);
-    } else assert(game.status == GAME_PLAYING && game.hits == 0u);
+  assert(game.attack.phase == GAME_ATTACK_IDLE && game.attack.side == GAME_LEFT);
+  assert(game.attack.idle_ms_left >= 4000u && game.attack.idle_ms_left <= 9000u);
+  for (mode = 0; mode < 2; ++mode) {
+    for (side = 0; side < (mode == GAME_A ? 1u : 2u); ++side) {
+      for (pose = 0; pose < GAME_POSES; ++pose) {
+        game = fixture((GameMode)mode);
+        game.popeye_pose = (uint8_t)pose;
+        game.attack.side = (GameSide)side;
+        game.attack.phase = GAME_ATTACK_WINDUP;
+        game.attack.steps_left = 1u;
+        game.half_ring = true;
+        assert(game_step(&game));
+        if (pose == (side == GAME_LEFT ? 0u : 4u)) {
+          assert(game.status == GAME_RECOVERING && game.misses == 1u && game.hits == 1u);
+          assert(game.half_ring && game.miss_cause == GAME_MISS_HIT);
+        } else assert(game.status == GAME_PLAYING && game.hits == 0u);
+      }
+    }
   }
-  /* Hit wins over an unrelated cargo drop on the same tick. */
+  /* Hit resolves before an unrelated drop, giving exactly one miss. */
   game = fixture(GAME_B);
   game.popeye_pose = 0u;
   cargo_at(&game, 0u, 3u, 3u);
-  game.attacks[0].phase = GAME_ATTACK_WINDUP;
-  game.attacks[0].steps_left = 1u;
+  game.attack.phase = GAME_ATTACK_WINDUP;
+  game.attack.steps_left = 1u;
   assert(game_step(&game));
   assert(game.hits == 1u && game.drops == 0u && game.total_misses == 1u);
-  /* Two independently expired timers are staggered instead of sharing strikes. */
+  /* One Brutus switches sides only after a completed strike in B. */
   game = fixture(GAME_B);
-  game.attacks[0].idle_ms_left = 0u;
-  game.attacks[1].idle_ms_left = 0u;
-  assert(game_step(&game));
-  assert(game.attacks[0].phase == GAME_ATTACK_WINDUP);
-  assert(game.attacks[1].phase == GAME_ATTACK_IDLE);
-  assert(game_step(&game));
-  assert(game.attacks[1].phase == GAME_ATTACK_WINDUP);
-  assert(game_step(&game));
-  assert(game.attacks[0].phase == GAME_ATTACK_STRIKE && game.attacks[1].phase == GAME_ATTACK_WINDUP);
-  assert(game_step(&game));
-  assert(game.attacks[0].phase == GAME_ATTACK_IDLE && game.attacks[1].phase == GAME_ATTACK_STRIKE);
-  assert(game_step(&game));
-  assert(game.attacks[1].idle_ms_left >= 3000u && game.attacks[1].idle_ms_left <= 7000u);
+  game.attack.idle_ms_left = 0u;
+  assert(game_step(&game) && game.attack.side == GAME_LEFT);
+  assert(game_step(&game) && game.attack.side == GAME_LEFT);
+  assert(game_step(&game) && game.attack.phase == GAME_ATTACK_STRIKE);
+  assert(game_step(&game) && game.attack.side == GAME_RIGHT);
+  assert(game.attack.phase == GAME_ATTACK_IDLE);
+  memset(game.cargo, 0, sizeof(game.cargo));
+  game.attack.phase = GAME_ATTACK_STRIKE;
+  game.attack.steps_left = 1u;
+  assert(game_step(&game) && game.attack.side == GAME_LEFT);
 }
 
 static void test_reservations_and_olive(void) {
@@ -223,19 +213,19 @@ static void test_reservations_and_olive(void) {
   for (stage = 1u; stage <= 2u; ++stage) {
     game = fixture(GAME_A);
     cargo_at(&game, 0u, 0u, (uint8_t)stage);
-    game.attacks[0].idle_ms_left = 0u;
+    game.attack.idle_ms_left = 0u;
     assert(game_step(&game));
-    assert(game.attacks[0].phase == GAME_ATTACK_IDLE);
+    assert(game.attack.phase == GAME_ATTACK_IDLE);
   }
   game = fixture(GAME_B);
   cargo_at(&game, 0u, 3u, 1u);
-  game.attacks[1].idle_ms_left = 0u;
+  game.attack.side = GAME_RIGHT;
+  game.attack.idle_ms_left = 0u;
   assert(game_step(&game));
-  assert(game.attacks[1].phase == GAME_ATTACK_IDLE);
+  assert(game.attack.phase == GAME_ATTACK_IDLE);
   /* Left near -> right near crosses centre, so requires TWO ticks. */
   game = fixture(GAME_B);
   game.score = 60u;
-  game.olive_lane = 2u;
   game.olive_target = 2u;
   game.olive_ready = true;
   cargo_at(&game, 0u, 1u, 0u); /* after next tick, landing separation is one */
@@ -247,20 +237,18 @@ static void test_reservations_and_olive(void) {
    * adversarial fixture is deliberately inconsistent before the new proposal. */
   game = fixture(GAME_B);
   game.score = 60u;
-  game.olive_lane = 3u;
   game.olive_target = 3u;
   game.olive_ready = true;
   cargo_at(&game, 0u, 0u, 0u); /* future separation one: far-left forbids far-right */
   cargo_at(&game, 1u, 2u, 0u); /* same proposal is reachable from near-right */
   assert(game_step(&game));
   assert(!game.olive_throwing);
-  /* Olive walks one spot per tick, shows arrival, and only THEN throws. */
+  /* A changed food arc gets one ready frame at Olive's fixed ledge. */
   game = fixture(GAME_A);
   game.olive_target = 3u;
-  assert(game_step(&game) && game.olive_lane == 1u && !game.olive_throwing);
-  assert(game_step(&game) && game.olive_lane == 2u && !game.olive_throwing);
-  assert(game_step(&game) && game.olive_lane == 3u && !game.olive_throwing);
-  assert(game_step(&game) && game.olive_lane == 3u && game.olive_throwing);
+  assert(game_step(&game) && game.olive_ready && !game.olive_throwing);
+  assert(game_step(&game) && game.olive_throwing);
+  assert(game.cargo[0].lane == 3u);
   assert(game.cargo[0].stage == 0u && game.cargo[0].launch_step == game.step);
   /* The third-cargo ramp is attainable: left, near-left, near-left gives
    * launch gaps 2 then 1, and all pairwise pose distances remain feasible. */
@@ -286,64 +274,40 @@ static void test_reservations_and_olive(void) {
 }
 
 static void test_scoring(void) {
-  Game game = fixture(GAME_A);
+  Game game;
   uint32_t boundaries[] = { 199u, 499u, 1199u, 1499u, 2199u, 2499u };
-  unsigned i;
-  game.score = 199u;
-  game.misses = 2u;
-  game.half_ring = true;
-  catch_next(&game, 1u);
-  assert(game.score == 200u && game.misses == 0u && !game.half_ring && !game.lucky_tide);
-  catch_next(&game, 1u);
-  assert(game.score == 201u);
+  unsigned i, misses;
   for (i = 0u; i < sizeof(boundaries) / sizeof(boundaries[0]); ++i) {
-    game = fixture(GAME_A);
-    game.score = boundaries[i];
-    game.lucky_tide = true;
-    game.events = 0u;
-    catch_next(&game, 1u);
-    assert(game.score == boundaries[i] + 2u && game.lucky_tide);
-    assert((game.events & GAME_EVENT_LUCKY_TIDE) != 0u);
-    game = fixture(GAME_A);
-    game.score = boundaries[i];
-    game.misses = 1u;
-    game.half_ring = true;
-    /* A manually injected Lucky+miss state tests +2 crossing while clearing. */
-    game.lucky_tide = true;
-    catch_next(&game, 1u);
-    assert(game.score == boundaries[i] + 2u && game.misses == 0u && !game.half_ring);
+    for (misses = 0u; misses < 3u; ++misses) {
+      game = fixture(GAME_A);
+      game.score = boundaries[i];
+      game.misses = (uint8_t)misses;
+      game.half_ring = true;
+      catch_next(&game, 1u);
+      assert(game.score == boundaries[i] + 1u && game.misses == 0u && !game.half_ring);
+      assert((game_take_events(&game) & GAME_EVENT_BONUS) != 0u);
+      catch_next(&game, 1u);
+      assert(game.score == boundaries[i] + 2u); /* No invented double-point bonus. */
+    }
   }
   game = fixture(GAME_A);
-  game.score = 199u;
   game.half_ring = true;
   catch_next(&game, 1u);
-  assert(game.lucky_tide && game.half_ring); /* Only full rings decide milestone. */
+  assert(game.half_ring); /* Pending-drop handling remains provisional. */
   drop_next(&game);
-  assert(!game.lucky_tide && !game.half_ring && game.misses == 1u);
+  assert(game.misses == 1u && !game.half_ring);
   game = fixture(GAME_A);
   game.score = 999u;
   catch_next(&game, 1u);
   assert(game.score == 1000u && game_display_score(&game) == 0u);
-  assert(game.high_scores[GAME_A] == 1000u && game_step_interval(&game) == 240u);
-  game = fixture(GAME_A);
-  game.score = 999u;
-  game.lucky_tide = true;
-  catch_next(&game, 1u);
-  assert(game.score == 1001u && game_display_score(&game) == 1u);
-  assert(game.high_scores[GAME_A] == 1001u && game.high_scores[GAME_B] == 0u);
-  assert(game_step_interval(&game) == 240u);
+  assert(game.high_scores[GAME_A] == 1000u && game_step_interval(&game) == 560u);
   game.controls_swapped = true;
   game_start(&game, GAME_B, 3u);
-  assert(game.score == 0u && !game.lucky_tide && game.controls_swapped);
-  assert(game.high_scores[GAME_A] == 1001u && game.high_scores[GAME_B] == 0u);
+  assert(game.score == 0u && game.controls_swapped);
+  assert(game.high_scores[GAME_A] == 1000u && game.high_scores[GAME_B] == 0u);
   game.step = 10u;
-  game.score = 2000u;
-  game.attacks[0].idle_ms_left = UINT32_MAX;
-  game.attacks[1].idle_ms_left = UINT32_MAX;
-  catch_next(&game, 1u);
-  assert(game.high_scores[GAME_B] == 2001u && game.high_scores[GAME_A] == 1001u);
   game.score = UINT32_MAX - 1u;
-  game.lucky_tide = true;
+  game.attack.idle_ms_left = UINT32_MAX;
   catch_next(&game, 1u);
   assert(game.score == UINT32_MAX && game.high_scores[GAME_B] == UINT32_MAX);
   catch_next(&game, 1u);
@@ -351,42 +315,41 @@ static void test_scoring(void) {
 }
 
 static void test_difficulty(void) {
-  Game game = fixture(GAME_A);
-  game.score = 0u;
-  assert(game_step_interval(&game) == 560u && game_cargo_limit(&game) == 1u);
-  game.score = 9u;
-  assert(game_cargo_limit(&game) == 1u);
-  game.score = 10u;
-  assert(game_cargo_limit(&game) == 2u);
-  game.score = 24u;
-  assert(game_step_interval(&game) == 560u);
-  game.score = 25u;
-  assert(game_step_interval(&game) == 544u);
-  game.score = 59u;
-  assert(game_cargo_limit(&game) == 2u);
-  game.score = 60u;
-  assert(game_cargo_limit(&game) == 3u);
-  game.score = 499u;
-  assert(game_step_interval(&game) == 256u);
-  game.score = 500u;
-  assert(game_step_interval(&game) == 240u);
-  game.score = 1000u;
-  assert(game_step_interval(&game) == 240u);
-  game.mode = GAME_B;
-  game.score = 0u;
-  assert(game_step_interval(&game) == 440u && game_cargo_limit(&game) == 2u);
-  game.score = 29u;
-  assert(game_cargo_limit(&game) == 2u);
-  game.score = 30u;
-  assert(game_cargo_limit(&game) == 3u);
-  game.score = 374u;
-  assert(game_step_interval(&game) == 216u);
-  game.score = 375u;
-  assert(game_step_interval(&game) == 200u);
-  game.score = 1000u;
-  assert(game_step_interval(&game) == 200u);
-  game.score = UINT32_MAX;
-  assert(game_step_interval(&game) == 200u);
+  unsigned mode, cycle;
+  for (mode = 0; mode < 2; ++mode) {
+    for (cycle = 0; cycle <= 1000; cycle += 100) {
+      Game game = fixture((GameMode)mode);
+      game.score = cycle;
+      assert(game_step_interval(&game) == 560u && game_cargo_limit(&game) == 1u);
+      game.score = cycle + 9u;
+      assert(game_cargo_limit(&game) == 1u);
+      game.score = cycle + 10u;
+      assert(game_cargo_limit(&game) == 2u);
+      game.score = cycle + 25u;
+      assert(game_step_interval(&game) == 440u);
+      game.score = cycle + 59u;
+      assert(game_cargo_limit(&game) == 2u && game_step_interval(&game) == 340u);
+      game.score = cycle + 60u;
+      assert(game_cargo_limit(&game) == 3u);
+      game.score = cycle + 99u;
+      assert(game_step_interval(&game) == 240u);
+    }
+  }
+}
+
+static void test_game_over_movement(void) {
+  Game game = fixture(GAME_A), before;
+  game.status = GAME_OVER;
+  game.misses = 3u;
+  game.miss_cause = GAME_MISS_HIT;
+  before = game;
+  press(&game, GAME_UP);
+  assert(game.popeye_pose == 1u && game.miss_cause == GAME_MISS_NONE);
+  press(&game, GAME_DOWN);
+  assert(game.popeye_pose == 2u && game.status == GAME_OVER);
+  assert(!game_step(&game) && !game_advance(&game, 10000u));
+  assert(game.score == before.score && game.misses == before.misses && game.step == before.step);
+  assert(game.attack.idle_ms_left == before.attack.idle_ms_left);
 }
 
 static void test_pause_and_elapsed(void) {
@@ -404,9 +367,9 @@ static void test_pause_and_elapsed(void) {
   assert(game_advance(&game, 1u) && game.step == 11u);
   drop_next(&game);
   drop_next(&game);
-  idle_before = game.attacks[0].idle_ms_left;
+  idle_before = game.attack.idle_ms_left;
   assert(!game_advance(&game, 700u) && game.recovery_ms_left == 800u);
-  assert(game.attacks[0].idle_ms_left == idle_before);
+  assert(game.attack.idle_ms_left == idle_before);
   assert(game_pause(&game));
   paused = game;
   assert(!game_advance(&game, 2000u));
@@ -414,7 +377,7 @@ static void test_pause_and_elapsed(void) {
   assert(game_resume(&game) && game.status == GAME_RECOVERING);
   assert(game_advance(&game, 900u));
   assert(game.status == GAME_PLAYING && game.step_ms_left == 460u);
-  assert(game.attacks[0].idle_ms_left == idle_before - 100u);
+  assert(game.attack.idle_ms_left == idle_before - 100u);
 }
 
 static void test_determinism(void) {
@@ -469,13 +432,11 @@ static unsigned bot_choose_pose(const Game *game) {
     if (due > horizon) horizon = due;
     if (due < first_due) { first_due = due; preference = lane_pose[cargo->lane]; }
   }
-  for (i = 0u; i < GAME_SIDES; ++i) {
-    if (game->attacks[i].phase == GAME_ATTACK_WINDUP) {
-      unsigned due = game->attacks[i].steps_left;
-      assert(due == 1u || due == 2u);
-      blocked[due][i == 0u ? 0u : 4u] = true;
-      if (due > horizon) horizon = due;
-    }
+  if (game->attack.phase == GAME_ATTACK_WINDUP) {
+    unsigned due = game->attack.steps_left;
+    assert(due == 1u || due == 2u);
+    blocked[due][game->attack.side == GAME_LEFT ? 0u : 4u] = true;
+    if (due > horizon) horizon = due;
   }
   for (time = (int)horizon; time >= 0; --time) {
     for (pose = 0u; pose < GAME_POSES; ++pose) {
@@ -515,7 +476,7 @@ static void test_fairness(void) {
       uint64_t lane_last_landing[4] = { 0u, 0u, 0u, 0u };
       unsigned lanes_seen = 0u;
       unsigned strikes[2] = { 0u, 0u };
-      unsigned warning_ticks[2] = { 0u, 0u };
+      unsigned warning_ticks = 0u;
       uint64_t last_catch_step = 0u;
       game_init(&game, (GameMode)mode, seed);
       while (game.score < 1000u) {
@@ -530,7 +491,6 @@ static void test_fairness(void) {
         assert(game.status == GAME_PLAYING);
         assert(game.drops == 0u && game.hits == 0u && game.total_misses == 0u);
         assert(game.misses == 0u && !game.half_ring);
-        assert(!(game.attacks[0].phase == GAME_ATTACK_STRIKE && game.attacks[1].phase == GAME_ATTACK_STRIKE));
         if (game.catches != before.catches) last_catch_step = game.step;
         for (i = 0u; i < GAME_MAX_CARGO; ++i) {
           if (before.cargo[i].active && before.cargo[i].stage == 3u) {
@@ -542,8 +502,7 @@ static void test_fairness(void) {
             if (cargo->launch_step == game.step) {
               uint8_t lane = cargo->lane;
               assert(cargo->stage == 0u && game.olive_throwing);
-              assert(before.olive_lane == lane && before.olive_ready);
-              assert(game.olive_lane == before.olive_lane); /* Never throw while walking. */
+              assert(before.olive_target == lane && before.olive_ready);
               lanes_seen |= 1u << lane;
               for (j = 0u; j < 4u; ++j) {
                 unsigned distance = poses[lane] > poses[j] ? poses[lane] - poses[j] : poses[j] - poses[lane];
@@ -577,18 +536,23 @@ static void test_fairness(void) {
         {
           unsigned active = 0u;
           for (i = 0u; i < GAME_MAX_CARGO; ++i) if (game.cargo[i].active) ++active;
-          unsigned band = game.mode == GAME_A ? (game.score < 10u ? 0u : game.score < 60u ? 1u : 2u) : (game.score < 30u ? 0u : 1u);
-          assert(active <= game_cargo_limit(&game));
-          if (active > observed_max[mode][band]) observed_max[mode][band] = active;
+          unsigned cycle_score = game.score % 100u;
+          unsigned band = cycle_score < 10u ? 0u : cycle_score < 60u ? 1u : 2u;
+          bool launched = false;
+          for (i = 0; i < GAME_MAX_CARGO; ++i)
+            if (game.cargo[i].active && game.cargo[i].launch_step == game.step) launched = true;
+          /* Already airborne food may finish after the 100-point reset. */
+          if (launched) assert(active <= game_cargo_limit(&game));
+          if (active <= game_cargo_limit(&game) && active > observed_max[mode][band]) observed_max[mode][band] = active;
         }
-        for (i = 0u; i < GAME_SIDES; ++i) {
-          const GameAttack *attack = &game.attacks[i];
-          uint8_t far_lane = i == 0u ? 0u : 3u;
+        {
+          const GameAttack *attack = &game.attack;
+          uint8_t far_lane = attack->side == GAME_LEFT ? 0u : 3u;
           if (attack->phase == GAME_ATTACK_WINDUP) {
             uint64_t strike = game.step + attack->steps_left;
-            if (before.attacks[i].phase == GAME_ATTACK_IDLE) warning_ticks[i] = 0u;
-            ++warning_ticks[i];
-            assert(warning_ticks[i] <= 2u);
+            if (before.attack.phase == GAME_ATTACK_IDLE) warning_ticks = 0u;
+            ++warning_ticks;
+            assert(warning_ticks <= 2u);
             for (j = 0u; j < GAME_MAX_CARGO; ++j) {
               if (game.cargo[j].active && game.cargo[j].lane == far_lane) {
                 assert(game.cargo[j].landing_step != strike);
@@ -596,11 +560,14 @@ static void test_fairness(void) {
               }
             }
           } else if (attack->phase == GAME_ATTACK_STRIKE) {
-            assert(before.attacks[i].phase == GAME_ATTACK_WINDUP && warning_ticks[i] == 2u);
+            assert(before.attack.phase == GAME_ATTACK_WINDUP && warning_ticks == 2u);
             assert(lane_last_landing[far_lane] != game.step);
             assert(lane_last_landing[far_lane] + 1u != game.step);
-            ++strikes[i];
+            ++strikes[attack->side];
           }
+          if (mode == GAME_A) assert(attack->side == GAME_LEFT);
+          if (attack->side != before.attack.side)
+            assert(mode == GAME_B && before.attack.phase == GAME_ATTACK_STRIKE && attack->phase == GAME_ATTACK_IDLE);
         }
       }
       assert(lanes_seen == 15u && game.catches >= 500u);
@@ -612,13 +579,11 @@ static void test_fairness(void) {
       total_strikes[0] += strikes[0];
       total_strikes[1] += strikes[1];
     }
-    if (mode == GAME_A) {
-      assert(observed_max[mode][0] == 1u && observed_max[mode][1] == 2u && observed_max[mode][2] == 3u);
-    } else assert(observed_max[mode][0] == 2u && observed_max[mode][1] == 3u);
+    assert(observed_max[mode][0] == 1u && observed_max[mode][1] == 2u && observed_max[mode][2] == 3u);
     printf("Game %c: 10,000 seeds from zero through >=1,000 true points; zero unavoidable misses; zero drops, hits, misses or stalls\n", mode == GAME_A ? 'A' : 'B');
     fflush(stdout);
   }
-  puts("Cargo ramp coverage: A maxima 1/2/3 below 10 / below 60 / thereafter; B maxima 2/3 below 30 / thereafter");
+  puts("Food ramp coverage: A/B maxima 1/2/3 per 100-point cycle, including airborne food at resets");
   printf("Fairness coverage: %llu steps, %llu catches, %llu left / %llu right strikes; all four lanes every seed\n",
          (unsigned long long)total_steps, (unsigned long long)total_catches,
          (unsigned long long)total_strikes[0], (unsigned long long)total_strikes[1]);
@@ -632,6 +597,7 @@ int main(void) {
   test_reservations_and_olive();
   test_scoring();
   test_difficulty();
+  test_game_over_movement();
   test_pause_and_elapsed();
   test_determinism();
   puts("Rule tests passed");

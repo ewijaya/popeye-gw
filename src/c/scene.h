@@ -8,18 +8,19 @@
 
 /* The PRD 9.2 segment inventory. IDs only: positions belong to the view. */
 enum {
-  SEG_OLIVE_READY = 0,                       /* + lane, 4 */
-  SEG_OLIVE_THROW = SEG_OLIVE_READY + 4,       /* + lane, 4 */
-  SEG_OLIVE_BELL = SEG_OLIVE_THROW + 4,        /* + pose, 2 */
+  SEG_OLIVE_READY = 0,                       /* fixed left ledge */
+  SEG_OLIVE_THROW = SEG_OLIVE_READY + 1,       /* fixed left ledge */
+  SEG_OLIVE_BELL = SEG_OLIVE_THROW + 1,        /* + pose, 2 */
   SEG_CARGO = SEG_OLIVE_BELL + 2,            /* + lane * 5 + stage, 20 */
   SEG_POPEYE = SEG_CARGO + 20,               /* + pose, 5 */
   SEG_POPEYE_DIZZY_LEFT = SEG_POPEYE + 5,
   SEG_POPEYE_DIZZY_RIGHT,
   SEG_POPEYE_CATCH,
-  SEG_SPLASH,                              /* + lane, 4 */
+  SEG_SPLASH,                              /* fixed left ledge */
   SEG_BRUTUS = SEG_SPLASH + 4,            /* + side * 3 + phase, 6 */
-  SEG_RING = SEG_BRUTUS + 6,              /* + ring, 3 */
-  SEG_RING_HALF = SEG_RING + 3,
+  SEG_MISS = SEG_BRUTUS + 6,              /* + mark, 3 */
+  SEG_MISS_HALF = SEG_MISS + 3,
+  SEG_MISS_LABEL,
   SEG_DIGIT,                               /* + digit * 7 + a..g, 28 */
   SEG_COLON = SEG_DIGIT + 28,
   SEG_AM,
@@ -27,7 +28,6 @@ enum {
   SEG_GAME_A,
   SEG_GAME_B,
   SEG_BELL,
-  SEG_GULL,
   SEG_HI,
   SEG_COUNT
 };

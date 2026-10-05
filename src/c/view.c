@@ -69,10 +69,8 @@ static void draw_overlay(GContext *ctx) {
   if (s_overlay == VIEW_OVERLAY_NONE) return;
   if (s_overlay == VIEW_OVERLAY_CLOCK) {
     graphics_context_set_text_color(ctx, GColorBlack);
-    draw_text(ctx, "Popeye G&W", GRect(24, s_landscape ? 72 : 83, 152, 24), true, GTextAlignmentCenter);
-    draw_text(ctx, "Select: A   Hold: B", GRect(24, s_landscape ? 94 : 106, 152, 20), false, GTextAlignmentCenter);
-    draw_text(ctx, s_landscape ? "Left: scores   Right: menu" : "Up: scores   Down: menu",
-              GRect(8, s_landscape ? 181 : 209, 184, 19), false, GTextAlignmentCenter);
+    /* Keep the playfield clear with a compact clock-only start hint. */
+    draw_text(ctx, "Select A  Hold B", GRect(4, s_landscape ? 24 : 27, 106, 20), false, GTextAlignmentCenter);
     return;
   }
   graphics_context_set_fill_color(ctx, GColorWhite);

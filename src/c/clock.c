@@ -44,12 +44,12 @@ void clock_scene(Scene *scene, const struct tm *local, bool style_24h,
   scene_digit(scene, 3u, (unsigned)local->tm_min % 10u);
   if (!attract || local->tm_sec % 2 == 0) scene_light(scene, SEG_COLON);
   scene_light(scene, SEG_POPEYE + (attract ? phase % GAME_POSES : 2u));
-  scene_light(scene, SEG_BRUTUS + (attract && phase % 2u ? GAME_ATTACK_WINDUP : GAME_ATTACK_IDLE));
+  scene_light(scene, SEG_BRUTUS + (attract && phase % 4u >= 2u ? 3u : 0u) + (attract && phase % 2u ? GAME_ATTACK_WINDUP : GAME_ATTACK_IDLE));
   if (ringing) {
     scene_light(scene, SEG_OLIVE_BELL + (unsigned)local->tm_sec % 2u);
     if (local->tm_sec % 2 == 0) scene_light(scene, SEG_BELL);
   } else {
-    scene_light(scene, SEG_OLIVE_READY + phase % GAME_LANES);
+    scene_light(scene, attract && phase % 2u ? SEG_OLIVE_THROW : SEG_OLIVE_READY);
     if (alarm_on) scene_light(scene, SEG_BELL);
   }
 }
