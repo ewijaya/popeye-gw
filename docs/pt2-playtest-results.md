@@ -1,6 +1,6 @@
 # PT2 play-test results — 2026-10-05
 
-Status: **M5 accepted by the owner on PT2, 2026-10-05**. The owner
+Status: **M5 base accepted; requested Bottom view installed for a focused follow-up**. The owner
 enabled the phone's Dev Connection. CloudPebble ping returned Pong, and the
 installer exited 0 with `App install succeeded.` Game A subsequently appeared
 in the physical-device log. Connection, installation and runtime logs do not
@@ -25,7 +25,38 @@ both modes, landscape and scores/settings after updates and reopening, the
 owner answered **“yes all looks good”**. These reports establish M5 acceptance
 for the installed build, not publication approval or timing-accurate PP-23 fidelity.
 
-## Current candidate: green title banners
+## Current candidate: Bottom landscape view
+
+The owner requested landscape with the controls below the display after M5
+acceptance. The new View cycle is Portrait → Top → Bottom. Existing Top remains
+available; native Down/Up become physical left/right in Bottom, with Swap still
+applied by the game. Clock, scene, menus and overlays rotate together.
+
+- Version **1.0.0**, source commit `de86f20421a2b71a2920443ea24a4e4156d1941b`.
+- Clean tree when frozen at **2026-10-05 18:46:31 JST**.
+- Frozen file: `.release/pt2-playtest/de86f20421a2/popeye-gw.pbw`.
+- SHA-256: `f40a6d16327e453900aeb9872893743bcae277d8a3a72ffd4cd31457b7a9821f`.
+- Physical installation: **pass**, CloudPebble exit 0, `App install succeeded.`
+
+| Build check | Result |
+|---|---|
+| Host tests / ASan+UBSan | Both pass; 10,000 seeds/mode, zero unavoidable misses |
+| Settings migration | v3 remains eight bytes; v1/v2 alarms/preferences retained; v2 landscape becomes Top; Bottom round-trip passes |
+| Controls / rendering | Both rotations and green palette packing pass; left/right press/release tested with Swap on/off; three complete atlases checked |
+| Clean SDK build | Exit 0 and literal `'build' finished`; Tool 5.0.40 / SDK 4.33.1 |
+| App image / headroom | **18,984 / 61,440 bytes**, 42,456 bytes headroom; all six gameplay entry points retained by linker |
+| PBW / resources | **47,322 / 26,040 bytes**, within budgets |
+| Identity / icon | Correct name, UUID, version, Emery-only watchapp; unchanged launcher icon |
+| Emulator heap, Bottom A/B | Each **45,904 free / 66,184 used**, 40.95% free |
+| Visual checks | Five native captures: Bottom settings, clock after reopening, A movement left/right, B |
+| Physical follow-up | Installed; upright layout, left/right + Swap, persisted Bottom and prior scores/settings awaiting owner report |
+| Cleanup | Environment locks removed; emulator logger stopped |
+
+Logs and native captures are under `.release/pt2-bottom/`. The earlier core M5
+acceptance remains attached to the prior candidate below; this follow-up does
+not assume that new orientation behavior has been physically accepted yet.
+
+## Accepted M5 base: green title banners
 
 - Version **1.0.0**, source commit `15ea674141ab4508f9156a0ddd338b180daeec83`.
 - Clean tree when frozen at **2026-10-05 18:26:59 JST**.
@@ -101,7 +132,7 @@ timing, saved-data format or catch mapping changed.
 The local manifest and test/build/device logs are under `.release/pt2-playtest/`.
 This frozen play-test candidate is not a store publication approval.
 
-## Physical acceptance
+## Core M5 physical acceptance (candidate `15ea674`)
 
 | Check | Status / evidence |
 |---|---|
