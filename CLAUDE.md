@@ -50,7 +50,7 @@
 - Emulator commands (run only when needed for the requested milestone):
 
   ```sh
-  pebble install --emulator emery
+  pebble install --emulator emery build/harbor-catch.pbw
   pebble screenshot --emulator emery --no-open screenshot.png
   ```
 
@@ -62,5 +62,7 @@
   pebble install --cloudpebble build/harbor-catch.pbw
   ```
 
-  Verify the actual generated PBW filename before use. Never publish to the
-  RePebble store without explicit approval of that exact build.
+  Pass the PBW path explicitly: the CLI's default is based on the checkout
+  directory name, whereas this project builds `harbor-catch.pbw`.
+  Never publish to the RePebble store without explicit approval of that exact
+  build.

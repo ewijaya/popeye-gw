@@ -4,6 +4,7 @@
 # Feel free to customize this to your needs.
 #
 import os.path
+import sys
 
 top = '.'
 out = 'build'
@@ -25,6 +26,8 @@ def configure(ctx):
 
 def build(ctx):
     ctx.load('pebble_sdk')
+    ctx.env.BUNDLE_NAME = 'harbor-catch.pbw'
+    ctx.add_post_fun(check_app_size)
 
     build_worker = os.path.exists('worker_src')
     binaries = []
@@ -52,3 +55,15 @@ def build(ctx):
                                          'src/pkjs/**/*.json',
                                          'src/common/**/*.js']),
                    js_entry_file='src/pkjs/index.js')
+
+
+def check_app_size(ctx):
+    """Check every linked image, including incremental builds, with SDK binutils."""
+    checker = ctx.path.find_node('tools/check_app_size.py').abspath()
+    for platform in ctx.env.TARGET_PLATFORMS:
+        platform_env = ctx.all_envs[platform]
+        elf = ctx.bldnode.make_node(
+            '{}/pebble-app.elf'.format(platform_env.BUILD_DIR)).abspath()
+        if ctx.exec_command([sys.executable, checker, '--size-tool',
+                             platform_env.SIZE, elf]):
+            ctx.fatal('App image budget check failed for {}'.format(platform))
