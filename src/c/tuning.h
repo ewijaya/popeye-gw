@@ -1,0 +1,27 @@
+#ifndef HARBOR_CATCH_TUNING_H
+#define HARBOR_CATCH_TUNING_H
+
+/* PRD 5.8: keep the complete play-testing curve in this one header. */
+#define HC_A_START_STEP_MS 560u
+#define HC_B_START_STEP_MS 440u
+#define HC_SPEED_POINTS 25u
+#define HC_SPEED_DECREMENT_MS 16u
+#define HC_A_MIN_STEP_MS 240u
+#define HC_B_MIN_STEP_MS 200u
+#define HC_A_FIRST_CARGO_THRESHOLD 10u
+#define HC_A_SECOND_CARGO_THRESHOLD 60u
+#define HC_A_INITIAL_CARGO_LIMIT 1u
+#define HC_A_MIDDLE_CARGO_LIMIT 2u
+#define HC_A_FINAL_CARGO_LIMIT 3u
+#define HC_B_CARGO_THRESHOLD 30u
+#define HC_B_INITIAL_CARGO_LIMIT 2u
+#define HC_B_FINAL_CARGO_LIMIT 3u
+#define HC_A_IDLE_MIN_MS 4000u
+#define HC_A_IDLE_MAX_MS 9000u
+#define HC_B_IDLE_MIN_MS 3000u
+#define HC_B_IDLE_MAX_MS 7000u
+#define HC_WINDUP_STEPS 2u
+#define HC_STRIKE_STEPS 1u
+#define HC_MISS_RECOVERY_MS 1500u
+
+#endif
