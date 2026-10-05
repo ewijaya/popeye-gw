@@ -1,0 +1,4 @@
+interface:
+  display_name: "Harbor Catch Release"
+  short_description: "Freeze, publish and verify a Harbor Catch candidate"
+  default_prompt: "Use $harbor-catch-release for the requested Harbor Catch release workflow."

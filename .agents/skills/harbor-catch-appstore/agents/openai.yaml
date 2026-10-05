@@ -1,0 +1,4 @@
+interface:
+  display_name: "Harbor Catch App Store"
+  short_description: "Prepare, register and verify the Harbor Catch listing"
+  default_prompt: "Use $harbor-catch-appstore for the requested Harbor Catch store task."
