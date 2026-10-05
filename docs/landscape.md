@@ -10,7 +10,7 @@ The preference survives Vertical mode, unrelated setting changes, and reopening.
 Bottom is the initial horizontal preference; upgrades preserve an existing
 horizontal Top/Bottom selection.
 
-On store version **1.0.0**, the earlier **Settings → View** control cycles
+On older **1.0.0** installations, the earlier **Settings → View** control cycles
 Portrait → Bottom → Top.
 
 | View | Hold the watch | Buttons from left to right |
@@ -69,9 +69,10 @@ The emulator was restored to its original Bottom view and settings afterward.
 
 The test bundle's SHA-256 is
 `de4d11edf278c5abf0e2e93b581fb54e261e07c489e26bd4dda21d96b5717ede`.
-Physical PT2 acceptance is pending. This change has not been published; the
-store remains on 1.0.0. Phone Clay configuration is not required for these
-on-watch settings.
+The development candidate above was superseded by the frozen release build
+recorded in [1.0.1 publication](releases/1.0.1.md), which the owner approved
+after installation on the PT2. Phone Clay configuration is not required for
+these on-watch settings.
 
 ## Bottom-button follow-up
 

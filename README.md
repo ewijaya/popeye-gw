@@ -6,13 +6,12 @@ left; Popeye catches it in his boat while Brutus threatens him with a hammer
 from the left pier or a fist from the right ship. The PT2 scene uses crisp
 black segments, a white field, and vivid red, orange, blue and turquoise.
 
-**Status:** Version 1.0.0 is published and verified on the Pebble App Store and
-GitHub. Version 1.0.1 adds separate Orientation and horizontal Buttons settings
-and is prepared for release, pending the frozen-build watch check and approval. M5 and Bottom landscape passed the owner's PT2 play-test; the owner
-approved the exact final bundle and listing. M6 release is complete.
+**Status:** Version 1.0.1 is published on GitHub and the Pebble App Store.
+It separates Vertical/Horizontal orientation from horizontal Bottom/Top button
+position and adds screen-setup Help. See the [release record](docs/releases/1.0.1.md).
 
 **Download:** [Pebble App Store](https://apps.repebble.com/e9cb2950ca21440798fb1db8) ·
-[GitHub release v1.0.0](https://github.com/ewijaya/popeye-gw/releases/tag/v1.0.0)
+[GitHub release v1.0.0](https://github.com/ewijaya/popeye-gw/releases/tag/v1.0.1)
 ([PBW](https://github.com/ewijaya/popeye-gw/releases/download/v1.0.0/popeye-gw.pbw)).
 Both downloads match the approved SHA-256 recorded in the release checks.
 
@@ -162,7 +161,7 @@ Turn the watch clockwise for Bottom (buttons below) or counterclockwise for Top
 (buttons above). Left moves left, middle starts/pauses, right moves right
 (unless Swap is on). The clock, alarm and menus follow the chosen orientation.
 
-On the published **1.0.0**, use **Settings → View** and cycle
+On older **1.0.0** installations, use **Settings → View** and cycle
 **Portrait → Bottom → Top**. Portrait is vertical; Bottom and Top are horizontal.
 See [landscape mode](docs/landscape.md) for details and screenshots.
 

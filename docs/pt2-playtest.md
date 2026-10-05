@@ -50,7 +50,7 @@ is useful but does not establish a measured <50 ms input latency.
    Try buttons above/below; physical left/right should still move left/right.
    Switch to Vertical, quit/reopen, then return to Horizontal: the chosen button
    position should return. Menus and clock rotate too. Restore the preferred view.
-   On store version 1.0.0, Settings → View cycles Portrait → Bottom → Top.
+   On older version 1.0.0, Settings → View cycles Portrait → Bottom → Top.
    Toggle Swap and Ghosts once; verify the change and restore
    the previous choices. Turn Demo Off: poses and colon become static.
 
