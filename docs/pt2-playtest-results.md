@@ -1,6 +1,6 @@
 # PT2 play-test results — 2026-10-05
 
-Status: **M5 and Bottom view accepted; Bottom-first View cycle requested**. The owner
+Status: **M5 and Bottom view accepted; Help and Bottom-first cycle installed**. The owner
 enabled the phone's Dev Connection. CloudPebble ping returned Pong, and the
 installer exited 0 with `App install succeeded.` Game A subsequently appeared
 in the physical-device log. Connection, installation and runtime logs do not
@@ -25,7 +25,38 @@ both modes, landscape and scores/settings after updates and reopening, the
 owner answered **“yes all looks good”**. These reports establish M5 acceptance
 for the installed build, not publication approval or timing-accurate PP-23 fidelity.
 
-## Current candidate: Bottom landscape view
+## Current candidate: on-watch Help and Bottom-first landscape
+
+The owner requested a concise Help page and Bottom as the default landscape
+choice. Menu → Help now contains three short screens with Select to advance,
+movement buttons to browse both ways, and Back to return. Direction labels
+adapt to portrait/landscape. View cycles Portrait → Bottom → Top and preserves
+existing saved views. Main-menu scrolling still reaches About below Help.
+
+- Version **1.0.0**, source commit `c2e7270d36ef6694f0f9185d375b27430dba758f`.
+- Clean tree when frozen at **2026-10-05 19:03:17 JST**.
+- Frozen file: `.release/pt2-playtest/c2e7270d36ef/popeye-gw.pbw`.
+- SHA-256: `79c82ea63923f9f3aa23724a99f45952a7602d7c9c9106349a427e88ee05c046`.
+- Physical installation: **pass**, CloudPebble exit 0, `App install succeeded.`
+
+| Build check | Result |
+|---|---|
+| Host tests / ASan+UBSan | Both pass; 10,000 seeds/mode with zero unavoidable misses |
+| Clean SDK build | Exit 0 and literal `'build' finished`; Tool 5.0.40 / SDK 4.33.1 |
+| App image / headroom | **19,752 / 61,440 bytes**, 41,688 bytes headroom; all six gameplay entry points retained |
+| PBW / resources | **48,091 / 26,040 bytes**, within budgets |
+| Identity / icon | Name, UUID, version, Emery-only watchapp verified; launcher icon unchanged |
+| Emulator heap, Bottom A/B | Each **45,136 free / 66,184 used**, 40.55% free, after visiting Help |
+| Visual checks | Three native Help captures: controls in portrait, rules and shortcuts in Bottom; no clipping |
+| Navigation | Help Select/previous-page wrap, Back to menu, About route, and Portrait → Bottom exercised |
+| Physical Help readability | Not yet separately reported; earlier M5 and Bottom acceptance retained |
+| Cleanup | Environment locks removed; owned emulator logger stopped |
+
+Logs/captures are under `.release/pt2-help/`. The preceding Bottom-default check
+used two native captures in `.release/pt2-bottom-default/`, for five total across
+this combined update. Rules, save formats and source art are unchanged.
+
+## Accepted follow-up: Bottom landscape view
 
 The owner requested landscape with the controls below the display after M5
 acceptance. The new View cycle is Portrait → Top → Bottom. Existing Top remains
