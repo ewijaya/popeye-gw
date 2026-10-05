@@ -1,13 +1,13 @@
-# Harbor Catch release workflow
+# Popeye G&W release workflow
 
-This is the maintained procedure behind the `harbor-catch-build-audit`,
-`harbor-catch-release` and `harbor-catch-appstore` skills (`.claude/skills/`,
+This is the maintained procedure behind the `popeye-gw-build-audit`,
+`popeye-gw-release` and `popeye-gw-appstore` skills (`.claude/skills/`,
 mirrored in `.agents/skills/`). It implements PRD sections 12, 13 and 15.
 
 Identity lives in [release-config.json](release-config.json). `uuid` identifies
 the PBW; `store_app_id` is a separate ID the RePebble store assigns at first
 registration and stays `null` until then. The bundle is always
-`build/harbor-catch.pbw`, whatever the checkout directory is called.
+`build/popeye-gw.pbw`, whatever the checkout directory is called.
 
 **Every publication needs the owner's explicit approval of the exact frozen
 PBW (its SHA-256), its version and its destinations, after the owner's
@@ -28,7 +28,7 @@ Never raise a budget to make a release pass; that is an owner decision.
 ## Essential validation (default for every release)
 
 - Always: both host suites, one clean SDK build, PBW identity and budgets, and
-  the originality scan of new or changed text and art.
+  the identity review of new or changed text and art.
 - Emulator: launch plus the flows the diff touches. At most five screenshots,
   and only for layout or art changes. Allow one emulator retry (`pebble kill`,
   `pebble wipe`), then report the gap instead of debugging at length.
@@ -74,11 +74,10 @@ Limit edits to:
 - `docs/releases/store-description.txt`, only when its wording changes.
 
 Do not change game code, tuning or art during release preparation. Run the
-originality check (PRD 14) on the changelog, README, description, listing
-assets and every string in `src/`. Search them for the franchise that the
-historical repository name refers to, its characters, its publisher and its
-maker, and for any other third-party mark. Commit with
-`build: prepare Harbor Catch X.Y.Z`.
+identity check (PRD 14) on the changelog, README, description, listing
+assets and every string in `src/`. Verify the Popeye G&W display name,
+`popeye-gw` artifact names and the approved Popeye, Olive Oyl and Brutus cast. Commit with
+`build: prepare Popeye G&W X.Y.Z`.
 
 ## 3. Build audit
 
@@ -103,7 +102,7 @@ PBW identity and sizes:
 ```sh
 python3 - <<'EOF'
 import hashlib, json, zipfile
-pbw = "build/harbor-catch.pbw"
+pbw = "build/popeye-gw.pbw"
 cfg = json.load(open("docs/release-config.json"))
 pkg = json.load(open("package.json"))
 with zipfile.ZipFile(pbw) as z:
@@ -145,7 +144,7 @@ Freeze once, from the audited build, into the ignored `.release/` folder:
 ```sh
 V=X.Y.Z; D=.release/$V
 mkdir -p "$D"
-cp build/harbor-catch.pbw "$D/harbor-catch.pbw"
+cp build/popeye-gw.pbw "$D/popeye-gw.pbw"
 ```
 
 Write `$D/notes.md` (the changelog section body: LF line endings, no trailing
@@ -162,7 +161,7 @@ approval no longer applies.
 Install the frozen bytes on the owner's Pebble Time 2:
 
 ```sh
-pebble install --cloudpebble "$D/harbor-catch.pbw"
+pebble install --cloudpebble "$D/popeye-gw.pbw"
 ```
 
 ## 5. Approval
@@ -192,15 +191,15 @@ differs, stop.
 V=X.Y.Z; D=.release/$V
 C=$(python3 -c "import json;print(json.load(open('$D/manifest.json'))['commit'])")
 git push origin main
-git tag -a "v$V" -m "Harbor Catch $V" "$C"
+git tag -a "v$V" -m "Popeye G&W $V" "$C"
 git push origin "v$V"
-gh release create "v$V" "$D/harbor-catch.pbw" --verify-tag \
-  --title "Harbor Catch $V" --notes-file "$D/notes.md"
+gh release create "v$V" "$D/popeye-gw.pbw" --verify-tag \
+  --title "Popeye G&W $V" --notes-file "$D/notes.md"
 ```
 
 ## 7. Publish the store
 
-Follow the `harbor-catch-appstore` skill: Dashboard **New** for the first
+Follow the `popeye-gw-appstore` skill: Dashboard **New** for the first
 registration (section 8), otherwise an upload to the existing listing
 (section 9). Upload only the frozen PBW. Never run top-level
 `pebble publish`: it rebuilds the PBW and can create a listing on its own.
@@ -266,7 +265,7 @@ registration (section 8), otherwise an upload to the existing listing
 ```sh
 V=X.Y.Z; D=.release/$V; T=$(mktemp -d)
 gh release view "v$V" --json tagName,isDraft,isPrerelease,assets
-gh release download "v$V" -p harbor-catch.pbw -D "$T" && shasum -a 256 "$T/harbor-catch.pbw"
+gh release download "v$V" -p popeye-gw.pbw -D "$T" && shasum -a 256 "$T/popeye-gw.pbw"
 UUID=$(python3 -c "import json;print(json.load(open('docs/release-config.json'))['uuid'])")
 curl -fsS "https://appstore-api.repebble.com/api/v1/apps/uuid/$UUID?hardware=emery" -o "$T/emery.json"
 curl -fsS "https://appstore-api.repebble.com/api/v1/apps/uuid/$UUID" -o "$T/general.json"
@@ -288,7 +287,7 @@ the phone confirms what it shows.
 When everything is verified, add or update the README's download section.
 Link only the verified destinations: the store listing and the GitHub
 release. Set `manifest.verified_at`. Commit
-`docs: record Harbor Catch X.Y.Z publication` and push it. This commit belongs
+`docs: record Popeye G&W X.Y.Z publication` and push it. This commit belongs
 to an authorized release, never to maintaining this workflow.
 
 ## Recovery

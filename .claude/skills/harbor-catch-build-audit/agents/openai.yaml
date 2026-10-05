@@ -1,4 +1,0 @@
-interface:
-  display_name: "Harbor Catch Build Audit"
-  short_description: "Test, build and measure Harbor Catch without publishing"
-  default_prompt: "Use $harbor-catch-build-audit to audit the current Harbor Catch build."

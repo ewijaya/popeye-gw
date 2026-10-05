@@ -1,0 +1,4 @@
+interface:
+  display_name: "Popeye G&W Release"
+  short_description: "Freeze, publish and verify a Popeye G&W candidate"
+  default_prompt: "Use $popeye-gw-release for the requested Popeye G&W release workflow."

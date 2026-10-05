@@ -1,0 +1,4 @@
+interface:
+  display_name: "Popeye G&W Build Audit"
+  short_description: "Test, build and measure Popeye G&W without publishing"
+  default_prompt: "Use $popeye-gw-build-audit to audit the current Popeye G&W build."

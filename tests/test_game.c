@@ -16,9 +16,9 @@ static Game fixture(GameMode mode) {
   unsigned side;
   game_init(&game, mode, 1u);
   game.step = 10u;
-  game.mae_lane = 0u;
-  game.mae_target = 0u;
-  game.mae_ready = false;
+  game.olive_lane = 0u;
+  game.olive_target = 0u;
+  game.olive_ready = false;
   for (side = 0u; side < GAME_SIDES; ++side) game.attacks[side].idle_ms_left = UINT32_MAX;
   return game;
 }
@@ -36,7 +36,7 @@ static void cargo_at(Game *game, unsigned slot, uint8_t lane, uint8_t stage) {
 static void catch_next(Game *game, uint8_t lane) {
   memset(game->cargo, 0, sizeof(game->cargo));
   cargo_at(game, 0u, lane, 3u);
-  game->finn_pose = game_lane_pose(lane);
+  game->popeye_pose = game_lane_pose(lane);
   assert(game_step(game));
   assert(game->status == GAME_PLAYING);
 }
@@ -44,38 +44,38 @@ static void catch_next(Game *game, uint8_t lane) {
 static void drop_next(Game *game) {
   memset(game->cargo, 0, sizeof(game->cargo));
   cargo_at(game, 0u, 0u, 3u);
-  game->finn_pose = 2u;
+  game->popeye_pose = 2u;
   assert(game_step(game));
 }
 
 static void test_inputs(void) {
   Game game = fixture(GAME_A);
-  assert(game.finn_pose == 2u);
+  assert(game.popeye_pose == 2u);
   assert(game_input(&game, GAME_UP, true));
-  assert(game.finn_pose == 1u && game.step == 10u);
+  assert(game.popeye_pose == 1u && game.step == 10u);
   assert(!game_input(&game, GAME_UP, true));
   assert(game_step(&game));
-  assert(game.finn_pose == 1u); /* A held button cannot repeat on a tick. */
+  assert(game.popeye_pose == 1u); /* A held button cannot repeat on a tick. */
   (void)game_input(&game, GAME_UP, false);
   press(&game, GAME_UP);
-  assert(game.finn_pose == 0u);
+  assert(game.popeye_pose == 0u);
   press(&game, GAME_UP);
-  assert(game.finn_pose == 0u);
+  assert(game.popeye_pose == 0u);
   press(&game, GAME_DOWN);
   press(&game, GAME_DOWN);
   press(&game, GAME_DOWN);
   press(&game, GAME_DOWN);
   press(&game, GAME_DOWN);
-  assert(game.finn_pose == 4u);
+  assert(game.popeye_pose == 4u);
   game.controls_swapped = true;
   press(&game, GAME_DOWN);
-  assert(game.finn_pose == 3u);
+  assert(game.popeye_pose == 3u);
   press(&game, GAME_UP);
-  assert(game.finn_pose == 4u);
+  assert(game.popeye_pose == 4u);
   assert(!game_input(&game, (GameButton)99, true));
   assert(game_pause(&game));
   press(&game, GAME_DOWN);
-  assert(game.finn_pose == 4u);
+  assert(game.popeye_pose == 4u);
   assert(game_resume(&game));
 }
 
@@ -83,7 +83,7 @@ static void test_cargo_and_feedback(void) {
   Game game = fixture(GAME_A);
   unsigned stage;
   cargo_at(&game, 0u, 1u, 0u);
-  game.finn_pose = 1u;
+  game.popeye_pose = 1u;
   for (stage = 1u; stage < 4u; ++stage) {
     assert(game_step(&game));
     assert(game.cargo[0].stage == stage && game.cargo[0].active);
@@ -94,16 +94,16 @@ static void test_cargo_and_feedback(void) {
   assert(game.catch_pose == 1);
   assert((game_take_events(&game) & GAME_EVENT_CATCH) != 0u);
   assert(game_take_events(&game) == 0u);
-  /* Mae can immediately reuse the resolved slot. Catch feedback survives it. */
+  /* Olive can immediately reuse the resolved slot. Catch feedback survives it. */
   game = fixture(GAME_A);
-  game.mae_ready = true;
+  game.olive_ready = true;
   cargo_at(&game, 0u, 0u, 3u);
-  game.finn_pose = 0u;
+  game.popeye_pose = 0u;
   assert(game_step(&game));
   assert(game.cargo[0].active && game.cargo[0].stage == 0u);
   assert(game.cargo[0].launch_step == game.step);
   assert(game.cargo[0].landing_step == game.step + 4u);
-  assert(game.catch_pose == 0 && game.catches == 1u && game.mae_throwing);
+  assert(game.catch_pose == 0 && game.catches == 1u && game.olive_throwing);
   /* Upright centre is not one of the four catch poses. */
   game = fixture(GAME_A);
   drop_next(&game);
@@ -120,14 +120,14 @@ static void test_drops_misses_and_recovery(void) {
   memset(game.cargo, 0, sizeof(game.cargo));
   cargo_at(&game, 0u, 0u, 3u);
   cargo_at(&game, 1u, 2u, 0u);
-  game.finn_pose = 2u;
+  game.popeye_pose = 2u;
   assert(game_step(&game));
   assert(!game.half_ring && game.misses == 1u);
   assert(game.status == GAME_RECOVERING && game.miss_cause == GAME_MISS_DROP);
   assert(game.recovery_ms_left == 1500u);
   for (i = 0u; i < GAME_MAX_CARGO; ++i) assert(!game.cargo[i].active);
   assert(!game_input(&game, GAME_UP, true));
-  assert(game.finn_pose == 2u);
+  assert(game.popeye_pose == 2u);
   (void)game_input(&game, GAME_UP, false);
   assert(!game_advance(&game, 1499u));
   assert(game.status == GAME_RECOVERING && game.recovery_ms_left == 1u);
@@ -179,8 +179,8 @@ static void test_attacks(void) {
   assert(game.attacks[1].phase == GAME_ATTACK_IDLE && game.attacks[1].idle_ms_left == 0u);
   for (pose = 0u; pose < GAME_POSES; ++pose) {
     game = fixture(GAME_B);
-    game.mae_target = 2u;
-    game.finn_pose = (uint8_t)pose;
+    game.olive_target = 2u;
+    game.popeye_pose = (uint8_t)pose;
     game.attacks[pose == 4u ? 1u : 0u].phase = GAME_ATTACK_WINDUP;
     game.attacks[pose == 4u ? 1u : 0u].steps_left = 1u;
     game.half_ring = true;
@@ -193,7 +193,7 @@ static void test_attacks(void) {
   }
   /* Hit wins over an unrelated cargo drop on the same tick. */
   game = fixture(GAME_B);
-  game.finn_pose = 0u;
+  game.popeye_pose = 0u;
   cargo_at(&game, 0u, 3u, 3u);
   game.attacks[0].phase = GAME_ATTACK_WINDUP;
   game.attacks[0].steps_left = 1u;
@@ -216,7 +216,7 @@ static void test_attacks(void) {
   assert(game.attacks[1].idle_ms_left >= 3000u && game.attacks[1].idle_ms_left <= 7000u);
 }
 
-static void test_reservations_and_mae(void) {
+static void test_reservations_and_olive(void) {
   Game game;
   unsigned stage;
   /* Existing cargo vetoes a new wind-up for BOTH forbidden landing ticks. */
@@ -235,49 +235,49 @@ static void test_reservations_and_mae(void) {
   /* Left near -> right near crosses centre, so requires TWO ticks. */
   game = fixture(GAME_B);
   game.score = 60u;
-  game.mae_lane = 2u;
-  game.mae_target = 2u;
-  game.mae_ready = true;
+  game.olive_lane = 2u;
+  game.olive_target = 2u;
+  game.olive_ready = true;
   cargo_at(&game, 0u, 1u, 0u); /* after next tick, landing separation is one */
   assert(game_step(&game));
-  assert(!game.mae_throwing);
+  assert(!game.olive_throwing);
   assert(game_step(&game));
-  assert(game.mae_throwing); /* separation two now permits it */
+  assert(game.olive_throwing); /* separation two now permits it */
   /* Every reservation is inspected, even nonconsecutive injected entries. This
    * adversarial fixture is deliberately inconsistent before the new proposal. */
   game = fixture(GAME_B);
   game.score = 60u;
-  game.mae_lane = 3u;
-  game.mae_target = 3u;
-  game.mae_ready = true;
+  game.olive_lane = 3u;
+  game.olive_target = 3u;
+  game.olive_ready = true;
   cargo_at(&game, 0u, 0u, 0u); /* future separation one: far-left forbids far-right */
   cargo_at(&game, 1u, 2u, 0u); /* same proposal is reachable from near-right */
   assert(game_step(&game));
-  assert(!game.mae_throwing);
-  /* Mae walks one spot per tick, shows arrival, and only THEN throws. */
+  assert(!game.olive_throwing);
+  /* Olive walks one spot per tick, shows arrival, and only THEN throws. */
   game = fixture(GAME_A);
-  game.mae_target = 3u;
-  assert(game_step(&game) && game.mae_lane == 1u && !game.mae_throwing);
-  assert(game_step(&game) && game.mae_lane == 2u && !game.mae_throwing);
-  assert(game_step(&game) && game.mae_lane == 3u && !game.mae_throwing);
-  assert(game_step(&game) && game.mae_lane == 3u && game.mae_throwing);
+  game.olive_target = 3u;
+  assert(game_step(&game) && game.olive_lane == 1u && !game.olive_throwing);
+  assert(game_step(&game) && game.olive_lane == 2u && !game.olive_throwing);
+  assert(game_step(&game) && game.olive_lane == 3u && !game.olive_throwing);
+  assert(game_step(&game) && game.olive_lane == 3u && game.olive_throwing);
   assert(game.cargo[0].stage == 0u && game.cargo[0].launch_step == game.step);
   /* The third-cargo ramp is attainable: left, near-left, near-left gives
    * launch gaps 2 then 1, and all pairwise pose distances remain feasible. */
   game = fixture(GAME_A);
   game.score = 60u;
-  game.mae_ready = true;
-  assert(game_step(&game) && game.mae_throwing);
-  assert(game_step(&game) && !game.mae_throwing);
-  assert(game_step(&game) && game.mae_throwing);
-  assert(game_step(&game) && game.mae_throwing);
+  game.olive_ready = true;
+  assert(game_step(&game) && game.olive_throwing);
+  assert(game_step(&game) && !game.olive_throwing);
+  assert(game_step(&game) && game.olive_throwing);
+  assert(game_step(&game) && game.olive_throwing);
   assert(game.cargo[0].active && game.cargo[1].active && game.cargo[2].active);
   assert(game.cargo[0].lane == 0u && game.cargo[1].lane == 1u && game.cargo[2].lane == 1u);
-  /* Initial far-right Finn can reach a fresh far-left launch in four presses. */
+  /* Initial far-right Popeye can reach a fresh far-left launch in four presses. */
   game = fixture(GAME_A);
-  game.finn_pose = 4u;
-  game.mae_ready = true;
-  assert(game_step(&game) && game.mae_throwing);
+  game.popeye_pose = 4u;
+  game.olive_ready = true;
+  assert(game_step(&game) && game.olive_throwing);
   for (stage = 0u; stage < 4u; ++stage) {
     press(&game, GAME_UP);
     assert(game_step(&game));
@@ -424,7 +424,7 @@ static void test_determinism(void) {
   game_init(&b, GAME_B, 0u);
   /* Explicit xorshift reference vector, not just comparing two opaque calls. */
   assert(a.rng == UINT32_C(0x40aec71f));
-  assert(a.mae_target == 3u);
+  assert(a.olive_target == 3u);
   for (i = 0u; i < 1000u; ++i) {
     if (i % 3u == 0u) { press(&a, GAME_UP); press(&b, GAME_UP); }
     if (i % 5u == 0u) { press(&a, GAME_DOWN); press(&b, GAME_DOWN); }
@@ -488,11 +488,11 @@ static unsigned bot_choose_pose(const Game *game) {
       }
     }
   }
-  assert(viable[0][game->finn_pose]);
+  assert(viable[0][game->popeye_pose]);
   {
     unsigned best = GAME_POSES, best_distance = GAME_POSES;
-    for (pose = game->finn_pose == 0u ? 0u : game->finn_pose - 1u;
-         pose < GAME_POSES && pose <= game->finn_pose + 1u; ++pose) {
+    for (pose = game->popeye_pose == 0u ? 0u : game->popeye_pose - 1u;
+         pose < GAME_POSES && pose <= game->popeye_pose + 1u; ++pose) {
       unsigned distance = pose > preference ? pose - preference : preference - pose;
       if (viable[1][pose] && distance < best_distance) { best = pose; best_distance = distance; }
     }
@@ -523,9 +523,9 @@ static void test_fairness(void) {
         unsigned destination = bot_choose_pose(&game);
         unsigned i, j;
         assert(game.step < 16000u && game.step - last_catch_step < 32u);
-        if (destination < game.finn_pose) press(&game, GAME_UP);
-        else if (destination > game.finn_pose) press(&game, GAME_DOWN);
-        assert(game.finn_pose == destination);
+        if (destination < game.popeye_pose) press(&game, GAME_UP);
+        else if (destination > game.popeye_pose) press(&game, GAME_DOWN);
+        assert(game.popeye_pose == destination);
         assert(game_step(&game));
         assert(game.status == GAME_PLAYING);
         assert(game.drops == 0u && game.hits == 0u && game.total_misses == 0u);
@@ -541,9 +541,9 @@ static void test_fairness(void) {
             assert(cargo->landing_step == game.step + 4u - cargo->stage);
             if (cargo->launch_step == game.step) {
               uint8_t lane = cargo->lane;
-              assert(cargo->stage == 0u && game.mae_throwing);
-              assert(before.mae_lane == lane && before.mae_ready);
-              assert(game.mae_lane == before.mae_lane); /* Never throw while walking. */
+              assert(cargo->stage == 0u && game.olive_throwing);
+              assert(before.olive_lane == lane && before.olive_ready);
+              assert(game.olive_lane == before.olive_lane); /* Never throw while walking. */
               lanes_seen |= 1u << lane;
               for (j = 0u; j < 4u; ++j) {
                 unsigned distance = poses[lane] > poses[j] ? poses[lane] - poses[j] : poses[j] - poses[lane];
@@ -629,7 +629,7 @@ int main(void) {
   test_cargo_and_feedback();
   test_drops_misses_and_recovery();
   test_attacks();
-  test_reservations_and_mae();
+  test_reservations_and_olive();
   test_scoring();
   test_difficulty();
   test_pause_and_elapsed();
@@ -637,6 +637,6 @@ int main(void) {
   puts("Rule tests passed");
   fflush(stdout);
   test_fairness();
-  puts("All Harbor Catch tests passed");
+  puts("All Popeye G&W tests passed");
   return 0;
 }

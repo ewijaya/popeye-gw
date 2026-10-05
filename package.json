@@ -1,5 +1,5 @@
 {
-  "name": "harbor-catch",
+  "name": "popeye-gw",
   "author": "Edward Wijaya",
   "version": "1.0.0",
   "keywords": [
@@ -8,7 +8,7 @@
   "private": true,
   "dependencies": {},
   "pebble": {
-    "displayName": "Harbor Catch",
+    "displayName": "Popeye G&W",
     "uuid": "6b7c8c28-36f0-47ca-a073-3e8f33efcaf0",
     "sdkVersion": "3",
     "enableMultiJS": false,
@@ -19,7 +19,25 @@
       "watchface": false
     },
     "resources": {
-      "media": []
+      "media": [
+        {
+          "type": "bitmap",
+          "name": "BACKDROP_GHOSTS",
+          "file": "images/backdrop-ghosts.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "SEGMENTS",
+          "file": "images/segments.png",
+          "memoryFormat": "1BitPalette"
+        },
+        {
+          "type": "bitmap",
+          "name": "MENU_ICON",
+          "file": "images/menu-icon.png",
+          "menuIcon": true
+        }
+      ]
     }
   }
 }

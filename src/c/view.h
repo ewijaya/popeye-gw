@@ -1,5 +1,5 @@
-#ifndef HARBOR_CATCH_VIEW_H
-#define HARBOR_CATCH_VIEW_H
+#ifndef POPEYE_GW_VIEW_H
+#define POPEYE_GW_VIEW_H
 
 #include <pebble.h>
 

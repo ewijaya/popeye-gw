@@ -1,16 +1,19 @@
-# Harbor Catch
+# Popeye G&W
 
-An original LCD-style catch game for the **Pebble Time 2**, in the spirit of
-early-1980s wide-screen LCD handhelds.
+A fan-made LCD-style catch game for the **Pebble Time 2**, inspired by
+[Nintendo’s Popeye Game & Watch](https://nintendo.fandom.com/wiki/Popeye_(Game_%26_Watch)).
+Fixed black segments, faint LCD ghosts and a printed nautical backdrop bring
+the wide-screen handheld feel to the watch.
 
-Finn, a young sailor in a rowboat, catches cargo that Mae tosses from a
-freighter's deck while Grizzle, a harbour pirate, strikes from the piers.
-Game A and Game B, saved high scores, and a clock with a daily alarm when
-you're not playing.
+Popeye catches cargo that Olive Oyl tosses from a freighter's deck while
+Brutus strikes from the piers. The app is named **Popeye G&W**; the repository,
+package and build artifact use `popeye-gw`.
 
-**Status:** M2 playable prototype. Game A and Game B play start to finish with
-placeholder rectangles for every segment; original art is M3, and the clock,
-alarm, menu and saved scores are M4. See the
+**Status:** M3 art implementation. Game A and Game B use a complete 88-segment
+LCD art set, a printed backdrop, faint ghost segments and a launcher icon.
+The clock, alarm, menu and persistent high scores are the next milestone (M4).
+Build measurements and emulator evidence are in the [M3 art audit](docs/m3-art-audit.md).
+See the
 [Product Requirements Document](PRD.md) and [repository conventions](CLAUDE.md).
 
 ## Host tests
@@ -36,7 +39,7 @@ are exposed for the later renderer. Pacing values live in `src/c/tuning.h`.
 The PRD leaves a few details open. The engine uses these interpretations:
 
 - A launch displays cargo segment 1; four later steps advance through segments
-  2–5, with the catch or drop on segment 5. Mae's arrival at a throw spot is
+  2–5, with the catch or drop on segment 5. Olive's arrival at a throw spot is
   visible for a step before launching.
 - Milestones trigger when the true score crosses 200 or 500 within each 1,000,
   including a double-point catch that skips the exact value. Difficulty and
@@ -44,7 +47,7 @@ The PRD leaves a few details open. The engine uses these interpretations:
 - A half-ring alone is not a full miss: a milestone starts Lucky Tide and keeps
   that half-ring. A hit adds a full miss without consuming a half-ring. Every
   drop or hit ends Lucky Tide.
-- Grizzle's idle countdown uses active milliseconds, with transitions on step
+- Brutus's idle countdown uses active milliseconds, with transitions on step
   boundaries. A due attack waits if its warning/strike would conflict with
   cargo already in flight or the other pier's strike.
 - Hits resolve before cargo on a step. A full miss ends that step and clears
@@ -53,36 +56,63 @@ The PRD leaves a few details open. The engine uses these interpretations:
 - True scores and mode-specific high scores use 32-bit unsigned totals and
   saturate at their maximum representable value.
 
-## Prototype (M2)
+## Playing
 
 | State | Up / Down | Select | Hold Select | Back |
 |---|---|---|---|---|
 | Title | — | Game A | Game B | Exit |
-| Playing | Move Finn one pose | Pause | — | Pause |
+| Playing | Move Popeye one pose | Pause | — | Pause |
 | Paused | — | Resume | — | Quit to title |
 | Game over | — | Play again | Other mode | Title |
 
 `src/c/scene.c` turns game state into the PRD 9.2 set of 88 lit segments; it
-is pure C99 and host-tested. `src/c/view.c` draws each segment as a
-placeholder rectangle, with unlit segments as faint outlines, and is the only
-file that knows pixel positions. `src/c/main.c` runs one `AppTimer` per step
+is pure C99 and host-tested. `src/c/view.c` draws each segment from a packed
+sprite sheet using positions generated into `src/c/segments.h`. Inactive
+segments are baked into the backdrop with sparse grey pixels, keeping the
+overlapping poses faint on Emery's limited palette.
+`src/c/main.c` runs one `AppTimer` per step
 or recovery and none while paused, over or on the title. Pausing keeps the
 elapsed part of the current interval. Losing focus pauses a running game.
 
-M2 interpretations, all open to change in M3–M5:
+Current presentation and remaining work:
 
-- Until the M4 clock exists, the idle state is a title card showing Finn
+- Until the M4 clock exists, the idle state is a title card showing Popeye
   upright and the controls. Up and Down do nothing there.
 - The score uses the right three digits without leading zeros, so 1,005 shows
   as `5`.
 - Paused, game over and title are shown as a text card over the lane area.
-  The final LCD treatment of these states is decided with the art.
+  These overlays retain readable button instructions over the LCD scene.
 - A catch lights cargo segment 5 and the catch flash for one step. A hit shows
-  the dizzy pose on Finn's side. Drop and hit feedback stays through recovery.
+  the dizzy pose on Popeye's side. Drop and hit feedback stays through recovery.
 - High scores are kept in memory only; HI lights at game over after a new best.
   Saved scores are M4, and vibration and flashing effects are M5.
 - Each game start and game over logs `heap_bytes_free()` and
   `heap_bytes_used()` for the build audit.
+
+## Art
+
+The complete inventory includes five player poses, two dizzy poses, catching
+feedback, four throw positions with ready/throw frames, two bell frames,
+both rivals' idle/wind-up/strike phases, four cargo types with five positions
+each, splashes, life rings, digits and indicators. There are no rectangle
+placeholders in the renderer.
+
+Character animation and cargo sources were created with the built-in image
+generation tool. Repeated positions and mirrored poses share those sources;
+small UI symbols use geometric artwork. Prompts and preparation instructions
+are in [art/source/README.md](art/source/README.md).
+
+```sh
+# Only when changing source art; requires ImageMagick.
+python3 tools/prepare_art.py
+# Pack the committed runtime segments; Python standard library only.
+python3 tools/build_art.py
+python3 tools/build_art.py --check
+```
+
+The art check rejects missing, unexpected, empty or opaque full-screen
+segments, and validates the 25 × 25 launcher icon. Host tests check all 88
+generated entries, screen bounds, atlas bounds and non-overlapping atlas crops.
 
 ## Build
 
@@ -91,15 +121,15 @@ Requires Pebble Tool 5.0.40 and SDK 4.33.1. Use the bundled compiler.
 ```sh
 pebble clean
 pebble build
-pebble install --emulator emery build/harbor-catch.pbw
+pebble install --emulator emery build/popeye-gw.pbw
 ```
 
 Check the exit status and the literal `'build' finished` in the build output.
 Every SDK build checks `.text + .data + .bss` against the **61,440-byte** app
-budget and fails if it exceeds that limit. The M2 prototype links the whole
-engine; art resources arrive in M3. The bundle is named `harbor-catch.pbw`
+budget and fails if it exceeds that limit. The playable app links the game
+engine and loads the complete art set. The bundle is named `popeye-gw.pbw`
 regardless of the checkout directory name, so pass its path when installing.
 
 ## Licence
 
-MIT, for both code and original art. See [LICENSE](LICENSE).
+See [LICENSE](LICENSE) for the repository licence.

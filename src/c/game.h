@@ -1,5 +1,5 @@
-#ifndef HARBOR_CATCH_GAME_H
-#define HARBOR_CATCH_GAME_H
+#ifndef POPEYE_GW_GAME_H
+#define POPEYE_GW_GAME_H
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -71,13 +71,13 @@ typedef struct {
  * Recovery freezes cargo/attack/step time; pause freezes recovery too. A third
  * miss ends immediately. Resume preserves the exact remaining interval. Each
  * tick resolves attack hits first (a hit ends the tick and clears all cargo),
- * then cargo catches/drops, then Mae. One tick cannot award two full misses.
+ * then cargo catches/drops, then Olive. One tick cannot award two full misses.
  */
 typedef struct {
   GameMode mode;
   GameStatus status;
   GameStatus resume_status;
-  uint8_t finn_pose; /* left far=0, left near=1, centre=2, right near=3, far=4 */
+  uint8_t popeye_pose; /* left far=0, left near=1, centre=2, right near=3, far=4 */
   uint8_t misses;
   bool half_ring;
   bool lucky_tide;
@@ -93,10 +93,10 @@ typedef struct {
   uint32_t next_cargo_id;
   GameCargo cargo[GAME_MAX_CARGO];
   GameAttack attacks[GAME_SIDES]; /* left, right; right stays idle in A */
-  uint8_t mae_lane;
-  uint8_t mae_target;
-  bool mae_ready;
-  bool mae_throwing;
+  uint8_t olive_lane;
+  uint8_t olive_target;
+  bool olive_ready;
+  bool olive_throwing;
   int8_t catch_pose;
   int8_t splash_lane;
   GameMissCause miss_cause;
@@ -113,7 +113,7 @@ void game_init(Game *game, GameMode mode, uint32_t seed);
 void game_start(Game *game, GameMode mode, uint32_t seed);
 /* A repeated pressed=true for a held button does nothing. Release it before
  * another press. Input moves and clamps immediately; paused/recovery/over input
- * records button edges but cannot move Finn. The app maps Select/Back to the
+ * records button edges but cannot move Popeye. The app maps Select/Back to the
  * separate pause/resume functions. */
 bool game_input(Game *game, GameButton button, bool pressed);
 bool game_pause(Game *game);

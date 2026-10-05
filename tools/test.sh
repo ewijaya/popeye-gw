@@ -1,9 +1,10 @@
 #!/bin/sh
-# Host-only C99 suite; no SDK or Node runtime required.
+# Host-only C99 suite plus the art pipeline check (Python 3 standard library);
+# no SDK or Node runtime required.
 set -eu
 
 repo_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-test_dir=$(mktemp -d "${TMPDIR:-/tmp}/harbor-catch-tests.XXXXXX")
+test_dir=$(mktemp -d "${TMPDIR:-/tmp}/popeye-gw-tests.XXXXXX")
 trap 'rm -rf "$test_dir"' EXIT HUP INT TERM
 
 case "${1:-}" in
@@ -11,6 +12,8 @@ case "${1:-}" in
   --sanitize) set -- -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer ;;
   *) printf '%s\n' 'Usage: tools/test.sh [--sanitize]' >&2; exit 2 ;;
 esac
+
+python3 "$repo_dir/tools/build_art.py" --check
 
 cflags="-std=c99 -Wall -Wextra -Werror -pedantic"
 # shellcheck disable=SC2086

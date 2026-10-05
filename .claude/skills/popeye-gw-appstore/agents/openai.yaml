@@ -1,0 +1,4 @@
+interface:
+  display_name: "Popeye G&W App Store"
+  short_description: "Prepare, register and verify the Popeye G&W listing"
+  default_prompt: "Use $popeye-gw-appstore for the requested Popeye G&W store task."

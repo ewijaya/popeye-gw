@@ -1,18 +1,18 @@
-# Harbor Catch repository conventions
+# Popeye G&W repository conventions
 
 ## Product and scope
 
 - Read `PRD.md` in full before changing game rules or architecture. Ask the
   owner before editing the PRD; record implementation interpretations elsewhere.
-- Harbor Catch is an original LCD-style catch game for Pebble Time 2 only:
-  Emery, 200 × 228, 64 colours. Use only the original cast Finn, Mae and Grizzle.
-- Follow PRD section 14 in every new or edited file. Do not include third-party
-  character names, characters, logos, artwork or references to other games.
-  The historical repository name is not the product name.
+- Popeye G&W is a fan-made LCD-style catch game for Pebble Time 2 only:
+  Emery, 200 × 228, 64 colours, inspired by Nintendo’s Popeye Game & Watch.
+  Use the approved cast: Popeye, Olive Oyl and Brutus.
+- Follow PRD section 14 for the nostalgic LCD presentation and product identity.
+  Display name: `Popeye G&W`; repository, package and bundle slug: `popeye-gw`.
 - Work only on the requested milestone. Store publishing requires the owner's
   explicit approval of the exact build after the required watch play-test.
-- Releases follow `docs/releasing.md` through the `harbor-catch-build-audit`,
-  `harbor-catch-release` and `harbor-catch-appstore` skills. Keep
+- Releases follow `docs/releasing.md` through the `popeye-gw-build-audit`,
+  `popeye-gw-release` and `popeye-gw-appstore` skills. Keep
   `.claude/skills/` and `.agents/skills/` identical.
 
 ## Code and verification
@@ -53,7 +53,7 @@
 - Emulator commands (run only when needed for the requested milestone):
 
   ```sh
-  pebble install --emulator emery build/harbor-catch.pbw
+  pebble install --emulator emery build/popeye-gw.pbw
   pebble screenshot --emulator emery --no-open screenshot.png
   ```
 
@@ -62,10 +62,10 @@
 - Physical Pebble Time 2 installation through the phone connection:
 
   ```sh
-  pebble install --cloudpebble build/harbor-catch.pbw
+  pebble install --cloudpebble build/popeye-gw.pbw
   ```
 
   Pass the PBW path explicitly: the CLI's default is based on the checkout
-  directory name, whereas this project builds `harbor-catch.pbw`.
+  directory name, whereas this project builds `popeye-gw.pbw`.
   Never publish to the RePebble store without explicit approval of that exact
   build.

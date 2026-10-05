@@ -1,0 +1,62 @@
+[
+  {
+    "name": "popeye-near-left",
+    "ref": "popeye.png",
+    "prompt": "Use case: identity-preserve. Edit the supplied approved character sprite into ONE new animation pose for the same tiny LCD game. Preserve the EXACT character design, proportions, face, costume, and bold black/transparent line style. Full body fully in frame, isolated sprite on actual transparent background with transparent internal holes, pure black ink only, no white fill, no grey, no shading, no background, no text, no scene or frame. Simplify small details so thick contours and large facial features survive reduction to 40-60 pixels. Popeye catching cargo: face and torso turned to the LEFT, standing upright with a slight left lean, both huge forearms raised above chest height, palms open UP near his hat ready to catch a falling item. Hands must be at the top-left of the silhouette, feet planted below his hips. Preserve sailor cap, pipe pointing left, enormous chin and forearms, black short-sleeved shirt and sailor trousers. Do not draw cargo. Compact narrow upright full-body pose, about 38 wide by 58 tall."
+  },
+  {
+    "name": "popeye-far-left",
+    "ref": "popeye.png",
+    "prompt": "Use case: identity-preserve. Edit the supplied approved character sprite into ONE new animation pose for the same tiny LCD game. Preserve the EXACT character design, proportions, face, costume, and bold black/transparent line style. Full body fully in frame, isolated sprite on actual transparent background with transparent internal holes, pure black ink only, no white fill, no grey, no shading, no background, no text, no scene or frame. Simplify small details so thick contours and large facial features survive reduction to 40-60 pixels. Popeye making a far-left catch: deep dynamic LEFT lean, one knee bent, hips and feet to the RIGHT of his head and hands. Both giant forearms extend upward and LEFT, open palms near head height to catch falling cargo at the left extreme. Preserve pipe pointing left, cap, jutting chin, sailor uniform and anchor tattoo. Distinct stretched left-reaching silhouette with boots still below him, not horizontal. No cargo. Full body about 45 wide by 58 tall."
+  },
+  {
+    "name": "popeye-dizzy",
+    "ref": "popeye.png",
+    "prompt": "Use case: identity-preserve. Edit the supplied approved character sprite into ONE new animation pose for the same tiny LCD game. Preserve the EXACT character design, proportions, face, costume, and bold black/transparent line style. Full body fully in frame, isolated sprite on actual transparent background with transparent internal holes, pure black ink only, no white fill, no grey, no shading, no background, no text, no scene or frame. Simplify small details so thick contours and large facial features survive reduction to 40-60 pixels. Popeye in a DIZZY/HIT pose, facing LEFT, slumped backward toward the right, knees buckled, sailor cap tilted, one enormous forearm rubbing his head, other hand limp, pipe drooping, eye closed. Include two chunky tiny five-point stars immediately above head, inside silhouette bounding box. Preserve identifiable huge chin, sailor cap, pipe, black shirt, large forearms and trousers. Full body compact 40 wide by 56 tall."
+  },
+  {
+    "name": "olive-throw",
+    "ref": "olive.png",
+    "prompt": "Use case: identity-preserve. Edit the supplied approved character sprite into ONE new animation pose for the same tiny LCD game. Preserve the EXACT character design, proportions, face, costume, and bold black/transparent line style. Full body fully in frame, isolated sprite on actual transparent background with transparent internal holes, pure black ink only, no white fill, no grey, no shading, no background, no text, no scene or frame. Simplify small details so thick contours and large facial features survive reduction to 40-60 pixels. Olive Oyl in the THROW follow-through pose, facing RIGHT: long skinny torso leaning forward, rear foot lifted slightly, long thin arms extended forward and downward, one hand open at the tip releasing cargo. Keep her tight bun, long nose, long neck, scalloped light collar as negative space, black blouse and long skirt and big flat shoes. No cargo in her hands or flying around. Full body tall narrow 27 wide by 49 tall. The arm silhouette must be clearly different from the supplied ready pose."
+  },
+  {
+    "name": "brutus-windup",
+    "ref": "brutus.png",
+    "prompt": "Use case: identity-preserve. Edit the supplied approved character into ONE new animation pose. Preserve exact face, body design, costume, bold black LCD silhouette and transparent negative-space interiors. Pure black opaque ink only on genuine transparent background; no white fill, no grey, no shadows, no scenery, no writing, no border. Whole character visible with margin. Thick simple strokes readable after reduction to about 40-60 pixels. Brutus/Bluto preparing to strike toward the RIGHT. Full body, massive chest, black beard and sailor cap, menacing grin. His huge RIGHT fist is raised beside/behind his head ready to swing; other fist in front of belly, knees bent, body leans back slightly. A clearly readable wind-up warning pose unlike the idle stance. Feet planted, fist near top of head, compact 44 wide by 62 tall silhouette. No weapon."
+  },
+  {
+    "name": "brutus-strike",
+    "ref": "brutus.png",
+    "prompt": "Use case: identity-preserve. Edit the supplied approved character into ONE new animation pose. Preserve exact face, body design, costume, bold black LCD silhouette and transparent negative-space interiors. Pure black opaque ink only on genuine transparent background; no white fill, no grey, no shadows, no scenery, no writing, no border. Whole character visible with margin. Thick simple strokes readable after reduction to about 40-60 pixels. Brutus/Bluto STRIKING to the RIGHT. Full body with a deep forward lunge and an enormous fist extended horizontally to the right at shoulder/chest height, nearly straight arm. Massive bearded sailor body remains at left, fist reaches far right. Head keeps his sailor cap and angry grinning beard. Shoes planted at left, front knee bent. Broad punching silhouette, about 60 wide by 59 tall; silhouette must clearly differ from idle and wind-up. No weapon, no impact clouds."
+  },
+  {
+    "name": "olive-bell-0",
+    "ref": "olive.png",
+    "prompt": "Use case: identity-preserve. Edit the supplied approved character into ONE new animation pose. Preserve exact face, body design, costume, bold black LCD silhouette and transparent negative-space interiors. Pure black opaque ink only on genuine transparent background; no white fill, no grey, no shadows, no scenery, no writing, no border. Whole character visible with margin. Thick simple strokes readable after reduction to about 40-60 pixels. Olive Oyl ringing a small ship's handbell, first frame. Full body profile facing RIGHT. Preserve hair bun, slender neck and face, black blouse with pale scalloped collar as transparent cutout, long black skirt, oversized flat shoes. One long arm raised holding a tiny simple bell just beside her head, other hand at waist. Bell upright. Keep slender 28 wide by 49 tall silhouette."
+  },
+  {
+    "name": "olive-bell-1",
+    "ref": "olive.png",
+    "prompt": "Use case: identity-preserve. Edit the supplied approved character into ONE new animation pose. Preserve exact face, body design, costume, bold black LCD silhouette and transparent negative-space interiors. Pure black opaque ink only on genuine transparent background; no white fill, no grey, no shadows, no scenery, no writing, no border. Whole character visible with margin. Thick simple strokes readable after reduction to about 40-60 pixels. Olive Oyl ringing a small ship's handbell, second frame. Full body profile facing RIGHT. Preserve hair bun, slender neck and face, black blouse with pale scalloped collar as transparent cutout, long black skirt, oversized flat shoes. One long arm now extended diagonally forward at chest height holding the same small bell tipped downward, other hand at waist. Bell visibly lower than her head, giving two-frame ringing animation. Keep slender 28 wide by 49 tall silhouette."
+  },
+  {
+    "name": "fish",
+    "ref": null,
+    "prompt": "Use case: stylized-concept. One isolated monochrome LCD handheld game cargo sprite. Pure black opaque shapes on genuine transparency, internal holes also transparent, no white fill, no greys or shading. Extremely simple bold icon with thick contour, readable at just 14 by 14 pixels. No text, scenery, border, shadow, motion marks or extra objects. A single small fish in side profile facing left, oval body, triangular tail, one large eye cutout and a single gill cutout. Slight diagonal upward tilt. Max 3 internal details. Wide fish silhouette."
+  },
+  {
+    "name": "lantern",
+    "ref": null,
+    "prompt": "Use case: stylized-concept. One isolated monochrome LCD handheld game cargo sprite. Pure black opaque shapes on genuine transparency, internal holes also transparent, no white fill, no greys or shading. Extremely simple bold icon with thick contour, readable at just 14 by 14 pixels. No text, scenery, border, shadow, motion marks or extra objects. One old-fashioned small harbor oil lantern, squat rounded body, large arch handle on top, simple frame enclosing one large transparent window, wide flat foot. Upright compact shape, no flame detail, no thin wires."
+  },
+  {
+    "name": "barrel",
+    "ref": null,
+    "prompt": "Use case: stylized-concept. One isolated monochrome LCD handheld game cargo sprite. Pure black opaque shapes on genuine transparency, internal holes also transparent, no white fill, no greys or shading. Extremely simple bold icon with thick contour, readable at just 14 by 14 pixels. No text, scenery, border, shadow, motion marks or extra objects. A single squat wooden barrel, bulging sides, two thick black horizontal hoops and a simple top rim, only 2 broad transparent gaps, slightly tilted right. No wood grain. Compact near-square silhouette."
+  },
+  {
+    "name": "backdrop-lcd",
+    "ref": "backdrop.png",
+    "prompt": "Use case: precise-object-edit. Redraw this static background for a 200 by 228 pixel LCD watch game. Preserve EXACT original composition and object coordinates, using the reference as layout map: horizontal ship deck at y=72 (31.6% height); left and right piers at y=157 (68.9% height) occupying x=0..38 and x=162..199; central rowboat rim at y=190 (83.3% height), hull from x=33..166, bottom at y=202 (88.6% height); thin water band y=202..212, empty footer below. All the other space remains flat very pale warm grey/off-white LCD panel, including empty uppermost score strip y=0..23 and central gameplay space. Improve the colored printed art with a restrained 1980s screenprint look: thin muted blue ship deck with 5 simple portholes just below it, warm ochre wooden piers with 2 supports each, terracotta-orange boat with subtle horizontal plank lines, short muted blue sea ripples along the water band. Crisp clean flat geometric pixel-friendly shapes with 1-2 pixel thin outlines at final 200px resolution; NO textures or gradients or shadows. Use only 5-6 solid colors, almost all screen is unmarked pale panel. No people, no cargo, no text, no labels, no scenery behind playfield, no mountains, no logo, no UI, no decorative border. Full-bleed flat game backdrop only, portrait aspect ratio 200:228, no perspective. Opaque background."
+  }
+]

@@ -26,7 +26,7 @@ def configure(ctx):
 
 def build(ctx):
     ctx.load('pebble_sdk')
-    ctx.env.BUNDLE_NAME = 'harbor-catch.pbw'
+    ctx.env.BUNDLE_NAME = 'popeye-gw.pbw'
     ctx.add_post_fun(check_app_size)
 
     build_worker = os.path.exists('worker_src')

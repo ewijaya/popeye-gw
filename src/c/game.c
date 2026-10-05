@@ -23,13 +23,13 @@ uint8_t game_lane_pose(uint8_t lane) {
 }
 
 uint32_t game_step_interval(const Game *game) {
-  uint32_t start = game->mode == GAME_A ? HC_A_START_STEP_MS : HC_B_START_STEP_MS;
-  uint32_t floor = game->mode == GAME_A ? HC_A_MIN_STEP_MS : HC_B_MIN_STEP_MS;
-  uint32_t levels = game->score / HC_SPEED_POINTS;
-  if (levels >= (start - floor + HC_SPEED_DECREMENT_MS - 1u) / HC_SPEED_DECREMENT_MS) {
+  uint32_t start = game->mode == GAME_A ? PGW_A_START_STEP_MS : PGW_B_START_STEP_MS;
+  uint32_t floor = game->mode == GAME_A ? PGW_A_MIN_STEP_MS : PGW_B_MIN_STEP_MS;
+  uint32_t levels = game->score / PGW_SPEED_POINTS;
+  if (levels >= (start - floor + PGW_SPEED_DECREMENT_MS - 1u) / PGW_SPEED_DECREMENT_MS) {
     return floor;
   }
-  return start - levels * HC_SPEED_DECREMENT_MS;
+  return start - levels * PGW_SPEED_DECREMENT_MS;
 }
 
 uint16_t game_display_score(const Game *game) {
@@ -38,16 +38,16 @@ uint16_t game_display_score(const Game *game) {
 
 uint8_t game_cargo_limit(const Game *game) {
   if (game->mode == GAME_A) {
-    if (game->score < HC_A_FIRST_CARGO_THRESHOLD) return HC_A_INITIAL_CARGO_LIMIT;
-    if (game->score < HC_A_SECOND_CARGO_THRESHOLD) return HC_A_MIDDLE_CARGO_LIMIT;
-    return HC_A_FINAL_CARGO_LIMIT;
+    if (game->score < PGW_A_FIRST_CARGO_THRESHOLD) return PGW_A_INITIAL_CARGO_LIMIT;
+    if (game->score < PGW_A_SECOND_CARGO_THRESHOLD) return PGW_A_MIDDLE_CARGO_LIMIT;
+    return PGW_A_FINAL_CARGO_LIMIT;
   }
-  return game->score < HC_B_CARGO_THRESHOLD ? HC_B_INITIAL_CARGO_LIMIT : HC_B_FINAL_CARGO_LIMIT;
+  return game->score < PGW_B_CARGO_THRESHOLD ? PGW_B_INITIAL_CARGO_LIMIT : PGW_B_FINAL_CARGO_LIMIT;
 }
 
 static uint32_t next_idle(Game *game, unsigned side) {
-  uint32_t lo = game->mode == GAME_A ? HC_A_IDLE_MIN_MS : HC_B_IDLE_MIN_MS;
-  uint32_t hi = game->mode == GAME_A ? HC_A_IDLE_MAX_MS : HC_B_IDLE_MAX_MS;
+  uint32_t lo = game->mode == GAME_A ? PGW_A_IDLE_MIN_MS : PGW_B_IDLE_MIN_MS;
+  uint32_t hi = game->mode == GAME_A ? PGW_A_IDLE_MAX_MS : PGW_B_IDLE_MAX_MS;
   return lo + random_next(&game->attacks[side].rng) % (hi - lo + 1u);
 }
 
@@ -67,12 +67,12 @@ void game_start(Game *game, GameMode mode, uint32_t seed) {
   game->mode = mode == GAME_B ? GAME_B : GAME_A;
   game->status = GAME_PLAYING;
   game->resume_status = GAME_PLAYING;
-  game->finn_pose = 2u;
+  game->popeye_pose = 2u;
   game->rng = seed_nonzero(seed);
   game->next_cargo_id = 1u;
   game->catch_pose = -1;
   game->splash_lane = -1;
-  game->mae_target = (uint8_t)(random_next(&game->rng) % GAME_LANES);
+  game->olive_target = (uint8_t)(random_next(&game->rng) % GAME_LANES);
   for (i = 0u; i < GAME_SIDES; ++i) {
     game->attacks[i].rng = seed_nonzero(seed ^ (i == 0u ? UINT32_C(0xa341316c) : UINT32_C(0xc8013ea4)));
     game->attacks[i].idle_ms_left = next_idle(game, i);
@@ -95,10 +95,10 @@ bool game_input(Game *game, GameButton button, bool pressed) {
   if (game->status != GAME_PLAYING) return false;
   direction = button == GAME_UP ? -1 : 1;
   if (game->controls_swapped) direction = -direction;
-  old_pose = game->finn_pose;
-  if (direction < 0 && game->finn_pose > 0u) --game->finn_pose;
-  if (direction > 0 && game->finn_pose + 1u < GAME_POSES) ++game->finn_pose;
-  return game->finn_pose != old_pose;
+  old_pose = game->popeye_pose;
+  if (direction < 0 && game->popeye_pose > 0u) --game->popeye_pose;
+  if (direction > 0 && game->popeye_pose + 1u < GAME_POSES) ++game->popeye_pose;
+  return game->popeye_pose != old_pose;
 }
 
 bool game_pause(Game *game) {
@@ -151,7 +151,7 @@ static bool strike_conflicts_cargo(const Game *game, unsigned side, uint64_t str
  * timer and random stream remain independent; only unsafe starts are deferred.
  */
 static bool can_windup(const Game *game, unsigned side) {
-  uint64_t strike = game->step + HC_WINDUP_STEPS;
+  uint64_t strike = game->step + PGW_WINDUP_STEPS;
   uint64_t other_strike;
   if (strike_conflicts_cargo(game, side, strike)) return false;
   if (attack_strike_time(game, 1u - side, &other_strike) && other_strike == strike) return false;
@@ -169,7 +169,7 @@ static void update_attacks(Game *game) {
       --attack->steps_left;
       if (attack->steps_left == 0u) {
         attack->phase = GAME_ATTACK_STRIKE;
-        attack->steps_left = HC_STRIKE_STEPS;
+        attack->steps_left = PGW_STRIKE_STEPS;
       }
     } else if (attack->phase == GAME_ATTACK_STRIKE) {
       if (--attack->steps_left == 0u) {
@@ -182,7 +182,7 @@ static void update_attacks(Game *game) {
     GameAttack *attack = &game->attacks[side];
     if (attack->phase == GAME_ATTACK_IDLE && attack->idle_ms_left == 0u && can_windup(game, side)) {
       attack->phase = GAME_ATTACK_WINDUP;
-      attack->steps_left = HC_WINDUP_STEPS;
+      attack->steps_left = PGW_WINDUP_STEPS;
     }
   }
 }
@@ -200,7 +200,7 @@ static void miss(Game *game, GameMissCause cause) {
     game->events |= GAME_EVENT_OVER;
   } else {
     game->status = GAME_RECOVERING;
-    game->recovery_ms_left = HC_MISS_RECOVERY_MS;
+    game->recovery_ms_left = PGW_MISS_RECOVERY_MS;
   }
 }
 
@@ -247,7 +247,7 @@ static void dropped(Game *game, uint8_t lane) {
 }
 
 /* Fairness certificate: each commitment compares with EVERY live reservation,
- * using distance in Finn's five poses (not four lanes). Launch+4 grants the
+ * using distance in Popeye's five poses (not four lanes). Launch+4 grants the
  * initial centre pose enough time to reach any lane. Consecutive reservations
  * therefore form a feasible one-move-per-step route; the all-pairs test also
  * rejects nonconsecutive incompatibilities. Misses clear the route. A strike
@@ -256,7 +256,7 @@ static void dropped(Game *game, uint8_t lane) {
  * an intervening strike needs a single move out and back; the excluded previous
  * tick supplies this time. Travel between different lanes never needs a far
  * pose except at its endpoint. Wind-ups always provide two visible intervals.
- * Mae takes at most three walking ticks; capacity/spacing can only delay a
+ * Olive takes at most three walking ticks; capacity/spacing can only delay a
  * target until existing cargo resolves (at most four ticks), so no target can
  * stall permanently. Random choices affect variety, never these invariants.
  */
@@ -287,33 +287,33 @@ static bool can_launch(const Game *game, uint8_t lane) {
   return true;
 }
 
-static void update_mae(Game *game) {
+static void update_olive(Game *game) {
   unsigned i;
-  if (game->mae_lane != game->mae_target) {
-    if (game->mae_lane < game->mae_target) ++game->mae_lane;
-    else --game->mae_lane;
-    game->mae_ready = game->mae_lane == game->mae_target;
+  if (game->olive_lane != game->olive_target) {
+    if (game->olive_lane < game->olive_target) ++game->olive_lane;
+    else --game->olive_lane;
+    game->olive_ready = game->olive_lane == game->olive_target;
     return; /* The arrival must be visible before a throw. */
   }
-  if (!game->mae_ready) {
-    game->mae_ready = true;
+  if (!game->olive_ready) {
+    game->olive_ready = true;
     return;
   }
-  if (!can_launch(game, game->mae_lane)) return;
+  if (!can_launch(game, game->olive_lane)) return;
   for (i = 0u; i < GAME_MAX_CARGO; ++i) {
     GameCargo *cargo = &game->cargo[i];
     if (cargo->active) continue;
     cargo->active = true;
-    cargo->lane = game->mae_lane;
+    cargo->lane = game->olive_lane;
     cargo->stage = 0u;
     cargo->id = game->next_cargo_id++;
     cargo->launch_step = game->step;
     cargo->landing_step = game->step + GAME_CARGO_STEPS - 1u;
-    game->mae_throwing = true;
-    game->mae_target = (uint8_t)(random_next(&game->rng) % GAME_LANES);
+    game->olive_throwing = true;
+    game->olive_target = (uint8_t)(random_next(&game->rng) % GAME_LANES);
     /* Already visible at this spot: consecutive throws are permitted here.
      * A different spot still requires a visible walking/arrival tick. */
-    game->mae_ready = game->mae_target == game->mae_lane;
+    game->olive_ready = game->olive_target == game->olive_lane;
     game->events |= GAME_EVENT_LAUNCH;
     return;
   }
@@ -325,11 +325,11 @@ static void tick(Game *game) {
   game->catch_pose = -1;
   game->splash_lane = -1;
   game->miss_cause = GAME_MISS_NONE;
-  game->mae_throwing = false;
+  game->olive_throwing = false;
   update_attacks(game);
   for (i = 0u; i < GAME_SIDES; ++i) {
     if (game->attacks[i].phase == GAME_ATTACK_STRIKE &&
-        game->finn_pose == (i == 0u ? 0u : 4u)) {
+        game->popeye_pose == (i == 0u ? 0u : 4u)) {
       ++game->hits;
       miss(game, GAME_MISS_HIT);
       return;
@@ -342,12 +342,12 @@ static void tick(Game *game) {
     if (cargo->stage == GAME_CARGO_STEPS - 1u) {
       uint8_t lane = cargo->lane;
       cargo->active = false;
-      if (game->finn_pose == game_lane_pose(lane)) caught(game, lane);
+      if (game->popeye_pose == game_lane_pose(lane)) caught(game, lane);
       else dropped(game, lane);
       if (game->status != GAME_PLAYING) return;
     }
   }
-  update_mae(game);
+  update_olive(game);
 }
 
 static void elapse_idle(Game *game, uint32_t elapsed) {

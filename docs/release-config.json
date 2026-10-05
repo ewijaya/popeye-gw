@@ -1,16 +1,16 @@
 {
   "schema": 1,
-  "github_repo": "ewijaya/popeye-gw-pebble",
+  "github_repo": "ewijaya/popeye-gw",
   "branch": "main",
   "uuid": "6b7c8c28-36f0-47ca-a073-3e8f33efcaf0",
-  "display_name": "Harbor Catch",
+  "display_name": "Popeye G&W",
   "app_type": "watchapp",
   "category": "Games",
   "visibility": "listed",
   "platforms": [
     "emery"
   ],
-  "artifact_name": "harbor-catch.pbw",
+  "artifact_name": "popeye-gw.pbw",
   "store_app_id": null,
   "store_listing_url": null,
   "registration_method": "dashboard-new",

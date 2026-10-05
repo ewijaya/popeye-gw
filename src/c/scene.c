@@ -34,7 +34,7 @@ void scene_number(Scene *scene, uint16_t value) {
 
 void scene_idle(Scene *scene) {
   scene_clear(scene);
-  scene_light(scene, SEG_FINN + 2u);
+  scene_light(scene, SEG_POPEYE + 2u);
 }
 
 static unsigned lane_for_pose(int8_t pose) {
@@ -47,7 +47,7 @@ void scene_game(Scene *scene, const Game *game) {
   scene_clear(scene);
   scene_light(scene, game->mode == GAME_A ? SEG_GAME_A : SEG_GAME_B);
   scene_number(scene, game_display_score(game));
-  scene_light(scene, (game->mae_throwing ? SEG_MAE_THROW : SEG_MAE_READY) + game->mae_lane);
+  scene_light(scene, (game->olive_throwing ? SEG_OLIVE_THROW : SEG_OLIVE_READY) + game->olive_lane);
   for (i = 0u; i < GAME_MAX_CARGO; ++i) {
     const GameCargo *cargo = &game->cargo[i];
     if (cargo->active) scene_light(scene, SEG_CARGO + cargo->lane * GAME_CARGO_STEPS + cargo->stage);
@@ -56,16 +56,16 @@ void scene_game(Scene *scene, const Game *game) {
   if (game->catch_pose >= 0) {
     scene_light(scene, SEG_CARGO + lane_for_pose(game->catch_pose) * GAME_CARGO_STEPS +
                        GAME_CARGO_STEPS - 1u);
-    scene_light(scene, SEG_FINN_CATCH);
+    scene_light(scene, SEG_POPEYE_CATCH);
   }
   if (game->splash_lane >= 0) scene_light(scene, SEG_SPLASH + (unsigned)game->splash_lane);
   if (game->miss_cause == GAME_MISS_HIT) {
-    scene_light(scene, game->finn_pose == 0u ? SEG_FINN_DIZZY_LEFT : SEG_FINN_DIZZY_RIGHT);
+    scene_light(scene, game->popeye_pose == 0u ? SEG_POPEYE_DIZZY_LEFT : SEG_POPEYE_DIZZY_RIGHT);
   } else {
-    scene_light(scene, SEG_FINN + game->finn_pose);
+    scene_light(scene, SEG_POPEYE + game->popeye_pose);
   }
   for (i = 0u; i < sides; ++i) {
-    scene_light(scene, SEG_GRIZZLE + i * 3u + (unsigned)game->attacks[i].phase);
+    scene_light(scene, SEG_BRUTUS + i * 3u + (unsigned)game->attacks[i].phase);
   }
   for (i = 0u; i < game->misses && i < GAME_MAX_MISSES; ++i) scene_light(scene, SEG_RING + i);
   if (game->half_ring) scene_light(scene, SEG_RING_HALF);

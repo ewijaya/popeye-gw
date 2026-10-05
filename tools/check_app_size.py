@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Enforce the Harbor Catch app-image budget using the active SDK's size tool."""
+"""Enforce the Popeye G&W app-image budget using the active SDK's size tool."""
 
 import argparse
 import subprocess

@@ -1,112 +1,25 @@
 #include "view.h"
 
-/* M2 placeholder geometry for the PRD 9.2 segments. M3 replaces it with the
- * generated segment table; nothing outside this file depends on pixels. */
-#define POSE_X(pose) (36 + 32 * (pose))
-#define DIGIT_W 14
-#define DIGIT_H 20
-#define DIGIT_Y 2
+#include "segments.h"
 
-static const int16_t s_lane_x[GAME_LANES] = { POSE_X(0), POSE_X(1), POSE_X(3), POSE_X(4) };
-static const int16_t s_digit_x[SCENE_DIGITS] = { 108, 126, 150, 168 };
+/* Pixel placement is generated from the complete art/segments inventory. */
+typedef char CompleteSegmentArt[(SEGMENT_ART_COUNT == SEG_COUNT) ? 1 : -1];
 
 static Layer *s_layer;
+static GBitmap *s_backdrop;
+static GBitmap *s_sheet;
+static GBitmap *s_art[SEG_COUNT];
 static Scene s_scene;
 static ViewOverlay s_overlay;
+static bool s_art_ready;
 
-static GRect digit_rect(unsigned digit, unsigned bar) {
-  int16_t x = s_digit_x[digit];
-  switch (bar) {
-    case 0: return GRect(x + 2, DIGIT_Y, DIGIT_W - 4, 2);
-    case 1: return GRect(x + DIGIT_W - 2, DIGIT_Y + 2, 2, 7);
-    case 2: return GRect(x + DIGIT_W - 2, DIGIT_Y + 11, 2, 7);
-    case 3: return GRect(x + 2, DIGIT_Y + DIGIT_H - 2, DIGIT_W - 4, 2);
-    case 4: return GRect(x, DIGIT_Y + 11, 2, 7);
-    case 5: return GRect(x, DIGIT_Y + 2, 2, 7);
-    default: return GRect(x + 2, DIGIT_Y + 9, DIGIT_W - 4, 2);
-  }
-}
-
-static GRect segment_rect(unsigned seg) {
-  if (seg < SEG_MAE_THROW) return GRect(s_lane_x[seg - SEG_MAE_READY] - 9, 38, 9, 24);
-  if (seg < SEG_MAE_BELL) return GRect(s_lane_x[seg - SEG_MAE_THROW] + 1, 34, 9, 20);
-  if (seg < SEG_CARGO) return GRect(4 + 10 * (seg - SEG_MAE_BELL), 38, 9, 24);
-  if (seg < SEG_FINN) {
-    unsigned lane = (seg - SEG_CARGO) / GAME_CARGO_STEPS;
-    unsigned stage = (seg - SEG_CARGO) % GAME_CARGO_STEPS;
-    return GRect(s_lane_x[lane] - 5, 72 + 16 * stage, 10, 10);
-  }
-  if (seg < SEG_FINN_DIZZY_LEFT) return GRect(POSE_X(seg - SEG_FINN) - 6, 152, 12, 24);
-  if (seg == SEG_FINN_DIZZY_LEFT) return GRect(POSE_X(0) - 9, 158, 18, 14);
-  if (seg == SEG_FINN_DIZZY_RIGHT) return GRect(POSE_X(4) - 9, 158, 18, 14);
-  if (seg == SEG_FINN_CATCH) return GRect(90, 148, 20, 3);
-  if (seg < SEG_GRIZZLE) return GRect(s_lane_x[seg - SEG_SPLASH] - 8, 192, 16, 6);
-  if (seg < SEG_RING) {
-    unsigned side = (seg - SEG_GRIZZLE) / 3u;
-    unsigned phase = (seg - SEG_GRIZZLE) % 3u;
-    static const GRect left[3] = {
-      { { 2, 150 }, { 12, 24 } }, { { 2, 128 }, { 12, 18 } }, { { 14, 160 }, { 14, 6 } }
-    };
-    GRect rect = left[phase];
-    if (side == 1u) rect.origin.x = (int16_t)(200 - rect.origin.x - rect.size.w);
-    return rect;
-  }
-  if (seg < SEG_RING_HALF) return GRect(8 + 20 * (seg - SEG_RING), 204, 16, 16);
-  if (seg == SEG_RING_HALF) return GRect(68, 204, 8, 16);
-  if (seg < SEG_COLON) return digit_rect((seg - SEG_DIGIT) / 7u, (seg - SEG_DIGIT) % 7u);
-  switch (seg) {
-    case SEG_COLON: return GRect(145, 7, 2, 10);
-    case SEG_AM: return GRect(186, 4, 10, 6);
-    case SEG_PM: return GRect(186, 14, 10, 6);
-    case SEG_GAME_A: return GRect(4, 0, 40, 12);
-    case SEG_GAME_B: return GRect(4, 11, 40, 12);
-    case SEG_BELL: return GRect(50, 5, 12, 14);
-    case SEG_GULL: return GRect(66, 7, 16, 10);
-    default: return GRect(86, 3, 16, 16); /* SEG_HI */
-  }
-}
-
-static const char *segment_label(unsigned seg) {
-  switch (seg) {
-    case SEG_GAME_A: return "GAME A";
-    case SEG_GAME_B: return "GAME B";
-    case SEG_HI: return "HI";
-    default: return NULL;
-  }
-}
-
-static void draw_backdrop(GContext *ctx) {
-  graphics_context_set_stroke_color(ctx, GColorDarkGray);
-  graphics_draw_line(ctx, GPoint(0, 24), GPoint(199, 24));
-  graphics_draw_line(ctx, GPoint(0, 30), GPoint(199, 30));   /* deck rail */
-  graphics_draw_line(ctx, GPoint(24, 180), GPoint(176, 180)); /* rowboat */
-  graphics_draw_line(ctx, GPoint(24, 180), GPoint(34, 188));
-  graphics_draw_line(ctx, GPoint(176, 180), GPoint(166, 188));
-  graphics_draw_line(ctx, GPoint(34, 188), GPoint(166, 188));
-  graphics_draw_rect(ctx, GRect(0, 176, 18, 10));             /* piers */
-  graphics_draw_rect(ctx, GRect(182, 176, 18, 10));
-  graphics_draw_line(ctx, GPoint(0, 190), GPoint(199, 190));  /* waterline */
-}
-
-static void draw_segment(GContext *ctx, unsigned seg, bool lit) {
-  GRect rect = segment_rect(seg);
-  const char *label = segment_label(seg);
-  GColor colour = lit ? GColorBlack : GColorMediumAquamarine;
-  if (label != NULL) {
-    graphics_context_set_text_color(ctx, colour);
-    graphics_draw_text(ctx, label, fonts_get_system_font(FONT_KEY_GOTHIC_09), rect,
-                       GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
-  } else if (lit) {
-    graphics_context_set_fill_color(ctx, colour);
-    graphics_fill_rect(ctx, rect, 0, GCornerNone);
-  } else {
-    graphics_context_set_stroke_color(ctx, colour);
-    graphics_draw_rect(ctx, rect);
-  }
+static void draw_segment(GContext *ctx, unsigned seg) {
+  const SegmentArt *art = &segment_art[seg];
+  graphics_draw_bitmap_in_rect(ctx, s_art[seg], GRect(art->x, art->y, art->w, art->h));
 }
 
 static void draw_overlay(GContext *ctx) {
-  static const char *const titles[] = { NULL, "Harbor Catch", "Paused", "Game over" };
+  static const char *const titles[] = { NULL, "Popeye G&W", "Paused", "Game over" };
   static const char *const hints[] = {
     NULL,
     "Select: Game A\nHold Select: Game B",
@@ -130,26 +43,68 @@ static void draw_overlay(GContext *ctx) {
 
 static void update_proc(Layer *layer, GContext *ctx) {
   unsigned seg;
-  graphics_context_set_fill_color(ctx, GColorMintGreen);
-  graphics_fill_rect(ctx, layer_get_bounds(layer), 0, GCornerNone);
-  draw_backdrop(ctx);
-  for (seg = 0u; seg < SEG_COUNT; ++seg) draw_segment(ctx, seg, scene_lit(&s_scene, seg));
+  graphics_context_set_compositing_mode(ctx, GCompOpAssign);
+  if (!s_art_ready) {
+    graphics_context_set_fill_color(ctx, GColorWhite);
+    graphics_fill_rect(ctx, layer_get_bounds(layer), 0, GCornerNone);
+    graphics_context_set_text_color(ctx, GColorBlack);
+    graphics_draw_text(ctx, "Unable to load artwork\nBack: exit",
+                       fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD),
+                       GRect(8, 76, 184, 70), GTextOverflowModeWordWrap,
+                       GTextAlignmentCenter, NULL);
+    return;
+  }
+  graphics_draw_bitmap_in_rect(ctx, s_backdrop, layer_get_bounds(layer));
+  graphics_context_set_compositing_mode(ctx, GCompOpSet);
+  graphics_context_set_fill_color(ctx, GColorBlack);
+  graphics_context_set_text_color(ctx, GColorBlack);
+  for (seg = 0u; seg < SEG_COUNT; ++seg) {
+    if (scene_lit(&s_scene, seg)) draw_segment(ctx, seg);
+  }
+  graphics_context_set_compositing_mode(ctx, GCompOpAssign);
   draw_overlay(ctx);
 }
 
 void view_init(Layer *parent) {
+  unsigned seg;
+  s_backdrop = gbitmap_create_with_resource(RESOURCE_ID_BACKDROP_GHOSTS);
+  s_sheet = gbitmap_create_with_resource(RESOURCE_ID_SEGMENTS);
+  s_art_ready = s_backdrop != NULL && s_sheet != NULL;
+  if (s_art_ready) {
+    for (seg = 0u; seg < SEG_COUNT; ++seg) {
+      const SegmentArt *art = &segment_art[seg];
+      s_art[seg] = gbitmap_create_as_sub_bitmap(s_sheet,
+                      GRect(art->sheet_x, art->sheet_y, art->w, art->h));
+      if (s_art[seg] == NULL) s_art_ready = false;
+    }
+  }
+  if (!s_art_ready) APP_LOG(APP_LOG_LEVEL_ERROR, "Unable to load complete segment art");
   s_layer = layer_create(layer_get_bounds(parent));
+  if (s_layer == NULL) {
+    APP_LOG(APP_LOG_LEVEL_ERROR, "Unable to create art layer");
+    return;
+  }
   layer_set_update_proc(s_layer, update_proc);
   layer_add_child(parent, s_layer);
 }
 
 void view_deinit(void) {
-  layer_destroy(s_layer);
+  unsigned seg;
+  if (s_layer != NULL) layer_destroy(s_layer);
   s_layer = NULL;
+  for (seg = 0u; seg < SEG_COUNT; ++seg) {
+    if (s_art[seg] != NULL) gbitmap_destroy(s_art[seg]);
+    s_art[seg] = NULL;
+  }
+  if (s_sheet != NULL) gbitmap_destroy(s_sheet);
+  if (s_backdrop != NULL) gbitmap_destroy(s_backdrop);
+  s_sheet = NULL;
+  s_backdrop = NULL;
+  s_art_ready = false;
 }
 
 void view_show(const Scene *scene, ViewOverlay overlay) {
   s_scene = *scene;
   s_overlay = overlay;
-  layer_mark_dirty(s_layer);
+  if (s_layer != NULL) layer_mark_dirty(s_layer);
 }
