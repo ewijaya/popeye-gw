@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.1 — Unreleased
+## 1.0.1 — 2026-10-05
 
 - Put Orientation first in Settings, with explicit Vertical and Horizontal choices.
 - Show a separate Buttons: Bottom / Top setting only in Horizontal mode.

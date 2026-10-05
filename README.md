@@ -8,7 +8,7 @@ black segments, a white field, and vivid red, orange, blue and turquoise.
 
 **Status:** Version 1.0.0 is published and verified on the Pebble App Store and
 GitHub. Version 1.0.1 adds separate Orientation and horizontal Buttons settings
-and is being tested before release. M5 and Bottom landscape passed the owner's PT2 play-test; the owner
+and is prepared for release, pending the frozen-build watch check and approval. M5 and Bottom landscape passed the owner's PT2 play-test; the owner
 approved the exact final bundle and listing. M6 release is complete.
 
 **Download:** [Pebble App Store](https://apps.repebble.com/e9cb2950ca21440798fb1db8) ·
