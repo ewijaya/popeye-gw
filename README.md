@@ -6,9 +6,9 @@ left; Popeye catches it in his boat while Brutus threatens him with a hammer
 from the left pier or a fist from the right ship. The PT2 scene uses crisp
 black segments, a white field, and vivid red, orange, blue and turquoise.
 
-**Status:** M5 accepted on the owner's PT2 on 2026-10-05: 82 segments, Game A/B,
-clock with a food-catching demo, daily alarm, saved settings/high scores,
-portrait/landscape, and finite visual/haptic feedback. M6 release remains pending.
+**Status:** Version 1.0.0 is being prepared for release. M5 and Bottom landscape
+passed the owner's PT2 play-test; Help and the Bottom-first View cycle are
+installed. GitHub release and RePebble publication await final-build approval.
 See the [PT2 play-test checklist](docs/pt2-playtest.md)
 and [results record](docs/pt2-playtest-results.md). This is a watch adaptation, not an exact ROM recreation.
 [Reference observations and remaining fidelity gaps](docs/pp23-fidelity.md)
@@ -17,6 +17,29 @@ The app name is **Popeye G&W**; repository/package/build slug is `popeye-gw`.
 See the [PRD](PRD.md), [repository conventions](CLAUDE.md), and the
 [M5 notes and artwork](docs/m5-notes.md) and [M5 audit](docs/m5-audit.md). Earlier scene/M3/M4 audits describe their
 historical builds.
+
+## Help
+
+The same quick reference is available on the watch under **Menu → Help**.
+In portrait, Select is the middle button on the right. In landscape it is
+the middle of the three buttons above or below the screen.
+
+| From / topic | Button or rule | What happens |
+|---|---|---|
+| Clock: Game A | Tap Select | Start Game A. Brutus attacks from the left. |
+| Clock: Game B | Hold Select | Start Game B. Brutus changes sides. |
+| Playing: move | Up / Down in portrait; Left / Right in landscape | Move one pose per press. Swap reverses movement. |
+| Playing: pause / resume | Select | Pause; press again to resume. |
+| Catch food | Reach its matching catch pose | Add one point. |
+| Center pose | Stand upright | Safe from Brutus, but cannot catch food. |
+| Dropped food | Two drops | Add one MISS; the first drop shows a half-can. |
+| Brutus hit | Get hit | Add one MISS. |
+| Game over | Three MISS | The round ends. |
+| Quit a running game | Back twice | First pause, then return to the clock. |
+| Clock: high scores | Up in portrait; Left in landscape | Show saved Game A/B scores. |
+| Clock: menu | Down in portrait; Right in landscape | Open High scores, Alarm, Settings, Help or About. |
+| Settings: View / Swap | Select the setting, then press Select | View cycles Portrait → Bottom → Top. Swap reverses game movement. |
+| Help pages | Select; movement buttons; Back | Select advances, movement buttons browse both ways, Back returns to the menu. |
 
 ## Host tests
 

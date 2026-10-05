@@ -1,1 +1,13 @@
-Popeye G&W brings the charm of 1981 LCD handheld games to Pebble Time 2. Catch Olive Oyl's flying food, dodge Brutus and chase your best score in Game A or B. Enjoy vivid scenery, portrait or landscape play, an animated clock, a daily alarm and saved high scores. Brief vibration cues respect Quiet Time. Works on the watch without a phone connection. A fan-made adaptation inspired by Nintendo's Popeye Wide Screen PP-23, with original generated artwork and provisional gameplay timing.
+A whole childhood on one small screen.
+
+There was a time when a whole afternoon could fit in your hands. A little boat, a few black shapes, and the solemn promise that this would be your last game before dinner. Then one more catch. One more try.
+
+Popeye G&W returns to the harbour of Nintendo's 1981 Wide Screen handheld. Olive Oyl stands beside her car, tossing food across the water. Popeye reaches from his rowboat. Brutus waits for you to lean a little too far. The figures move in those familiar little jumps, and you remember how much could happen with so few pictures.
+
+Play Game A or B, turn the watch sideways, and leave your best score for tomorrow. Between games, the harbour keeps time, with a daily alarm to bring you back to the present.
+
+Somewhere, it is still the afternoon you didn't want to end.
+
+An unofficial fan adaptation for Pebble Time 2, with vivid scenery, saved scores and gentle vibration cues. Runs entirely on the watch. Gameplay is adapted for Pebble; this is not an exact emulation.
+
+Controls and Help: https://github.com/ewijaya/popeye-gw#help
