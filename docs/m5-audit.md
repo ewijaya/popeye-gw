@@ -60,9 +60,11 @@ The banner uses the official PT2 hardware image as a shape reference and the
 native B capture as its screen reference. It is generated marketing artwork,
 not a measured photograph of the display. Source prompts and the two masters
 are in [art/store/](../art/store/README.md); large store assets are not in the
-PBW. The owner likes the visual treatment, but requested replacements for
-“FOR PEBBLE TIME 2” and “1981-inspired • Fan-made”. Ten text pairs are being
-considered; the current draft retains its text until a pair is selected.
+PBW. The owner liked the visual treatment and subsequently selected
+**BACK TO GAME & WATCH** / **Olive throws. Popeye catches. Brutus waits.**
+The master and 720 × 320 export were updated with the built-in image editor,
+and the two lines were visually checked at both sizes. This listing-only
+edit does not change the audited PBW or its checksum.
 
 [The reference ledger](pp23-fidelity.md) now includes a reproducible four-second
 PP-23 recording sample. Full hardware timing, original input/hold behavior,

@@ -1,0 +1,10 @@
+Use case: text-localization (replace English copy).
+Edit the supplied approved Popeye G&W banner. Change only the two specified text areas.
+1. In the lower-left dark green rounded strip, replace "FOR PEBBLE TIME 2" with exactly:
+"BACK TO GAME & WATCH"
+Use the same bold cream vintage slab-serif lettering, one line, centered in the existing strip. Fit the full text without clipping, retaining the ampersand.
+2. In the small footer below that strip, replace "1981-inspired • Fan-made" with exactly:
+"Olive throws. Popeye catches. Brutus waits."
+Keep it in one line, dark forest green, with a legible weight. Shorten the decorative horizontal rules as needed to accommodate the longer line. Keep the footer within the left text area without overlapping the watch or water.
+Preserve everything else: the large Popeye G&W headline, lettering style, green/gold/red palette, warm ivory paper and subtle print texture, rounded border, stripe arrangement, gold backdrop circle, blue water, watch position/scale, black Pebble Time 2 case, all three side buttons and red strap, and the game image inside the watch. The game screen must retain Olive at the left car, Popeye in the orange boat, Brutus punching from the right, food, score 78, GAME B and MISS. Do not redraw or redesign any of these elements. Do not add text or graphics.
+Maintain the original extra-wide 9:4 composition and the original full artwork, with no new crops. This is a minimal copy replacement on an approved advertisement, not a new design.

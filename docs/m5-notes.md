@@ -49,9 +49,9 @@ needs the existing minute tick. No extra clock timer is introduced.
 
 The owner's revised brief is implemented as a 1981-style green/gold/ivory advert
 with a red-strap PT2 and the app's Game B scene on its screen. Matching Popeye
-portrait icons keep their face/pipe readable at small sizes. The visual
-treatment is liked by the owner; the strip/footer copy is under review and
-will omit the watch model and the “1981-inspired • Fan-made” line.
+portrait icons keep their face/pipe readable at small sizes. The owner selected
+**BACK TO GAME & WATCH** / **Olive throws. Popeye catches. Brutus waits.**
+The master and store export now use those lines, preserving the liked design.
 
 - [Banner, 720 × 320](releases/listing/banner-720x320.png)
 - [Store icon, 144 × 144](releases/listing/icon-144.png) and [48 × 48](releases/listing/icon-48.png)

@@ -1,4 +1,4 @@
-# Banner copy review
+# Banner copy — option 1 selected
 
 Keep **Popeye G&W** as the main headline. Replace the green strip and small
 footer. The owner's latest direction is to evoke the original Nintendo
@@ -18,7 +18,7 @@ Pebble model or using “1981-inspired • Fan-made” on the banner.
 | 9 | BACK WHEN EVERY CATCH COUNTED | Three misses. One more try. |
 | 10 | SMALL SCREEN. BIG MEMORIES. | A sailor, a boat and a familiar challenge. |
 
-Recommendation: **1** gives the most immediate connection to Game & Watch;
-**2** most closely echoes the original Wide Screen packaging. No option has
-yet been selected or applied. Banner copy does not change the current PBW's
-Emery-only compatibility; the store's device targeting must remain accurate.
+The owner selected **1**, now applied to the banner master and store export.
+It gives the most immediate connection to Game & Watch. The other pairs
+remain here as the copy-review record. Banner copy does not change the
+current PBW's Emery-only compatibility; store device targeting remains accurate.
