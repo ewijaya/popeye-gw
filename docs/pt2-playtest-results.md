@@ -36,9 +36,11 @@ per-check measurements were reported; the earlier detailed results below retain
 their stated limits.
 
 [GitHub v1.0.0](https://github.com/ewijaya/popeye-gw/releases/tag/v1.0.0)
-is published and the downloaded PBW matches that digest. RePebble registration
-is uncertain after one submission returned HTTP 500; it is not yet a verified
-store release. See the [release record](releases/1.0.0.md).
+and the [Pebble App Store listing](https://apps.repebble.com/e9cb2950ca21440798fb1db8)
+are published. Both downloaded PBWs match that digest. The owner completed
+store submission after the earlier HTTP 500/timeouts; general and Emery
+catalogs, metadata, artwork and the public changelog now verify. M6 is complete.
+See the [release record](releases/1.0.0.md).
 
 ## Current candidate: on-watch Help and Bottom-first landscape
 

@@ -8,7 +8,7 @@
 
 | | |
 |---|---|
-| Status | M5 and bottom-button view accepted on PT2; M6 GitHub published, RePebble verification pending |
+| Status | M1–M6 complete: PT2 accepted; 1.0.0 published and verified on GitHub and RePebble |
 | Date | 5 October 2026 |
 | Owner | Edward Wijaya |
 | Target | Pebble Time 2 (Emery, 200 × 228, 64 colours) |

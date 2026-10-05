@@ -11,8 +11,8 @@
     "emery"
   ],
   "artifact_name": "popeye-gw.pbw",
-  "store_app_id": null,
-  "store_listing_url": null,
+  "store_app_id": "e9cb2950ca21440798fb1db8",
+  "store_listing_url": "https://apps.repebble.com/e9cb2950ca21440798fb1db8",
   "registration_method": "dashboard-new",
   "appstore_api": "https://appstore-api.repebble.com",
   "dashboard": "https://developer.repebble.com",
