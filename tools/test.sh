@@ -12,7 +12,12 @@ case "${1:-}" in
   *) printf '%s\n' 'Usage: tools/test.sh [--sanitize]' >&2; exit 2 ;;
 esac
 
-/usr/bin/cc -std=c99 -Wall -Wextra -Werror -pedantic "$@" \
-  -I"$repo_dir/src/c" "$repo_dir/src/c/game.c" \
+cflags="-std=c99 -Wall -Wextra -Werror -pedantic"
+# shellcheck disable=SC2086
+/usr/bin/cc $cflags "$@" -I"$repo_dir/src/c" "$repo_dir/src/c/game.c" \
+  "$repo_dir/src/c/scene.c" "$repo_dir/tests/test_scene.c" -o "$test_dir/test_scene"
+# shellcheck disable=SC2086
+/usr/bin/cc $cflags "$@" -I"$repo_dir/src/c" "$repo_dir/src/c/game.c" \
   "$repo_dir/tests/test_game.c" -o "$test_dir/test_game"
+UBSAN_OPTIONS=halt_on_error=1 "$test_dir/test_scene"
 UBSAN_OPTIONS=halt_on_error=1 "$test_dir/test_game"
