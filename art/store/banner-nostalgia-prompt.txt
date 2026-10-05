@@ -1,0 +1,7 @@
+Use case: text-localization.
+Make one focused copy edit to the supplied approved Popeye G&W banner.
+Replace only the bottom-left sentence "Olive throws. Popeye catches. Brutus waits." with this exact sentence:
+"A whole childhood on one small screen."
+Keep the same LARGE, heavy, slightly condensed vintage slab-serif lettering, dark forest green ink, sentence case and final period. Maintain approximately the same letter height as the current enlarged footer; do not shrink this back to tiny print. Keep the new sentence on one line beneath the green BACK TO GAME & WATCH panel, comfortably within the available left-column width and above the bottom border. Center it naturally under the green panel.
+The tagline must stand alone on the ivory paper. No flanking lines, dashes, rules, bullets, separators, swashes or added decorations.
+Preserve all other artwork and text as closely as possible: the Popeye G&W headline, BACK TO GAME & WATCH panel, complete black/red Pebble watch, three right-side buttons, red strap, the actual game image including score 78, GAME B, MISS, Olive, Popeye and Brutus, water, boat, car, green outer border, stripes, gold shape, paper texture, palette, placement and scale. Do not redesign, crop or add objects. Retain the original 9:4 wide composition. Change only the footer wording.

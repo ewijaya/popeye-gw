@@ -2,14 +2,14 @@
 
 Created with the built-in image generation tool on 2026-10-05. The owner's
 brief was a charming, vibrant, high-contrast 1981 advert, with a Pebble Time 2
-showing this game on its screen. These assets are local listing drafts. The owner selected copy option 1:
-**BACK TO GAME & WATCH** / **Olive throws. Popeye catches. Brutus waits.**
+showing this game on its screen. These assets are local listing drafts. The owner selected the Game & Watch strip and the first nostalgic footer option:
+**BACK TO GAME & WATCH** / **A whole childhood on one small screen.**
 The banner master and 720 × 320 export now use that copy. The tagline uses
 large, heavy vintage slab-serif lettering with no flanking lines or separators.
 
 | Master | Prompt | Export |
 |---|---|---|
-| [banner-master.png](banner-master.png) | [Original generation](banner-prompt.txt), [selected copy edit](banner-edit-prompt.txt), [larger footer](banner-footer-prompt.txt) | [720 × 320 banner](../../docs/releases/listing/banner-720x320.png) |
+| [banner-master.png](banner-master.png) | [Original generation](banner-prompt.txt), [selected copy edit](banner-edit-prompt.txt), [larger footer](banner-footer-prompt.txt), [nostalgic wording](banner-nostalgia-prompt.txt) | [720 × 320 banner](../../docs/releases/listing/banner-720x320.png) |
 | [icon-master.png](icon-master.png) | [icon-prompt.txt](icon-prompt.txt) | [144 × 144](../../docs/releases/listing/icon-144.png), [48 × 48](../../docs/releases/listing/icon-48.png) |
 
 The banner uses warm ivory, deep green, gold and red stripes, retro display
@@ -29,7 +29,10 @@ The subsequent typography edit used `d052b81:art/store/banner-master.png`
 as its input and [banner-footer-prompt.txt](banner-footer-prompt.txt) as its
 instructions: enlarge the tagline, use a 1981 toy-box lettering style and
 remove both decorative horizontal rules. It also used the built-in generator.
-The final text was visually checked at master and 720 × 320 export sizes.
+The final wording edit used `d458c6c:art/store/banner-master.png` and
+[banner-nostalgia-prompt.txt](banner-nostalgia-prompt.txt), keeping the enlarged
+type and plain footer while replacing its sentence. The final text was
+visually checked at master and 720 × 320 export sizes.
 
 The banner is generated marketing artwork, including its rendered screen;
 it is not a photograph of physical-watch brightness. The five separate
