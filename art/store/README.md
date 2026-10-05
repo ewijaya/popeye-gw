@@ -17,7 +17,7 @@ lettering, and the black/red PT2. Its watch reference was the
 [official Pebble Time 2 product image](https://repebble.com/images/products/PWkl7yO.jpeg),
 linked from [Pebble's product page](https://repebble.com/watch). That downloaded
 reference stays in ignored `.release/m5/pt2-reference.jpg`.
-The screen reference was [the native Game B capture](../../docs/releases/listing/03-game-b.png).
+The screen reference was [the original native Game B capture](https://github.com/ewijaya/popeye-gw/blob/9285f0fd5d61444a082350793e0777c8c2b87463/docs/releases/listing/03-game-b.png).
 The icon used the approved [Popeye source preview](../previews/popeye-source.png)
 and the banner's palette. No CLI/API fallback was used.
 
@@ -35,11 +35,19 @@ type and plain footer while replacing its sentence. The final text was
 visually checked at master and 720 × 320 export sizes.
 
 The banner is generated marketing artwork, including its rendered screen;
-it is not a photograph of physical-watch brightness. The five separate
-200 × 228 listing images are unedited native QEMU captures. Game A/B and
-HI examples use debugger-staged state for repeatable composition, not earned
-scores; the game-over transition itself ran through the game engine. See
-[the M5 audit](../../docs/m5-audit.md) for validation and limitations.
+it is not a photograph of physical-watch brightness. The proposed 1.0.0 gallery
+has five fresh captures: Bottom landscape clock, portrait Game A, Bottom
+landscape Game B with Brutus striking, portrait pause controls and alarm.
+The pause image replaces the earlier proposed game-over/HI image for this
+gallery review. All five 200 × 228 originals are retained in
+[listing/native/](../../docs/releases/listing/native/). The two landscape
+presentation exports are lossless 90-degree rotations to 228 × 200, with no
+resizing or retouching. Confirm portal acceptance before uploading those exports.
+
+Game A/B and pause compositions use debugger-staged scores and food positions,
+not earned scores. Clock and alarm are running app scenes. No capture code is
+compiled into the app; emulator scores/settings were restored afterwards.
+See [the 1.0.0 review](../../docs/releases/1.0.0.md) for the exact PBW and gallery.
 
 Rebuild the exact-size exports with ImageMagick:
 
@@ -47,6 +55,7 @@ Rebuild the exact-size exports with ImageMagick:
 magick art/store/banner-master.png -resize 720x320! docs/releases/listing/banner-720x320.png
 magick art/store/icon-master.png -resize 144x144 docs/releases/listing/icon-144.png
 magick art/store/icon-master.png -resize 48x48 docs/releases/listing/icon-48.png
+magick art/store/icon-master.png -resize 80x80 docs/releases/listing/icon-80.png
 ```
 
 The existing 25 × 25 on-watch launcher icon is unchanged. Larger store art is

@@ -9,6 +9,7 @@ black segments, a white field, and vivid red, orange, blue and turquoise.
 **Status:** Version 1.0.0 is being prepared for release. M5 and Bottom landscape
 passed the owner's PT2 play-test; Help and the Bottom-first View cycle are
 installed. GitHub release and RePebble publication await final-build approval.
+Review the [1.0.0 store description, screenshot gallery and release checks](docs/releases/1.0.0.md).
 See the [PT2 play-test checklist](docs/pt2-playtest.md)
 and [results record](docs/pt2-playtest-results.md). This is a watch adaptation, not an exact ROM recreation.
 [Reference observations and remaining fidelity gaps](docs/pp23-fidelity.md)

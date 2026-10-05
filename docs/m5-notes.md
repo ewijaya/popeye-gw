@@ -67,8 +67,9 @@ AM/PM and both ghost backdrops move with it. Clock hints now say “Tap Select: 
 and “Hold Select: B”. The alarm indicator sits at the right edge, clear of the
 hints and MISS cans. These are presentation changes; game rules are unchanged.
 Native captures cover clock, menu, settings, landscape settings and alarm.
-Store screenshots predate this readability update and need refreshing against
-the final accepted build before publication; approved banner artwork is unchanged.
+The M6 preparation now refreshes the store captures against the Help build,
+including portrait and Bottom landscape. See the [1.0.0 review](releases/1.0.0.md).
+The approved banner artwork is unchanged.
 
 ## Bottom-button landscape follow-up
 
@@ -97,7 +98,7 @@ The master and store export now use those lines, preserving the liked design.
 
 - [Banner, 720 × 320](releases/listing/banner-720x320.png)
 - [Store icon, 144 × 144](releases/listing/icon-144.png) and [48 × 48](releases/listing/icon-48.png)
-- [Five native screenshots](releases/listing/): clock, A, B striking, game over/HI, alarm
+- [Proposed release gallery](releases/1.0.0.md): clock, A, B striking, pause controls, alarm
 - [Masters, complete prompts and references](../art/store/README.md)
 - [Draft listing description](releases/store-description.txt)
 
