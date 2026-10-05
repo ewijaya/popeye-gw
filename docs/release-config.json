@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "github_repo": "ewijaya/popeye-gw-pebble",
+  "branch": "main",
+  "uuid": "6b7c8c28-36f0-47ca-a073-3e8f33efcaf0",
+  "display_name": "Harbor Catch",
+  "app_type": "watchapp",
+  "category": "Games",
+  "visibility": "listed",
+  "platforms": [
+    "emery"
+  ],
+  "artifact_name": "harbor-catch.pbw",
+  "store_app_id": null,
+  "store_listing_url": null,
+  "registration_method": "dashboard-new",
+  "appstore_api": "https://appstore-api.repebble.com",
+  "dashboard": "https://developer.repebble.com",
+  "public_store": "https://apps.repebble.com",
+  "public_catalog_path": "/api/v1/apps/uuid/{uuid}",
+  "description_file": "docs/releases/store-description.txt",
+  "listing_assets_dir": "docs/releases/listing",
+  "budgets": {
+    "app_image_bytes": 61440,
+    "resources_bytes": 200000,
+    "pbw_bytes": 2000000,
+    "min_free_heap_percent": 20
+  }
+}

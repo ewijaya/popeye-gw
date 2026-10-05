@@ -11,6 +11,9 @@
   The historical repository name is not the product name.
 - Work only on the requested milestone. Store publishing requires the owner's
   explicit approval of the exact build after the required watch play-test.
+- Releases follow `docs/releasing.md` through the `harbor-catch-build-audit`,
+  `harbor-catch-release` and `harbor-catch-appstore` skills. Keep
+  `.claude/skills/` and `.agents/skills/` identical.
 
 ## Code and verification
 
