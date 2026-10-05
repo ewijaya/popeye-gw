@@ -1,0 +1,74 @@
+#include "scene.h"
+
+#include <string.h>
+
+/* Seven-segment patterns, bit 0 = a (top) through bit 6 = g (middle). */
+static const uint8_t digit_patterns[10] = {
+  0x3Fu, 0x06u, 0x5Bu, 0x4Fu, 0x66u, 0x6Du, 0x7Du, 0x07u, 0x7Fu, 0x6Fu
+};
+
+void scene_clear(Scene *scene) {
+  memset(scene, 0, sizeof(*scene));
+}
+
+void scene_light(Scene *scene, unsigned segment) {
+  if (segment < SEG_COUNT) scene->bits[segment / 32u] |= UINT32_C(1) << (segment % 32u);
+}
+
+bool scene_lit(const Scene *scene, unsigned segment) {
+  return segment < SEG_COUNT && (scene->bits[segment / 32u] >> (segment % 32u) & 1u) != 0u;
+}
+
+void scene_number(Scene *scene, uint16_t value) {
+  unsigned digit = SCENE_DIGITS;
+  do {
+    unsigned bit;
+    uint8_t pattern = digit_patterns[value % 10u];
+    --digit;
+    for (bit = 0u; bit < 7u; ++bit) {
+      if ((pattern >> bit & 1u) != 0u) scene_light(scene, SEG_DIGIT + digit * 7u + bit);
+    }
+    value = (uint16_t)(value / 10u);
+  } while (value != 0u && digit != 0u);
+}
+
+void scene_idle(Scene *scene) {
+  scene_clear(scene);
+  scene_light(scene, SEG_FINN + 2u);
+}
+
+static unsigned lane_for_pose(int8_t pose) {
+  return pose < 2 ? (unsigned)pose : (unsigned)pose - 1u;
+}
+
+void scene_game(Scene *scene, const Game *game) {
+  unsigned i;
+  unsigned sides = game->mode == GAME_A ? 1u : 2u;
+  scene_clear(scene);
+  scene_light(scene, game->mode == GAME_A ? SEG_GAME_A : SEG_GAME_B);
+  scene_number(scene, game_display_score(game));
+  scene_light(scene, (game->mae_throwing ? SEG_MAE_THROW : SEG_MAE_READY) + game->mae_lane);
+  for (i = 0u; i < GAME_MAX_CARGO; ++i) {
+    const GameCargo *cargo = &game->cargo[i];
+    if (cargo->active) scene_light(scene, SEG_CARGO + cargo->lane * GAME_CARGO_STEPS + cargo->stage);
+  }
+  /* A resolved catch shows its cargo on segment 5 for the resolution tick. */
+  if (game->catch_pose >= 0) {
+    scene_light(scene, SEG_CARGO + lane_for_pose(game->catch_pose) * GAME_CARGO_STEPS +
+                       GAME_CARGO_STEPS - 1u);
+    scene_light(scene, SEG_FINN_CATCH);
+  }
+  if (game->splash_lane >= 0) scene_light(scene, SEG_SPLASH + (unsigned)game->splash_lane);
+  if (game->miss_cause == GAME_MISS_HIT) {
+    scene_light(scene, game->finn_pose == 0u ? SEG_FINN_DIZZY_LEFT : SEG_FINN_DIZZY_RIGHT);
+  } else {
+    scene_light(scene, SEG_FINN + game->finn_pose);
+  }
+  for (i = 0u; i < sides; ++i) {
+    scene_light(scene, SEG_GRIZZLE + i * 3u + (unsigned)game->attacks[i].phase);
+  }
+  for (i = 0u; i < game->misses && i < GAME_MAX_MISSES; ++i) scene_light(scene, SEG_RING + i);
+  if (game->half_ring) scene_light(scene, SEG_RING_HALF);
+  if (game->lucky_tide) scene_light(scene, SEG_GULL);
+  if (game->status == GAME_OVER && game->new_high_score) scene_light(scene, SEG_HI);
+}
