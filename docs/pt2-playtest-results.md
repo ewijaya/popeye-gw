@@ -1,6 +1,6 @@
 # PT2 play-test results — 2026-10-05
 
-Status: **M5 and Bottom view accepted; Help and Bottom-first cycle installed**. The owner
+Status: **M5 and Bottom view accepted; final 1.0.0 bundle approved for publication**. The owner
 enabled the phone's Dev Connection. CloudPebble ping returned Pong, and the
 installer exited 0 with `App install succeeded.` Game A subsequently appeared
 in the physical-device log. Connection, installation and runtime logs do not
@@ -24,6 +24,21 @@ pause/resume and notification focus handling. For at least ten minutes across
 both modes, landscape and scores/settings after updates and reopening, the
 owner answered **“yes all looks good”**. These reports establish M5 acceptance
 for the installed build, not publication approval or timing-accurate PP-23 fidelity.
+
+## Final release approval and publication
+
+On 2026-10-05, after installation of the frozen 1.0.0 bundle and the final
+watch sign-off/publication request, the owner replied **“I approve.”** This
+approves PBW SHA-256
+`79c82ea63923f9f3aa23724a99f45952a7602d7c9c9106349a427e88ee05c046`,
+the proposed listing and the GitHub/RePebble destinations. No additional
+per-check measurements were reported; the earlier detailed results below retain
+their stated limits.
+
+[GitHub v1.0.0](https://github.com/ewijaya/popeye-gw/releases/tag/v1.0.0)
+is published and the downloaded PBW matches that digest. RePebble registration
+is uncertain after one submission returned HTTP 500; it is not yet a verified
+store release. See the [release record](releases/1.0.0.md).
 
 ## Current candidate: on-watch Help and Bottom-first landscape
 
@@ -190,5 +205,6 @@ This frozen play-test candidate is not a store publication approval.
 | Overall M5 acceptance | **Accepted** on installed candidate `15ea674`, PBW SHA-256 above |
 
 The owner also approved the final store banner with “A whole childhood on one
-small screen.” M6 still needs final-build store screenshots and separately
-approved GitHub/store publication. No release tag or store listing was published.
+small screen.” At that earlier checkpoint, M6 still required final-build
+screenshots and publication approval. The final release section above records
+the subsequent approval and current destination status.

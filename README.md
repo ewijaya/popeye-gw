@@ -6,9 +6,15 @@ left; Popeye catches it in his boat while Brutus threatens him with a hammer
 from the left pier or a fist from the right ship. The PT2 scene uses crisp
 black segments, a white field, and vivid red, orange, blue and turquoise.
 
-**Status:** Version 1.0.0 is being prepared for release. M5 and Bottom landscape
-passed the owner's PT2 play-test; Help and the Bottom-first View cycle are
-installed. GitHub release and RePebble publication await final-build approval.
+**Status:** Version 1.0.0 is published on GitHub. M5 and Bottom landscape
+passed the owner's PT2 play-test, and the owner approved the exact final bundle
+and listing. RePebble publication is pending: the submission returned a server
+error and registration has not yet been confirmed.
+
+**Download:** [GitHub release v1.0.0](https://github.com/ewijaya/popeye-gw/releases/tag/v1.0.0)
+([PBW](https://github.com/ewijaya/popeye-gw/releases/download/v1.0.0/popeye-gw.pbw)).
+The downloaded file matches the approved SHA-256 recorded in the release checks.
+
 Review the [1.0.0 store description, screenshot gallery and release checks](docs/releases/1.0.0.md).
 See the [PT2 play-test checklist](docs/pt2-playtest.md)
 and [results record](docs/pt2-playtest-results.md). This is a watch adaptation, not an exact ROM recreation.
