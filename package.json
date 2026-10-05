@@ -1,0 +1,25 @@
+{
+  "name": "harbor-catch",
+  "author": "Edward Wijaya",
+  "version": "1.0.0",
+  "keywords": [
+    "pebble-app"
+  ],
+  "private": true,
+  "dependencies": {},
+  "pebble": {
+    "displayName": "Harbor Catch",
+    "uuid": "6b7c8c28-36f0-47ca-a073-3e8f33efcaf0",
+    "sdkVersion": "3",
+    "enableMultiJS": false,
+    "targetPlatforms": [
+      "emery"
+    ],
+    "watchapp": {
+      "watchface": false
+    },
+    "resources": {
+      "media": []
+    }
+  }
+}
