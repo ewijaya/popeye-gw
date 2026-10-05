@@ -1,6 +1,7 @@
 #include "game.h"
 #include "scene.h"
 #include "segments.h"
+#include "segments_landscape.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -35,20 +36,27 @@ static void test_inventory_and_bits(void) {
   /* PRD 9.2: 10 + 20 + 8 + 4 + 6 + 4 + 31 + 5 segments. */
   assert(SEG_COUNT == 88);
   assert(SEGMENT_ART_COUNT == SEG_COUNT);
+  {
+    unsigned orientation;
+    for (orientation = 0; orientation < 2; ++orientation) {
+      const SegmentArt *table = orientation ? landscape_art : segment_art;
+      int sheet_height = orientation ? LANDSCAPE_SHEET_HEIGHT : SEGMENT_SHEET_HEIGHT;
   for (seg = 0u; seg < SEG_COUNT; ++seg) {
-    const SegmentArt *art = &segment_art[seg];
+    const SegmentArt *art = &table[seg];
     unsigned other;
     assert(art->w > 0 && art->h > 0);
     assert(art->x >= 0 && art->y >= 0);
     assert(art->x + art->w <= 200 && art->y + art->h <= 228);
     assert(art->sheet_x >= 0 && art->sheet_y >= 0);
     assert(art->sheet_x + art->w <= SEGMENT_SHEET_WIDTH);
-    assert(art->sheet_y + art->h <= SEGMENT_SHEET_HEIGHT);
+    assert(art->sheet_y + art->h <= sheet_height);
     /* Overlapping atlas entries would render fragments of a different pose. */
     for (other = 0u; other < seg; ++other) {
-      const SegmentArt *b = &segment_art[other];
+      const SegmentArt *b = &table[other];
       assert(art->sheet_x + art->w <= b->sheet_x || b->sheet_x + b->w <= art->sheet_x ||
              art->sheet_y + art->h <= b->sheet_y || b->sheet_y + b->h <= art->sheet_y);
+    }
+  }
     }
   }
   scene_clear(&scene);

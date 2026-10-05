@@ -3,6 +3,7 @@
 #
 # Feel free to customize this to your needs.
 #
+import json
 import os.path
 import sys
 
@@ -29,6 +30,8 @@ def build(ctx):
     ctx.env.BUNDLE_NAME = 'popeye-gw.pbw'
     ctx.add_post_fun(check_app_size)
 
+    with open(ctx.path.find_node('package.json').abspath()) as package_file:
+        version = json.load(package_file)['version']
     build_worker = os.path.exists('worker_src')
     binaries = []
 
@@ -36,6 +39,7 @@ def build(ctx):
     for platform in ctx.env.TARGET_PLATFORMS:
         ctx.env = ctx.all_envs[platform]
         ctx.set_group(ctx.env.PLATFORM_NAME)
+        ctx.env.append_value('DEFINES', 'POPEYE_GW_VERSION="{}"'.format(version))
         app_elf = '{}/pebble-app.elf'.format(ctx.env.BUILD_DIR)
         ctx.pbl_build(source=ctx.path.ant_glob('src/c/**/*.c'), target=app_elf, bin_type='app')
 

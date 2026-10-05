@@ -27,6 +27,11 @@
         },
         {
           "type": "bitmap",
+          "name": "BACKDROP",
+          "file": "images/backdrop.png"
+        },
+        {
+          "type": "bitmap",
           "name": "SEGMENTS",
           "file": "images/segments.png",
           "memoryFormat": "1BitPalette"
@@ -36,6 +41,22 @@
           "name": "MENU_ICON",
           "file": "images/menu-icon.png",
           "menuIcon": true
+        },
+        {
+          "type": "bitmap",
+          "name": "BACKDROP_LANDSCAPE",
+          "file": "images/backdrop-landscape.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BACKDROP_GHOSTS_LANDSCAPE",
+          "file": "images/backdrop-ghosts-landscape.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "SEGMENTS_LANDSCAPE",
+          "file": "images/segments-landscape.png",
+          "memoryFormat": "1BitPalette"
         }
       ]
     }

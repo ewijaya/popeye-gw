@@ -44,7 +44,8 @@ void scene_light(Scene *scene, unsigned segment);
 bool scene_lit(const Scene *scene, unsigned segment);
 /* Right-aligned in the four digits without leading zeros; 0 shows one zero. */
 void scene_number(Scene *scene, uint16_t value);
-/* Idle shell until the M4 clock: Popeye upright in the boat, nothing else. */
+void scene_digit(Scene *scene, unsigned digit, unsigned value);
+/* Static player pose, also useful for scene tests. */
 void scene_idle(Scene *scene);
 void scene_game(Scene *scene, const Game *game);
 

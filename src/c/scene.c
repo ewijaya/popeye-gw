@@ -19,15 +19,19 @@ bool scene_lit(const Scene *scene, unsigned segment) {
   return segment < SEG_COUNT && (scene->bits[segment / 32u] >> (segment % 32u) & 1u) != 0u;
 }
 
+void scene_digit(Scene *scene, unsigned digit, unsigned value) {
+  unsigned bit;
+  if (digit >= SCENE_DIGITS || value > 9u) return;
+  for (bit = 0u; bit < 7u; ++bit) {
+    if ((digit_patterns[value] >> bit & 1u) != 0u)
+      scene_light(scene, SEG_DIGIT + digit * 7u + bit);
+  }
+}
+
 void scene_number(Scene *scene, uint16_t value) {
   unsigned digit = SCENE_DIGITS;
   do {
-    unsigned bit;
-    uint8_t pattern = digit_patterns[value % 10u];
-    --digit;
-    for (bit = 0u; bit < 7u; ++bit) {
-      if ((pattern >> bit & 1u) != 0u) scene_light(scene, SEG_DIGIT + digit * 7u + bit);
-    }
+    scene_digit(scene, --digit, value % 10u);
     value = (uint16_t)(value / 10u);
   } while (value != 0u && digit != 0u);
 }

@@ -248,6 +248,33 @@ def header_text(segments, sheet_height):
     return "\n".join(lines)
 
 
+def landscape(rows):
+    """228 x 200 handheld canvas, turned clockwise into the native framebuffer.
+
+    Nearest-neighbour sampling keeps binary LCD segments crisp. Holding the
+    watch counterclockwise puts Up/Select/Down along the top, left to right.
+    """
+    return [[rows[(WIDTH - 1 - x) * HEIGHT // WIDTH][y * WIDTH // HEIGHT]
+             for x in range(WIDTH)] for y in range(HEIGHT)]
+
+
+def landscape_segments(segments):
+    result = []
+    for segment in segments:
+        rows = [[CLEAR] * WIDTH for _ in range(HEIGHT)]
+        for x, y in segment["lit"]:
+            rows[y][x] = LIT
+        rows = landscape(rows)
+        lit = [(x, y) for y in range(HEIGHT) for x in range(WIDTH) if rows[y][x][3]]
+        if not lit:
+            raise ArtError(segment["name"] + ": lost in landscape conversion")
+        x0, y0 = min(x for x, _ in lit), min(y for _, y in lit)
+        x1, y1 = max(x for x, _ in lit) + 1, max(y for _, y in lit) + 1
+        result.append(dict(name=segment["name"], id=segment["id"], x=x0, y=y0,
+                           w=x1-x0, h=y1-y0, pixels=[row[x0:x1] for row in rows[y0:y1]], lit=lit))
+    return result
+
+
 def build(out_root):
     art_dir = os.path.join(ROOT, "art")
     width, height, backdrop = read_png(os.path.join(art_dir, "backdrop.png"))
@@ -270,6 +297,21 @@ def build(out_root):
     write_png(os.path.join(images, "segments.png"), sheet)
     write_png(os.path.join(images, "backdrop.png"), backdrop)
     write_png(os.path.join(images, "backdrop-ghosts.png"), ghosts)
+    turned = landscape_segments(segments)
+    turned_sheet = pack(turned)
+    write_png(os.path.join(images, "segments-landscape.png"), turned_sheet)
+    write_png(os.path.join(images, "backdrop-landscape.png"), landscape(backdrop))
+    # Transform the same ghost composite, so lit segments and ghosts stay aligned.
+    write_png(os.path.join(images, "backdrop-ghosts-landscape.png"), landscape(ghosts))
+    turned_header = header_text(turned, len(turned_sheet))
+    turned_header = turned_header.replace("POPEYE_GW_SEGMENTS_H", "POPEYE_GW_SEGMENTS_LANDSCAPE_H")
+    turned_header = turned_header.replace("#include \"scene.h\"", "#include \"segments.h\"")
+    turned_header = turned_header.replace("typedef struct {\n  int16_t sheet_x, sheet_y, x, y, w, h;\n} SegmentArt;\n", "")
+    turned_header = turned_header.replace("SEGMENT_ART_COUNT", "LANDSCAPE_ART_COUNT")
+    turned_header = turned_header.replace("SEGMENT_SHEET_", "LANDSCAPE_SHEET_")
+    turned_header = turned_header.replace("segment_art[", "landscape_art[")
+    with open(os.path.join(out_root, "src", "c", "segments_landscape.h"), "w", newline="\n") as handle:
+        handle.write(turned_header)
     icon_w, icon_h, icon = read_png(os.path.join(art_dir, "menu-icon.png"))
     if (icon_w, icon_h) != (25, 25):
         raise ArtError("art/menu-icon.png: must be 25 x 25")
@@ -289,6 +331,10 @@ OUTPUTS = [
     "resources/images/backdrop-ghosts.png",
     "resources/images/menu-icon.png",
     "src/c/segments.h",
+    "src/c/segments_landscape.h",
+    "resources/images/segments-landscape.png",
+    "resources/images/backdrop-landscape.png",
+    "resources/images/backdrop-ghosts-landscape.png",
 ]
 
 

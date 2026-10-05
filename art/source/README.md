@@ -2,7 +2,7 @@
 
 Popeye G&W uses the approved Popeye, Olive Oyl and Brutus designs, with fixed black LCD segments inspired by the original wide-screen handheld.
 
-The complete runtime set has **88 segments**, including every gameplay pose and the clock/alarm indicators reserved for M4. Character variants, cargo and the backdrop were made with the built-in image generation tool. The tool does not expose a model selector or identifier. Source PNGs preserve generated transparency. Runtime segments are strictly opaque black or transparent at 200 × 228.
+The complete runtime set has **88 segments**, including every gameplay pose and the clock/alarm indicators. Character variants, cargo and the backdrop were made with the built-in image generation tool. The tool does not expose a model selector or identifier. Source PNGs preserve generated transparency. Runtime segments are strictly opaque black or transparent at 200 × 228.
 
 ## Reproduce the art
 
@@ -31,7 +31,7 @@ The renderer loads the packed atlas once with a black/transparent 1-bit palette.
 | `popeye-dizzy.png` | Left / mirrored right dizzy |
 | `olive.png` | Ready at four throw spots |
 | `olive-throw.png` | Throw at four throw spots |
-| `olive-bell-0.png`, `olive-bell-1.png` | Two ringing frames reserved for M4 |
+| `olive-bell-0.png`, `olive-bell-1.png` | Two alarm ringing frames |
 | `brutus.png`, `brutus-windup.png`, `brutus-strike.png` | Left rival phases / mirrored right rival phases |
 | `cargo.png`, `fish.png`, `lantern.png`, `barrel.png` | One cargo drawing per lane, five stages per lane |
 | `backdrop-lcd.png` | Printed deck, piers, boat and water |
