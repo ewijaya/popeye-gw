@@ -46,7 +46,8 @@ the middle of the three buttons above or below the screen.
 | Game over | Three MISS | The round ends. |
 | Quit a running game | Back twice | First pause, then return to the clock. |
 | Clock: high scores | Up in portrait; Left in landscape | Show saved Game A/B scores. |
-| Clock: menu | Down in portrait; Right in landscape | Open High scores, Alarm, Settings, Help or About. |
+| Clock: menu | Down in portrait; Right in landscape | Open High scores, Stats, Alarm, Settings, Help or About. |
+| Menu: Stats (1.1) | Select Stats; Select; movement buttons | Two pages of lifetime totals. Select on the last page offers Reset stats; high scores are untouched. |
 | Settings: Orientation (1.0.1) | Select Orientation, choose Vertical or Horizontal, then Select | Change screen orientation. Back cancels. |
 | Settings: Buttons (1.0.1, Horizontal only) | Select Buttons | Toggle Bottom / Top. The choice is remembered in Vertical mode. |
 | Settings: Swap | Select Swap | Reverse game movement. |
@@ -114,7 +115,7 @@ All four food arcs appear over 48 seconds. With attract animation disabled,
 it shows static poses and a steady colon and updates once per minute. Clock
 ticks stop on other pages and while the app is out of focus.
 
-The menu contains High scores, Alarm, Settings, Help and About. **Menu → Help**
+The menu contains High scores, Stats, Alarm, Settings, Help and About. **Menu → Help**
 provides four short screens for controls, catches/misses, clock shortcuts and
 screen setup in 1.0.1.
 Press Select for the next screen or Back to return to the menu; the movement
@@ -143,6 +144,19 @@ beep plays per game step, so the third MISS and game over give only the
 game-over sound. The alarm beeps in step with its pulses while idle. Sound
 follows the Settings → Sound switch and the watch's speaker mute / Quiet Time;
 it stops on pause, focus loss, restart and exit. Melodies are original.
+
+In the launcher, the app's glance (1.1) reads like "Best A 214 / B 187 - 07:00":
+both best scores plus the alarm time while the alarm is on. It is refreshed
+once as the app closes, with no timer or background work.
+
+After game over, the app returns to the clock if no button is pressed for five
+minutes; that is the only timer on the game-over screen.
+
+Lifetime stats (1.1, **Menu → Stats**) keep games played per mode (counted once a
+round scores or ends), catches, drops, Brutus hits, 200/500 bonus clears, the
+longest run of catches without a MISS, and active play time (running steps and
+MISS recovery only; paused, hidden or menu time is excluded). They live in their
+own record and are saved at pause, game over, focus loss and exit.
 
 Settings and high scores use separate versioned, checksummed byte records.
 Missing, corrupt or unknown records fall back to defaults independently. Best

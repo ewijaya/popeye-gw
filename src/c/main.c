@@ -12,12 +12,13 @@
 
 typedef enum { PAGE_CLOCK, PAGE_GAME, PAGE_MENU, PAGE_SCORES,
                PAGE_RESET, PAGE_SETTINGS, PAGE_ALARM, PAGE_HELP, PAGE_ABOUT,
-               PAGE_ORIENTATION } Page;
+               PAGE_ORIENTATION, PAGE_STATS, PAGE_STATS_RESET } Page;
 
 typedef enum { SETTING_ORIENTATION, SETTING_BUTTONS, SETTING_SWAP,
                SETTING_VIBRATION, SETTING_SOUND, SETTING_GHOSTS, SETTING_DEMO } SettingItem;
 
 #define HELP_PAGES 4u
+#define STATS_PAGES 2u
 
 /* Clock page: Select held shows the best score of the mode that release starts. */
 typedef enum { HOLD_NONE, HOLD_A, HOLD_B } Hold;
@@ -30,6 +31,8 @@ static unsigned s_row;
 static bool s_editing, s_focused = true;
 static uint8_t s_edit_value;
 static bool s_scores_dirty, s_scores_error, s_settings_error;
+static bool s_stats_dirty, s_stats_error, s_game_counted;
+static uint32_t s_streak, s_play_carry_ms;
 static AppTimer *s_timer, *s_ring_timer, *s_idle_timer;
 static uint32_t s_timer_delay;
 static uint64_t s_timer_start;
@@ -51,9 +54,14 @@ static uint64_t now_ms(void) {
   return (uint64_t)seconds * 1000u + millis;
 }
 
-static bool save_error(void) { return s_scores_error || s_settings_error; }
+static bool save_error(void) { return s_scores_error || s_settings_error || s_stats_error; }
 
+/* Lifetime stats ride along with the scores: written at pause, game over, focus loss and exit. */
 static void flush_scores(void) {
+  if (s_stats_dirty) {
+    s_stats_error = !storage_save_stats(&s_data.stats);
+    if (!s_stats_error) s_stats_dirty = false;
+  }
   if (!s_scores_dirty) return;
   s_scores_error = !storage_save_scores(&s_data.scores);
   if (!s_scores_error) s_scores_dirty = false;
@@ -63,6 +71,19 @@ static void record_score(void) {
   time_t now = time(NULL);
   if (scores_record(&s_data.scores, s_game.mode, s_game.score, clock_date(localtime(&now))))
     s_scores_dirty = true;
+}
+
+/* A game counts once it has scored or ended; quitting before that does not. */
+static void note_progress(void) {
+  if (s_game_counted || (s_game.score == 0u && s_game.status != GAME_OVER)) return;
+  s_game_counted = true;
+  stats_count_game(&s_data.stats, s_game.mode);
+  s_stats_dirty = true;
+}
+
+static void note_play_ms(uint32_t ms) {
+  stats_add_play_ms(&s_data.stats, &s_play_carry_ms, ms);
+  s_stats_dirty = true;
 }
 
 static bool save_settings(const Settings *settings) {
@@ -101,10 +122,15 @@ static void schedule_timer(void) {
 }
 
 static void timer_fired(void *data) {
+  uint32_t events;
   s_timer = NULL;
   game_step(&s_game);
-  feedback_service_events(game_take_events(&s_game), s_game.new_high_score,
-                          s_data.settings.vibration, s_data.settings.sound);
+  events = game_take_events(&s_game);
+  feedback_service_events(events, s_game.new_high_score, s_data.settings.vibration,
+                          s_data.settings.sound);
+  stats_note_events(&s_data.stats, events, &s_streak);
+  note_play_ms(s_timer_delay);
+  note_progress();
   record_score();
   if (s_game.status == GAME_OVER) { flush_scores(); log_heap("over"); }
   schedule_timer();
@@ -118,6 +144,8 @@ static void start_game(GameMode mode) {
   s_game.high_scores[1] = s_data.scores.best[1];
   s_game.controls_swapped = s_data.settings.swap_buttons;
   game_start(&s_game, mode, (uint32_t)now_ms());
+  s_streak = 0u;
+  s_game_counted = false;
   s_page = PAGE_GAME;
   feedback_service_set_running(s_focused && !(s_ringing && !s_passive_ring));
   sync_ticks();
@@ -134,8 +162,10 @@ static void pause_game(void) {
     if (elapsed >= s_timer_delay) elapsed = s_timer_delay - 1u;
     cancel_timer();
     game_advance(&s_game, (uint32_t)elapsed);
+    note_play_ms((uint32_t)elapsed);
   }
   game_pause(&s_game);
+  note_progress();
   record_score();
   flush_scores();
   render();
@@ -262,6 +292,13 @@ static void score_date(char *buffer, size_t size, uint32_t date) {
                 (unsigned long)(date / 100u % 100u), (unsigned long)(date % 100u));
 }
 
+static void play_time(char *buffer, size_t size, uint32_t seconds) {
+  if (seconds >= 3600u)
+    snprintf(buffer, size, "Time: %luh %02lum", (unsigned long)(seconds / 3600u), (unsigned long)(seconds / 60u % 60u));
+  else
+    snprintf(buffer, size, "Time: %lum %02lus", (unsigned long)(seconds / 60u), (unsigned long)(seconds % 60u));
+}
+
 static void render_panel(void) {
   ViewPanel panel = { .count = 4, .selected = (int)s_row };
   const Settings *settings = &s_data.settings;
@@ -269,13 +306,14 @@ static void render_panel(void) {
   snprintf(panel.footer, sizeof(panel.footer), "Select: open  Back: clock");
   switch (s_page) {
     case PAGE_MENU:
-      panel.count = 5;
+      panel.count = 6;
       panel.title = "Popeye G&W";
       snprintf(panel.rows[0], sizeof(panel.rows[0]), "High scores");
-      snprintf(panel.rows[1], sizeof(panel.rows[1]), "Alarm");
-      snprintf(panel.rows[2], sizeof(panel.rows[2]), "Settings");
-      snprintf(panel.rows[3], sizeof(panel.rows[3]), "Help");
-      snprintf(panel.rows[4], sizeof(panel.rows[4]), "About");
+      snprintf(panel.rows[1], sizeof(panel.rows[1]), "Stats");
+      snprintf(panel.rows[2], sizeof(panel.rows[2]), "Alarm");
+      snprintf(panel.rows[3], sizeof(panel.rows[3]), "Settings");
+      snprintf(panel.rows[4], sizeof(panel.rows[4]), "Help");
+      snprintf(panel.rows[5], sizeof(panel.rows[5]), "About");
       break;
     case PAGE_SETTINGS: {
       unsigned row = 0;
@@ -317,6 +355,32 @@ static void render_panel(void) {
       snprintf(panel.rows[2], sizeof(panel.rows[2]), "Game B: %lu", (unsigned long)s_data.scores.best[1]);
       score_date(panel.rows[3], sizeof(panel.rows[3]), s_data.scores.date[1]);
       snprintf(panel.footer, sizeof(panel.footer), "Select: reset scores\nBack: clock");
+      break;
+    case PAGE_STATS: {
+      const Stats *stats = &s_data.stats;
+      panel.selected = -1;
+      panel.title = s_row == 0u ? "Stats 1/2" : "Stats 2/2";
+      if (s_row == 0u) {
+        snprintf(panel.rows[0], sizeof(panel.rows[0]), "Games A: %lu", (unsigned long)stats->games[0]);
+        snprintf(panel.rows[1], sizeof(panel.rows[1]), "Games B: %lu", (unsigned long)stats->games[1]);
+        snprintf(panel.rows[2], sizeof(panel.rows[2]), "Catches: %lu", (unsigned long)stats->catches);
+        snprintf(panel.rows[3], sizeof(panel.rows[3]), "Drops: %lu", (unsigned long)stats->drops);
+        snprintf(panel.footer, sizeof(panel.footer), "Select: next  Back: menu");
+      } else {
+        snprintf(panel.rows[0], sizeof(panel.rows[0]), "Brutus hits: %lu", (unsigned long)stats->hits);
+        snprintf(panel.rows[1], sizeof(panel.rows[1]), "Best run: %lu", (unsigned long)stats->best_streak);
+        snprintf(panel.rows[2], sizeof(panel.rows[2]), "Bonuses: %lu", (unsigned long)stats->bonuses);
+        play_time(panel.rows[3], sizeof(panel.rows[3]), stats->play_seconds);
+        snprintf(panel.footer, sizeof(panel.footer), "Select: reset stats\nBack: menu");
+      }
+      break;
+    }
+    case PAGE_STATS_RESET:
+      panel.title = "Reset stats?";
+      panel.count = 2;
+      snprintf(panel.rows[0], sizeof(panel.rows[0]), "Keep stats");
+      snprintf(panel.rows[1], sizeof(panel.rows[1]), "Reset stats");
+      snprintf(panel.footer, sizeof(panel.footer), "Scores stay. Select: choose\nBack: cancel");
       break;
     case PAGE_RESET:
       panel.title = "Reset scores?";
@@ -439,9 +503,9 @@ static void move_down_handler(ClickRecognizerRef recognizer, void *context) {
     s_edit_value = (uint8_t)((s_edit_value + (up ? 1u : limit - 1u)) % limit);
     render();
   } else if (s_page != PAGE_SCORES && s_page != PAGE_ABOUT) {
-    unsigned count = (s_page == PAGE_RESET || s_page == PAGE_ORIENTATION) ? 2u :
-                     s_page == PAGE_HELP ? HELP_PAGES : s_page == PAGE_SETTINGS ? settings_row_count() :
-                     s_page == PAGE_MENU ? 5u : 4u;
+    unsigned count = (s_page == PAGE_RESET || s_page == PAGE_ORIENTATION || s_page == PAGE_STATS_RESET) ? 2u :
+                     s_page == PAGE_HELP ? HELP_PAGES : s_page == PAGE_STATS ? STATS_PAGES :
+                     s_page == PAGE_SETTINGS ? settings_row_count() : s_page == PAGE_MENU ? 6u : 4u;
     s_row = (s_row + (up ? count - 1u : 1u)) % count;
     render();
   }
@@ -470,11 +534,26 @@ static void select_handler(ClickRecognizerRef recognizer, void *context) {
       else pause_game();
       break;
     case PAGE_MENU: {
-      static const Page destinations[] = { PAGE_SCORES, PAGE_ALARM, PAGE_SETTINGS, PAGE_HELP, PAGE_ABOUT };
+      static const Page destinations[] = { PAGE_SCORES, PAGE_STATS, PAGE_ALARM, PAGE_SETTINGS, PAGE_HELP, PAGE_ABOUT };
       open_page(destinations[s_row]);
       return;
     }
     case PAGE_SCORES: open_page(PAGE_RESET); return;
+    case PAGE_STATS:
+      if (s_row + 1u < STATS_PAGES) { ++s_row; break; }
+      open_page(PAGE_STATS_RESET);
+      return;
+    case PAGE_STATS_RESET:
+      if (s_row == 1u) {
+        Stats reset;
+        stats_defaults(&reset);
+        s_stats_error = !storage_save_stats(&reset);
+        if (s_stats_error) break;
+        s_data.stats = reset;
+        s_stats_dirty = false;
+      }
+      open_page(PAGE_STATS);
+      return;
     case PAGE_RESET:
       if (s_row == 1u) {
         HighScores reset;
@@ -567,6 +646,7 @@ static void back_handler(ClickRecognizerRef recognizer, void *context) {
     else { flush_scores(); cancel_timer(); open_page(PAGE_CLOCK); }
   } else if (s_page == PAGE_MENU || s_page == PAGE_SCORES) open_page(PAGE_CLOCK);
   else if (s_page == PAGE_RESET) open_page(PAGE_SCORES);
+  else if (s_page == PAGE_STATS_RESET) open_page(PAGE_STATS);
   else if (s_page == PAGE_ORIENTATION) open_page(PAGE_SETTINGS);
   else open_page(PAGE_MENU);
 }
