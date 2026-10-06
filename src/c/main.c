@@ -6,6 +6,7 @@
 #include "feedback_service.h"
 #include "glance.h"
 #include "orientation.h"
+#include "replay.h"
 #include "storage.h"
 #include "tuning.h"
 #include "view.h"
@@ -17,8 +18,14 @@ typedef enum { PAGE_CLOCK, PAGE_GAME, PAGE_MENU, PAGE_SCORES,
 typedef enum { SETTING_ORIENTATION, SETTING_BUTTONS, SETTING_SWAP,
                SETTING_VIBRATION, SETTING_SOUND, SETTING_GHOSTS, SETTING_DEMO } SettingItem;
 
-#define HELP_PAGES 4u
-#define STATS_PAGES 2u
+#define HELP_PAGES 5u
+#define STATS_PAGES 3u
+#define SCORES_PAGES 2u
+#define MENU_ROWS 8u
+
+/* What is being played. Sprint and Daily are Game B rules with a 60 s active-play limit;
+ * Daily uses the date's seed and records a replay. */
+typedef enum { ROUND_A, ROUND_B, ROUND_SPRINT, ROUND_DAILY } Round;
 
 /* Clock page: Select held shows the best score of the mode that release starts. */
 typedef enum { HOLD_NONE, HOLD_A, HOLD_B } Hold;
@@ -32,6 +39,10 @@ static bool s_editing, s_focused = true;
 static uint8_t s_edit_value;
 static bool s_scores_dirty, s_scores_error, s_settings_error;
 static bool s_stats_dirty, s_stats_error, s_game_counted;
+static bool s_modes_dirty, s_modes_error, s_warned;
+static Round s_round;
+static Replay s_replay;
+static uint32_t s_round_date, s_daily_baseline;
 static uint32_t s_streak, s_play_carry_ms;
 static AppTimer *s_timer, *s_ring_timer, *s_idle_timer;
 static uint32_t s_timer_delay;
@@ -54,13 +65,21 @@ static uint64_t now_ms(void) {
   return (uint64_t)seconds * 1000u + millis;
 }
 
-static bool save_error(void) { return s_scores_error || s_settings_error || s_stats_error; }
+static bool save_error(void) { return s_scores_error || s_settings_error || s_stats_error || s_modes_error; }
+
+static bool timed_round(void) { return s_round >= ROUND_SPRINT; }
+/* Only Daily rounds are recorded; a NULL recorder makes the replay calls plain engine calls. */
+static Replay *recorder(void) { return s_round == ROUND_DAILY ? &s_replay : NULL; }
 
 /* Lifetime stats ride along with the scores: written at pause, game over, focus loss and exit. */
 static void flush_scores(void) {
   if (s_stats_dirty) {
     s_stats_error = !storage_save_stats(&s_data.stats);
     if (!s_stats_error) s_stats_dirty = false;
+  }
+  if (s_modes_dirty) {
+    s_modes_error = !storage_save_modes(&s_data.modes);
+    if (!s_modes_error) s_modes_dirty = false;
   }
   if (!s_scores_dirty) return;
   s_scores_error = !storage_save_scores(&s_data.scores);
@@ -69,7 +88,9 @@ static void flush_scores(void) {
 
 static void record_score(void) {
   time_t now = time(NULL);
-  if (scores_record(&s_data.scores, s_game.mode, s_game.score, clock_date(localtime(&now))))
+  if (timed_round()) {
+    if (modes_record(&s_data.modes, s_round == ROUND_DAILY, s_game.score, s_round_date)) s_modes_dirty = true;
+  } else if (scores_record(&s_data.scores, s_game.mode, s_game.score, clock_date(localtime(&now))))
     s_scores_dirty = true;
 }
 
@@ -77,8 +98,13 @@ static void record_score(void) {
 static void note_progress(void) {
   if (s_game_counted || (s_game.score == 0u && s_game.status != GAME_OVER)) return;
   s_game_counted = true;
-  stats_count_game(&s_data.stats, s_game.mode);
-  s_stats_dirty = true;
+  if (timed_round()) {
+    modes_count_game(&s_data.modes, s_round == ROUND_DAILY);
+    s_modes_dirty = true;
+  } else {
+    stats_count_game(&s_data.stats, s_game.mode);
+    s_stats_dirty = true;
+  }
 }
 
 static void note_play_ms(uint32_t ms) {
@@ -114,36 +140,62 @@ static void schedule_timer(void) {
   arm_idle();
   cancel_timer();
   if (!s_focused || s_page != PAGE_GAME) return;
-  if (s_game.status == GAME_PLAYING) s_timer_delay = s_game.step_ms_left;
-  else if (s_game.status == GAME_RECOVERING) s_timer_delay = s_game.recovery_ms_left;
-  else return;
+  if (s_game.status != GAME_PLAYING && s_game.status != GAME_RECOVERING) return;
+  s_timer_delay = game_next_boundary_ms(&s_game); /* Tick, end of recovery or the time limit. */
   s_timer_start = now_ms();
   s_timer = app_timer_register(s_timer_delay, timer_fired, NULL);
+}
+
+/* The Daily replay worth keeping is the best of the day: sealed when a round ends above
+ * the day's earlier best. Anything that cannot be stored verifiably is not kept. */
+static void keep_daily_replay(void) {
+  size_t length = replay_finish(&s_replay, &s_game);
+  if (length == 0u || s_game.score <= s_daily_baseline) return;
+  if (s_replay.overflow || !storage_save_replay(s_replay.bytes, length)) storage_clear_replay();
 }
 
 static void timer_fired(void *data) {
   uint32_t events;
   s_timer = NULL;
-  game_step(&s_game);
+  replay_step(recorder(), &s_game);
   events = game_take_events(&s_game);
   feedback_service_events(events, s_game.new_high_score, s_data.settings.vibration,
                           s_data.settings.sound);
+  if (timed_round() && !s_warned && s_game.status == GAME_PLAYING &&
+      s_game.time_left_ms <= PGW_SPRINT_WARNING_MS &&
+      (events & (GAME_EVENT_CATCH | GAME_EVENT_DROP | GAME_EVENT_MISS | GAME_EVENT_BONUS)) == 0u) {
+    s_warned = true; /* Ten seconds left: a cue on the first quiet tick. */
+    feedback_service_warn(s_data.settings.vibration, s_data.settings.sound);
+  }
   stats_note_events(&s_data.stats, events, &s_streak);
   note_play_ms(s_timer_delay);
   note_progress();
   record_score();
-  if (s_game.status == GAME_OVER) { flush_scores(); log_heap("over"); }
+  if (s_game.status == GAME_OVER) {
+    flush_scores();
+    if (s_round == ROUND_DAILY) keep_daily_replay();
+    log_heap("over");
+  }
   schedule_timer();
   render();
 }
 
-static void start_game(GameMode mode) {
+static void start_game(Round round) {
+  time_t now = time(NULL);
+  uint32_t seed;
   feedback_service_reset();
   flush_scores();
+  s_round = round;
+  s_round_date = clock_date(localtime(&now));
   s_game.high_scores[0] = s_data.scores.best[0];
-  s_game.high_scores[1] = s_data.scores.best[1];
+  s_game.high_scores[1] = round == ROUND_SPRINT ? s_data.modes.sprint_best :
+                          round == ROUND_DAILY ? s_data.modes.daily_best : s_data.scores.best[1];
   s_game.controls_swapped = s_data.settings.swap_buttons;
-  game_start(&s_game, mode, (uint32_t)now_ms());
+  seed = round == ROUND_DAILY ? game_daily_seed(s_round_date) : (uint32_t)now_ms();
+  game_start_timed(&s_game, round == ROUND_A ? GAME_A : GAME_B, seed, timed_round() ? PGW_SPRINT_MS : 0u);
+  s_daily_baseline = modes_daily_today(&s_data.modes, s_round_date);
+  s_warned = false;
+  if (round == ROUND_DAILY) replay_begin(&s_replay, &s_game, seed, s_round_date);
   s_streak = 0u;
   s_game_counted = false;
   s_page = PAGE_GAME;
@@ -161,10 +213,10 @@ static void pause_game(void) {
     uint64_t elapsed = now_ms() - s_timer_start;
     if (elapsed >= s_timer_delay) elapsed = s_timer_delay - 1u;
     cancel_timer();
-    game_advance(&s_game, (uint32_t)elapsed);
+    replay_advance(recorder(), &s_game, (uint32_t)elapsed);
     note_play_ms((uint32_t)elapsed);
   }
-  game_pause(&s_game);
+  replay_pause(recorder(), &s_game);
   note_progress();
   record_score();
   flush_scores();
@@ -306,14 +358,17 @@ static void render_panel(void) {
   snprintf(panel.footer, sizeof(panel.footer), "Select: open  Back: clock");
   switch (s_page) {
     case PAGE_MENU:
-      panel.count = 6;
+      panel.count = MENU_ROWS;
       panel.title = "Popeye G&W";
-      snprintf(panel.rows[0], sizeof(panel.rows[0]), "High scores");
-      snprintf(panel.rows[1], sizeof(panel.rows[1]), "Stats");
-      snprintf(panel.rows[2], sizeof(panel.rows[2]), "Alarm");
-      snprintf(panel.rows[3], sizeof(panel.rows[3]), "Settings");
-      snprintf(panel.rows[4], sizeof(panel.rows[4]), "Help");
-      snprintf(panel.rows[5], sizeof(panel.rows[5]), "About");
+      snprintf(panel.rows[0], sizeof(panel.rows[0]), "Daily");
+      snprintf(panel.rows[1], sizeof(panel.rows[1]), "Sprint");
+      snprintf(panel.rows[2], sizeof(panel.rows[2]), "High scores");
+      snprintf(panel.rows[3], sizeof(panel.rows[3]), "Stats");
+      snprintf(panel.rows[4], sizeof(panel.rows[4]), "Alarm");
+      snprintf(panel.rows[5], sizeof(panel.rows[5]), "Settings");
+      snprintf(panel.rows[6], sizeof(panel.rows[6]), "Help");
+      snprintf(panel.rows[7], sizeof(panel.rows[7]), "About");
+      if (s_row < 2u) snprintf(panel.footer, sizeof(panel.footer), "60 s of Game B rules\nSelect: play  Back: clock");
       break;
     case PAGE_SETTINGS: {
       unsigned row = 0;
@@ -348,29 +403,45 @@ static void render_panel(void) {
                s_row == 0u ? "Upright on wrist" : "Hold watch sideways");
       break;
     case PAGE_SCORES:
-      panel.title = "High scores";
+      panel.title = s_row == 0u ? "High scores 1/2" : "High scores 2/2";
       panel.selected = -1;
-      snprintf(panel.rows[0], sizeof(panel.rows[0]), "Game A: %lu", (unsigned long)s_data.scores.best[0]);
-      score_date(panel.rows[1], sizeof(panel.rows[1]), s_data.scores.date[0]);
-      snprintf(panel.rows[2], sizeof(panel.rows[2]), "Game B: %lu", (unsigned long)s_data.scores.best[1]);
-      score_date(panel.rows[3], sizeof(panel.rows[3]), s_data.scores.date[1]);
-      snprintf(panel.footer, sizeof(panel.footer), "Select: reset scores\nBack: clock");
+      if (s_row == 0u) {
+        snprintf(panel.rows[0], sizeof(panel.rows[0]), "Game A: %lu", (unsigned long)s_data.scores.best[0]);
+        score_date(panel.rows[1], sizeof(panel.rows[1]), s_data.scores.date[0]);
+        snprintf(panel.rows[2], sizeof(panel.rows[2]), "Game B: %lu", (unsigned long)s_data.scores.best[1]);
+        score_date(panel.rows[3], sizeof(panel.rows[3]), s_data.scores.date[1]);
+        snprintf(panel.footer, sizeof(panel.footer), "%s: Sprint, Daily\nSelect: reset  Back: clock",
+                 settings->landscape ? "Left/Right" : "Up/Down");
+      } else {
+        time_t now = time(NULL);
+        uint32_t today = modes_daily_today(&s_data.modes, clock_date(localtime(&now)));
+        snprintf(panel.rows[0], sizeof(panel.rows[0]), "Sprint: %lu", (unsigned long)s_data.modes.sprint_best);
+        score_date(panel.rows[1], sizeof(panel.rows[1]), s_data.modes.sprint_date);
+        snprintf(panel.rows[2], sizeof(panel.rows[2]), "Daily: %lu", (unsigned long)s_data.modes.daily_best);
+        score_date(panel.rows[3], sizeof(panel.rows[3]), s_data.modes.daily_best_date);
+        snprintf(panel.footer, sizeof(panel.footer), "Daily today: %lu\nSelect: reset  Back: clock", (unsigned long)today);
+      }
       break;
     case PAGE_STATS: {
       const Stats *stats = &s_data.stats;
       panel.selected = -1;
-      panel.title = s_row == 0u ? "Stats 1/2" : "Stats 2/2";
+      panel.title = s_row == 0u ? "Stats 1/3" : s_row == 1u ? "Stats 2/3" : "Stats 3/3";
       if (s_row == 0u) {
         snprintf(panel.rows[0], sizeof(panel.rows[0]), "Games A: %lu", (unsigned long)stats->games[0]);
         snprintf(panel.rows[1], sizeof(panel.rows[1]), "Games B: %lu", (unsigned long)stats->games[1]);
         snprintf(panel.rows[2], sizeof(panel.rows[2]), "Catches: %lu", (unsigned long)stats->catches);
         snprintf(panel.rows[3], sizeof(panel.rows[3]), "Drops: %lu", (unsigned long)stats->drops);
         snprintf(panel.footer, sizeof(panel.footer), "Select: next  Back: menu");
-      } else {
+      } else if (s_row == 1u) {
         snprintf(panel.rows[0], sizeof(panel.rows[0]), "Brutus hits: %lu", (unsigned long)stats->hits);
         snprintf(panel.rows[1], sizeof(panel.rows[1]), "Best run: %lu", (unsigned long)stats->best_streak);
         snprintf(panel.rows[2], sizeof(panel.rows[2]), "Bonuses: %lu", (unsigned long)stats->bonuses);
         play_time(panel.rows[3], sizeof(panel.rows[3]), stats->play_seconds);
+        snprintf(panel.footer, sizeof(panel.footer), "Select: next  Back: menu");
+      } else {
+        panel.count = 2;
+        snprintf(panel.rows[0], sizeof(panel.rows[0]), "Sprints: %lu", (unsigned long)s_data.modes.sprint_games);
+        snprintf(panel.rows[1], sizeof(panel.rows[1]), "Dailies: %lu", (unsigned long)s_data.modes.daily_games);
         snprintf(panel.footer, sizeof(panel.footer), "Select: reset stats\nBack: menu");
       }
       break;
@@ -386,8 +457,8 @@ static void render_panel(void) {
       panel.title = "Reset scores?";
       panel.count = 2;
       snprintf(panel.rows[0], sizeof(panel.rows[0]), "Keep scores");
-      snprintf(panel.rows[1], sizeof(panel.rows[1]), "Reset A + B");
-      snprintf(panel.footer, sizeof(panel.footer), "Select: choose  Back: cancel");
+      snprintf(panel.rows[1], sizeof(panel.rows[1]), "Reset all scores");
+      snprintf(panel.footer, sizeof(panel.footer), "A, B, Sprint, Daily\nSelect: choose  Back: cancel");
       break;
     case PAGE_ALARM: {
       unsigned hour = settings->alarm_hour, minute = settings->alarm_minute;
@@ -416,7 +487,7 @@ static void render_panel(void) {
       panel.selected = -1;
       snprintf(panel.footer, sizeof(panel.footer), "Select: next  Back: menu");
       if (s_row == 0u) {
-        panel.title = "Help 1/4";
+        panel.title = "Help 1/5";
         snprintf(panel.rows[0], sizeof(panel.rows[0]), "Tap Select: A");
         snprintf(panel.rows[1], sizeof(panel.rows[1]), "Hold Select: B");
         snprintf(panel.rows[2], sizeof(panel.rows[2]), "%s: move",
@@ -424,27 +495,34 @@ static void render_panel(void) {
         snprintf(panel.rows[3], sizeof(panel.rows[3]), "Select: pause/play");
         snprintf(panel.footer, sizeof(panel.footer), "Holding shows best score\nSelect: next  Back: menu");
       } else if (s_row == 1u) {
-        panel.title = "Help 2/4";
+        panel.title = "Help 2/5";
         snprintf(panel.rows[0], sizeof(panel.rows[0]), "Catch food: +1");
         snprintf(panel.rows[1], sizeof(panel.rows[1]), "Center can't catch");
         snprintf(panel.rows[2], sizeof(panel.rows[2]), "2 drops = 1 MISS");
         snprintf(panel.rows[3], sizeof(panel.rows[3]), "Hit = 1 MISS");
         snprintf(panel.footer, sizeof(panel.footer), "3 MISS ends game\nSelect: next  Back: menu");
       } else if (s_row == 2u) {
-        panel.title = "Help 3/4";
+        panel.title = "Help 3/5";
         snprintf(panel.rows[0], sizeof(panel.rows[0]), "Quit play: 2x Back");
         snprintf(panel.rows[1], sizeof(panel.rows[1]), "Clock %s: scores",
                  settings->landscape ? "Left" : "Up");
         snprintf(panel.rows[2], sizeof(panel.rows[2]), "Clock %s: menu",
                  settings->landscape ? "Right" : "Down");
         snprintf(panel.rows[3], sizeof(panel.rows[3]), "Settings: screen");
-      } else {
-        panel.title = "Help 4/4";
+      } else if (s_row == 3u) {
+        panel.title = "Help 4/5";
         snprintf(panel.rows[0], sizeof(panel.rows[0]), "Settings: Orientation");
         snprintf(panel.rows[1], sizeof(panel.rows[1]), "Vertical / Horizontal");
         snprintf(panel.rows[2], sizeof(panel.rows[2]), "Horizontal: Buttons");
         snprintf(panel.rows[3], sizeof(panel.rows[3]), "Bottom / Top");
         snprintf(panel.footer, sizeof(panel.footer), "Swap: reverse movement\nSelect: next  Back: menu");
+      } else {
+        panel.title = "Help 5/5";
+        snprintf(panel.rows[0], sizeof(panel.rows[0]), "Menu: Daily, Sprint");
+        snprintf(panel.rows[1], sizeof(panel.rows[1]), "60 s of Game B play");
+        snprintf(panel.rows[2], sizeof(panel.rows[2]), "Pause stops the clock");
+        snprintf(panel.rows[3], sizeof(panel.rows[3]), "Daily: same food today");
+        snprintf(panel.footer, sizeof(panel.footer), "Beep at 10 s left\nSelect: next  Back: menu");
       }
       break;
     case PAGE_ABOUT:
@@ -465,6 +543,7 @@ static void render_panel(void) {
 static void render(void) {
   Scene scene;
   ViewOverlay overlay = VIEW_OVERLAY_NONE;
+  char note[24] = "";
   time_t now = time(NULL);
   struct tm local = *localtime(&now);
   bool full_alarm = s_ringing && !s_passive_ring;
@@ -483,10 +562,19 @@ static void render(void) {
     scene_game(&scene, &s_game);
     feedback_service_apply(&scene);
     if (s_data.settings.alarm_on && (!s_ringing || local.tm_sec % 2 == 0)) scene_light(&scene, SEG_BELL);
-    if (s_game.status == GAME_PAUSED) overlay = VIEW_OVERLAY_PAUSED;
-    if (s_game.status == GAME_OVER) overlay = VIEW_OVERLAY_GAME_OVER;
+    if (s_game.status == GAME_PAUSED) {
+      overlay = VIEW_OVERLAY_PAUSED;
+      if (timed_round()) { /* Remaining active seconds, rounded up, in the overlay title. */
+        unsigned left = (s_game.time_left_ms + 999u) / 1000u;
+        snprintf(note, sizeof(note), "%s %u:%02u", s_round == ROUND_DAILY ? "Daily" : "Sprint", left / 60u, left % 60u);
+      }
+    }
+    if (s_game.status == GAME_OVER) {
+      overlay = VIEW_OVERLAY_GAME_OVER;
+      if (s_game.time_up) snprintf(note, sizeof(note), "Time up!");
+    }
   }
-  view_show(&scene, overlay, s_data.settings.ghosts, save_error());
+  view_show(&scene, overlay, note[0] != '\0' ? note : NULL, s_data.settings.ghosts, save_error());
 }
 
 static void move_down_handler(ClickRecognizerRef recognizer, void *context) {
@@ -494,7 +582,7 @@ static void move_down_handler(ClickRecognizerRef recognizer, void *context) {
       s_data.settings.landscape && s_data.settings.buttons_bottom);
   if (dismiss_ring()) return;
   if (s_page == PAGE_GAME) {
-    if (game_input(&s_game, up ? GAME_UP : GAME_DOWN, true)) render();
+    if (replay_input(recorder(), &s_game, up ? GAME_UP : GAME_DOWN, true)) render();
     arm_idle();
   } else if (s_page == PAGE_CLOCK) {
     open_page(up ? PAGE_SCORES : PAGE_MENU);
@@ -502,10 +590,11 @@ static void move_down_handler(ClickRecognizerRef recognizer, void *context) {
     unsigned limit = s_row == 1u ? 24u : 60u;
     s_edit_value = (uint8_t)((s_edit_value + (up ? 1u : limit - 1u)) % limit);
     render();
-  } else if (s_page != PAGE_SCORES && s_page != PAGE_ABOUT) {
+  } else if (s_page != PAGE_ABOUT) {
     unsigned count = (s_page == PAGE_RESET || s_page == PAGE_ORIENTATION || s_page == PAGE_STATS_RESET) ? 2u :
                      s_page == PAGE_HELP ? HELP_PAGES : s_page == PAGE_STATS ? STATS_PAGES :
-                     s_page == PAGE_SETTINGS ? settings_row_count() : s_page == PAGE_MENU ? 6u : 4u;
+                     s_page == PAGE_SCORES ? SCORES_PAGES : s_page == PAGE_SETTINGS ? settings_row_count() :
+                     s_page == PAGE_MENU ? MENU_ROWS : 4u;
     s_row = (s_row + (up ? count - 1u : 1u)) % count;
     render();
   }
@@ -515,7 +604,7 @@ static void move_up_handler(ClickRecognizerRef recognizer, void *context) {
   bool up = orientation_logical_up(click_recognizer_get_button_id(recognizer) == BUTTON_ID_UP,
       s_data.settings.landscape && s_data.settings.buttons_bottom);
   GameButton button = up ? GAME_UP : GAME_DOWN;
-  if (s_page == PAGE_GAME) game_input(&s_game, button, false);
+  if (s_page == PAGE_GAME) replay_input(recorder(), &s_game, button, false);
 }
 
 static void select_handler(ClickRecognizerRef recognizer, void *context) {
@@ -523,19 +612,20 @@ static void select_handler(ClickRecognizerRef recognizer, void *context) {
   if (dismiss_ring()) return;
   flush_scores();
   switch (s_page) {
-    case PAGE_CLOCK: start_game(GAME_A); return;
+    case PAGE_CLOCK: start_game(ROUND_A); return;
     case PAGE_GAME:
       if (s_game.status == GAME_PAUSED) {
-        game_resume(&s_game);
+        replay_resume(recorder(), &s_game);
         feedback_service_set_running(s_focused);
         schedule_timer();
       }
-      else if (s_game.status == GAME_OVER) start_game(s_game.mode);
+      else if (s_game.status == GAME_OVER) start_game(s_round);
       else pause_game();
       break;
     case PAGE_MENU: {
       static const Page destinations[] = { PAGE_SCORES, PAGE_STATS, PAGE_ALARM, PAGE_SETTINGS, PAGE_HELP, PAGE_ABOUT };
-      open_page(destinations[s_row]);
+      if (s_row < 2u) start_game(s_row == 0u ? ROUND_DAILY : ROUND_SPRINT);
+      else open_page(destinations[s_row - 2u]);
       return;
     }
     case PAGE_SCORES: open_page(PAGE_RESET); return;
@@ -557,11 +647,15 @@ static void select_handler(ClickRecognizerRef recognizer, void *context) {
     case PAGE_RESET:
       if (s_row == 1u) {
         HighScores reset;
+        ModeScores modes = s_data.modes;
         scores_defaults(&reset);
-        s_scores_error = !storage_save_scores(&reset);
+        modes_reset_scores(&modes); /* Bests only; round counts stay with the stats. */
+        s_scores_error = !(storage_save_scores(&reset) && storage_save_modes(&modes));
         if (s_scores_error) break;
         s_data.scores = reset;
-        s_scores_dirty = false;
+        s_data.modes = modes;
+        s_scores_dirty = s_modes_dirty = false;
+        storage_clear_replay(); /* It belonged to today's cleared Daily best. */
       }
       open_page(PAGE_SCORES);
       return;
@@ -606,9 +700,10 @@ static void select_handler(ClickRecognizerRef recognizer, void *context) {
 
 static void select_long_action(ClickRecognizerRef recognizer, void *context) {
   if (dismiss_ring()) return;
-  if (s_page == PAGE_CLOCK) start_game(GAME_B);
+  if (s_page == PAGE_CLOCK) start_game(ROUND_B);
   else if (s_page == PAGE_GAME && s_game.status == GAME_OVER)
-    start_game(s_game.mode == GAME_A ? GAME_B : GAME_A);
+    start_game(s_round == ROUND_A ? ROUND_B : s_round == ROUND_B ? ROUND_A :
+               s_round == ROUND_SPRINT ? ROUND_DAILY : ROUND_SPRINT);
   else if (s_page != PAGE_GAME) select_handler(recognizer, context);
 }
 
@@ -626,7 +721,7 @@ static void select_up_handler(ClickRecognizerRef recognizer, void *context) {
   if (!s_select_down) return;
   s_select_down = false;
   s_hold = HOLD_NONE;
-  if (hold != HOLD_NONE) start_game(hold == HOLD_B ? GAME_B : GAME_A);
+  if (hold != HOLD_NONE) start_game(hold == HOLD_B ? ROUND_B : ROUND_A);
   else if (!s_select_handled) select_handler(recognizer, context);
 }
 

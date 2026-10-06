@@ -21,6 +21,7 @@ static ViewOverlay s_overlay;
 static bool s_art_ready;
 static bool s_show_ghosts, s_save_error, s_panel_visible;
 static ViewPanel s_panel;
+static char s_note[24];
 
 static void draw_text(GContext *ctx, const char *text, GRect rect, bool bold,
                       GTextAlignment alignment) {
@@ -110,7 +111,7 @@ static void draw_overlay(GContext *ctx) {
   graphics_context_set_stroke_color(ctx, GColorBlack);
   graphics_draw_round_rect(ctx, box, 4);
   graphics_context_set_text_color(ctx, GColorBlack);
-  graphics_draw_text(ctx, titles[s_overlay], fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD),
+  graphics_draw_text(ctx, s_note[0] != '\0' ? s_note : titles[s_overlay], fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD),
                      GRect(box.origin.x, box.origin.y, box.size.w, 22),
                      GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
   graphics_draw_text(ctx, hints[s_overlay], fonts_get_system_font(FONT_KEY_GOTHIC_14),
@@ -263,8 +264,9 @@ void view_set_landscape(bool landscape, bool buttons_bottom) {
   s_buttons_bottom = landscape && buttons_bottom;
 }
 
-void view_show(const Scene *scene, ViewOverlay overlay, bool ghosts, bool save_error) {
+void view_show(const Scene *scene, ViewOverlay overlay, const char *note, bool ghosts, bool save_error) {
   s_panel_visible = false;
+  snprintf(s_note, sizeof(s_note), "%s", note != NULL ? note : "");
   s_show_ghosts = ghosts;
   if (s_loaded_landscape != s_landscape || s_loaded_bottom != s_buttons_bottom ||
       s_loaded_ghosts != ghosts) load_scene();

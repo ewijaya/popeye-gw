@@ -27,7 +27,8 @@ void view_init(Layer *parent, bool ghosts);
 void view_deinit(void);
 void view_set_landscape(bool landscape, bool buttons_bottom);
 /* Copies the lit segments and requests one redraw. */
-void view_show(const Scene *scene, ViewOverlay overlay, bool ghosts, bool save_error);
+/* note, if not NULL, replaces the Paused / Game over overlay title (for example "Daily 0:42"). */
+void view_show(const Scene *scene, ViewOverlay overlay, const char *note, bool ghosts, bool save_error);
 void view_panel(const ViewPanel *panel);
 
 #endif

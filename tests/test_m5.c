@@ -171,7 +171,7 @@ static void test_sound_cues(void) {
   assert(feedback_sound_cue(GAME_EVENT_OVER | GAME_EVENT_MISS | GAME_EVENT_DROP, true) == CUE_RECORD);
   assert(feedback_sound_cue(GAME_EVENT_OVER | GAME_EVENT_BONUS | GAME_EVENT_CATCH, false) == CUE_OVER);
   assert(feedback_sound_notes(CUE_NONE, &count) == NULL && count == 0);
-  for (cue = CUE_CATCH; cue <= CUE_ALARM; ++cue) {
+  for (cue = CUE_CATCH; cue <= CUE_WARNING; ++cue) {
     notes = feedback_sound_notes((SoundCue)cue, &count);
     assert(notes != NULL && count >= 1 && count <= FEEDBACK_SOUND_MAX_NOTES);
     for (i = 0; i < count; ++i) assert(notes[i].midi <= 127 && notes[i].ms >= 30 && notes[i].ms <= 300);
@@ -188,6 +188,10 @@ static void test_sound_cues(void) {
   for (i = 1; i < count; ++i) assert(notes[i].midi > notes[i - 1].midi);
   notes = feedback_sound_notes(CUE_ALARM, &count);
   assert(count >= 3 && notes[0].midi != 0 && notes[1].midi == 0); /* Repeated beeps with rests. */
+  notes = feedback_sound_notes(CUE_WARNING, &count);
+  assert(count == 3 && notes[0].midi == notes[2].midi && notes[1].midi == 0 && total_ms(CUE_WARNING) <= 200u);
+  assert(feedback_sound_cue(GAME_EVENT_TIME_UP | GAME_EVENT_OVER, false) == CUE_OVER); /* Time-up is a game over. */
+  assert(feedback_sound_cue(GAME_EVENT_TIME_UP | GAME_EVENT_OVER | GAME_EVENT_CATCH, true) == CUE_RECORD);
 }
 
 static void test_sound_service(void) {
@@ -240,6 +244,22 @@ static void test_sound_service(void) {
   feedback_service_play(CUE_ALARM, false);
   feedback_service_play(CUE_NONE, true);
   assert(fake_speaker_plays == plays + 1);
+  /* Ten seconds left in a timed round: the double blip and a pulse, gated like the other cues. */
+  feedback_service_set_running(true);
+  plays = fake_speaker_plays;
+  feedback_service_warn(true, true);
+  assert(fake_speaker_plays == plays + 1 && fake_speaker_count == 3 && fake_short_pulses > 0);
+  plays = fake_speaker_plays; fake_short_pulses = 0;
+  feedback_service_warn(false, false);
+  assert(fake_speaker_plays == plays && fake_short_pulses == 0);
+  fake_quiet = true; feedback_service_warn(true, true);
+  assert(fake_speaker_plays == plays && fake_short_pulses == 0);
+  fake_quiet = false; fake_muted = true; feedback_service_warn(false, true);
+  assert(fake_speaker_plays == plays);
+  fake_muted = false;
+  feedback_service_set_running(false);
+  feedback_service_warn(true, true);
+  assert(fake_speaker_plays == plays && fake_short_pulses == 0); /* Paused: silent. */
   /* Pause, focus loss, restart and exit stop whatever is sounding. */
   plays = fake_speaker_stops;
   feedback_service_set_running(false);

@@ -60,6 +60,12 @@ void feedback_service_play(SoundCue cue, bool sound) {
   speaker_play_notes(s_notes, count, FEEDBACK_SOUND_VOLUME);
 }
 
+void feedback_service_warn(bool vibration, bool sound) {
+  if (!s_running) return;
+  feedback_service_play(CUE_WARNING, sound);
+  if (vibration && !quiet_time_is_active()) vibes_short_pulse();
+}
+
 void feedback_service_init(void (*redraw)(void)) {
   feedback_service_reset();
   s_running = false;

@@ -6,6 +6,7 @@ static const SoundNote miss_notes[] = { { 72, 150 } };
 static const SoundNote bonus_notes[] = { { 88, 70 }, { 95, 110 } };
 static const SoundNote over_notes[] = { { 79, 110 }, { 76, 110 }, { 72, 220 } };
 static const SoundNote record_notes[] = { { 84, 80 }, { 88, 80 }, { 91, 80 }, { 96, 200 } };
+static const SoundNote warning_notes[] = { { 93, 60 }, { 0, 50 }, { 93, 60 } };
 static const SoundNote alarm_notes[] = { { 96, 70 }, { 0, 60 }, { 96, 70 }, { 0, 60 }, { 96, 70 }, { 0, 60 }, { 96, 70 } };
 
 SoundCue feedback_sound_cue(uint32_t events, bool record) {
@@ -25,6 +26,7 @@ const SoundNote *feedback_sound_notes(SoundCue cue, unsigned *count) {
     case CUE_OVER: return CUE_NOTES(over_notes);
     case CUE_RECORD: return CUE_NOTES(record_notes);
     case CUE_ALARM: return CUE_NOTES(alarm_notes);
+    case CUE_WARNING: return CUE_NOTES(warning_notes);
     case CUE_NONE: break;
   }
 #undef CUE_NOTES
