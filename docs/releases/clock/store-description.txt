@@ -1,0 +1,11 @@
+Old-school charm. Right on time.
+
+Popeye G&W Clock is a nostalgic LCD watchface with an active harbour scene. Olive Oyl throws, Popeye moves and catches, and Brutus joins the action in crisp, fixed-pose animation inspired by 1980s handhelds.
+
+Make it yours from My Apps settings: choose two information rows for the date, battery and connection, daily steps, optional weather, world time or an event countdown. Pick an LCD colour theme, adjust the inactive segment ghosts, or switch to larger digits, high contrast and reduced motion. Four layout presets help you get started; animation activity is selected separately. Japanese date labels are available.
+
+Choose continuous Lively, faster Arcade, Relaxed, a Classic minute scene or Still. Set the pace, active characters, quiet hours and battery cutoff. Motion pauses while the face is covered or Pebble Quiet Time is active. No sound; disconnect vibration is optional and off by default.
+
+Weather uses Open-Meteo and is off until enabled. Phone location or a manual city is available; weather updates require the phone and Internet. Steps require Pebble Health access. World time uses bundled daylight-saving rules. Cached data is marked when stale.
+
+An unofficial, fan-made watchface inspired by Popeye Game & Watch, with no official affiliation. The playable Popeye G&W game is a separate app.

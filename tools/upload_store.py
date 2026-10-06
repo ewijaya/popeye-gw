@@ -41,11 +41,33 @@ def semver(value):
     return tuple(map(int, value.split('.')))
 
 
+def app_config(app="popeye-gw", path=None):
+    """Resolve one app without inheriting another app's identity or journal."""
+    config = json.loads((path or ROOT / "docs/release-config.json").read_text())
+    require(config.get("schema") == 2, "Unsupported release configuration schema")
+    require(app in config["apps"], "Unknown release app")
+    result = {k: v for k, v in config.items() if k not in {"schema", "apps"}}
+    result.update(config["apps"][app], app=app)
+    require(result["app_type"] in {"watchapp", "watchface"}, "Unknown app type")
+    require(Path(result["artifact_name"]).name == result["artifact_name"],
+            "Artifact must be a filename")
+    return result
+
+
+def candidate_folder(folder, config):
+    folder = folder.resolve()
+    require(folder.parent == (ROOT / config["release_dir"]).resolve(),
+            "Use a frozen candidate in the selected app's release directory")
+    return folder
+
+
 def candidate(folder, config, publish=False):
     manifest = json.loads((folder / "manifest.json").read_text())
-    pbw = (folder / "popeye-gw.pbw").read_bytes()
+    pbw = (folder / config["artifact_name"]).read_bytes()
     notes = (folder / "notes.md").read_bytes()
     semver(manifest["version"])
+    require(manifest.get("app", "popeye-gw") == config["app"],
+            "Manifest belongs to another app")
     require(digest(pbw) == manifest["pbw_sha256"] and len(pbw) == manifest["pbw_bytes"],
             "Frozen PBW differs from manifest")
     require(digest(notes) == manifest["notes_sha256"], "Frozen notes differ from manifest")
@@ -55,11 +77,11 @@ def candidate(folder, config, publish=False):
             "Existing store App ID required")
     require(manifest.get("store_app_id") == config["store_app_id"],
             "Freeze the destination App ID in the manifest")
-    with zipfile.ZipFile(folder / "popeye-gw.pbw") as archive:
+    with zipfile.ZipFile(folder / config["artifact_name"]) as archive:
         info = json.loads(archive.read("appinfo.json"))
     require(info["uuid"] == config["uuid"] and info["versionLabel"] == manifest["version"]
             and info["targetPlatforms"] == config["platforms"]
-            and info["watchapp"].get("watchface") is False
+            and info["watchapp"].get("watchface") is (config["app_type"] == "watchface")
             and info["shortName"] == info["longName"] == config["display_name"],
             "Frozen PBW identity mismatch")
     if publish:
@@ -238,7 +260,7 @@ def publish(folder, config, manifest, notes, session, token, publisher, post, fe
         with attempt.open("x") as handle:
             json.dump(dict(identity, status="submitting"), handle, indent=2)
         guarded._upload_release(api_base=API, app_id=config["store_app_id"], firebase_id_token=token,
-            pbw_path=str(folder / "popeye-gw.pbw"), version=manifest["version"], release_notes=notes,
+            pbw_path=str(folder / config["artifact_name"]), version=manifest["version"], release_notes=notes,
             is_published=True, gif_paths=[], screenshot_paths=[], replace_screenshots=False)
     after = dashboard_app(session, config)
     check_preserved(after, baseline, manifest["version"])
@@ -248,14 +270,14 @@ def publish(folder, config, manifest, notes, session, token, publisher, post, fe
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("candidate", type=Path, help="Frozen .release/X.Y.Z directory")
+    parser.add_argument("candidate", type=Path, help="Frozen candidate directory for the selected app")
+    parser.add_argument("--app", default="popeye-gw", help="Release app (default: popeye-gw)")
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--inspect", action="store_true", help="Read authenticated listing without publishing")
     mode.add_argument("--publish", action="store_true", help="Publish using recorded exact-candidate approval")
     args = parser.parse_args()
-    config = json.loads((ROOT / "docs/release-config.json").read_text())
-    folder = args.candidate.resolve()
-    require(folder.parent == ROOT / ".release", "Use a frozen .release/X.Y.Z candidate")
+    config = app_config(args.app)
+    folder = candidate_folder(args.candidate, config)
     manifest, notes = candidate(folder, config, args.publish)
     if not (args.inspect or args.publish):
         print("Local candidate checks passed; no network requests made.")

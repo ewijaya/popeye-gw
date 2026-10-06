@@ -1,29 +1,63 @@
 {
-  "schema": 1,
+  "schema": 2,
   "github_repo": "ewijaya/popeye-gw",
   "branch": "main",
-  "uuid": "6b7c8c28-36f0-47ca-a073-3e8f33efcaf0",
-  "display_name": "Popeye G&W",
-  "app_type": "watchapp",
-  "category": "Games",
-  "visibility": "listed",
-  "platforms": [
-    "emery"
-  ],
-  "artifact_name": "popeye-gw.pbw",
-  "store_app_id": "e9cb2950ca21440798fb1db8",
-  "store_listing_url": "https://apps.repebble.com/e9cb2950ca21440798fb1db8",
   "registration_method": "dashboard-new",
   "appstore_api": "https://appstore-api.repebble.com",
   "dashboard": "https://developer.repebble.com",
   "public_store": "https://apps.repebble.com",
   "public_catalog_path": "/api/v1/apps/uuid/{uuid}",
-  "description_file": "docs/releases/store-description.txt",
-  "listing_assets_dir": "docs/releases/listing",
-  "budgets": {
-    "app_image_bytes": 61440,
-    "resources_bytes": 200000,
-    "pbw_bytes": 2000000,
-    "min_free_heap_percent": 20
+  "apps": {
+    "popeye-gw": {
+      "uuid": "6b7c8c28-36f0-47ca-a073-3e8f33efcaf0",
+      "display_name": "Popeye G&W",
+      "app_type": "watchapp",
+      "category": "Games",
+      "visibility": "listed",
+      "platforms": [
+        "emery"
+      ],
+      "artifact_name": "popeye-gw.pbw",
+      "store_app_id": "e9cb2950ca21440798fb1db8",
+      "store_listing_url": "https://apps.repebble.com/e9cb2950ca21440798fb1db8",
+      "description_file": "docs/releases/store-description.txt",
+      "listing_assets_dir": "docs/releases/listing",
+      "budgets": {
+        "app_image_bytes": 61440,
+        "resources_bytes": 200000,
+        "pbw_bytes": 2000000,
+        "min_free_heap_percent": 20
+      },
+      "project_dir": ".",
+      "tag_prefix": "v",
+      "changelog_file": "CHANGELOG.md",
+      "release_dir": ".release",
+      "registration_file": ".release/registration.json"
+    },
+    "popeye-gw-clock": {
+      "uuid": "9f808f24-978d-4e7d-9af1-16bd31e4b8c5",
+      "display_name": "Popeye G&W Clock",
+      "app_type": "watchface",
+      "category": "Faces",
+      "visibility": "listed",
+      "platforms": [
+        "emery"
+      ],
+      "artifact_name": "popeye-gw-clock.pbw",
+      "store_app_id": null,
+      "store_listing_url": null,
+      "description_file": "docs/releases/clock/store-description.txt",
+      "listing_assets_dir": "docs/releases/clock/listing",
+      "budgets": {
+        "app_image_bytes": 61440,
+        "resources_bytes": 200000,
+        "pbw_bytes": 2000000
+      },
+      "project_dir": "watchface",
+      "tag_prefix": "clock-v",
+      "changelog_file": "watchface/CHANGELOG.md",
+      "release_dir": ".release/popeye-gw-clock",
+      "registration_file": ".release/popeye-gw-clock/registration.json"
+    }
   }
 }

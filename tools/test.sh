@@ -1,6 +1,6 @@
 #!/bin/sh
 # Host-only C99 suite plus the art pipeline, upload and leaderboard checks (Python 3 standard library);
-# no SDK or Node runtime required.
+# no SDK required; watchface phone tests use Node.
 set -eu
 
 repo_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)

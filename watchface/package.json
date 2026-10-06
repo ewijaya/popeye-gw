@@ -6,12 +6,87 @@
     "pebble-app"
   ],
   "private": true,
-  "dependencies": {},
+  "scripts": {
+    "test:js": "node tests/test_pkjs.js"
+  },
+  "dependencies": {
+    "@rebble/clay": "1.1.0",
+    "moment": "2.30.1",
+    "moment-timezone": "0.6.5"
+  },
   "pebble": {
     "displayName": "Popeye G&W Clock",
     "uuid": "9f808f24-978d-4e7d-9af1-16bd31e4b8c5",
     "sdkVersion": "3",
-    "enableMultiJS": false,
+    "enableMultiJS": true,
+    "capabilities": [
+      "configurable",
+      "location",
+      "health"
+    ],
+    "messageKeys": {
+      "Preset": 1,
+      "Row1": 2,
+      "Row2": 3,
+      "RotateSeconds": 4,
+      "TimeFormat": 5,
+      "LargeTime": 6,
+      "HighContrast": 7,
+      "ReducedMotion": 8,
+      "BlinkColon": 9,
+      "DateFormat": 10,
+      "Language": 11,
+      "ShowYear": 12,
+      "ShowWeek": 13,
+      "BatteryStyle": 14,
+      "BatteryThreshold": 15,
+      "DisconnectAlert": 16,
+      "StepGoal": 17,
+      "StepStyle": 18,
+      "Celebrate": 19,
+      "WeatherEnabled": 20,
+      "WeatherUnits": 21,
+      "WeatherDetail": 22,
+      "WeatherRefresh": 23,
+      "WeatherEffects": 24,
+      "LocationMode": 25,
+      "LocationName": 26,
+      "WorldZone": 27,
+      "WorldLabel": 28,
+      "WorldFormat": 29,
+      "EventLabel": 30,
+      "EventDate": 31,
+      "EventRepeat": 32,
+      "EventElapsed": 33,
+      "AnimationMode": 34,
+      "AnimationSpeed": 35,
+      "AnimationPause": 36,
+      "CharacterActivity": 37,
+      "QuietStart": 38,
+      "QuietEnd": 39,
+      "QuietHours": 40,
+      "LowBatteryCutoff": 41,
+      "Theme": 42,
+      "BackgroundColor": 43,
+      "SegmentColor": 44,
+      "AccentColor": 45,
+      "CustomColors": 46,
+      "GhostStrength": 47,
+      "ColorArtwork": 48,
+      "RequestData": 100,
+      "WeatherTemp": 101,
+      "WeatherHigh": 102,
+      "WeatherLow": 103,
+      "WeatherCode": 104,
+      "WeatherUpdated": 105,
+      "WeatherStatus": 106,
+      "WorldOffset": 107,
+      "WorldUpdated": 108,
+      "ConfigVersion": 109,
+      "PhoneReady": 110,
+      "WeatherLocation": 111,
+      "WeatherUnit": 112
+    },
     "targetPlatforms": [
       "emery"
     ],
@@ -22,14 +97,21 @@
       "media": [
         {
           "type": "bitmap",
-          "name": "BACKDROP_GHOSTS",
-          "file": "../../resources/images/backdrop-ghosts.png"
+          "name": "BACKDROP",
+          "file": "../../resources/images/backdrop.png",
+          "memoryFormat": "8Bit"
         },
         {
           "type": "bitmap",
           "name": "SEGMENTS",
           "file": "../../resources/images/segments.png",
           "memoryFormat": "1BitPalette"
+        },
+        {
+          "type": "font",
+          "name": "INFO_SANS_15",
+          "file": "fonts/NotoSansJP-Regular.ttf",
+          "characterRegex": "[ -~日月火水木金土]"
         }
       ]
     }
