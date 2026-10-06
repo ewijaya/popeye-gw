@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.3.0 — 2026-10-06
 
 - Make the beeps quieter and add volume levels: Settings → Sound now cycles Off, Low, Medium and High. Medium, the new default, is a third of the previous level, and High is still quieter than before. The alarm uses the same level. Existing On/Off choices are kept.
 

@@ -10,8 +10,9 @@ black segments, a white field, and vivid red, orange, blue and turquoise.
 
 *Real gameplay from the Emery emulator (a sped-up highlight, shown at half of its 2x size).*
 
-**Status:** Version 1.2.0 is published on GitHub and the Pebble App Store.
-It adds an Ivory LCD theme (Settings → Theme); see the [release record](docs/releases/1.2.0.md).
+**Status:** Version 1.3.0 is being prepared for PT2 testing and publication.
+It makes the beeps quieter and adds Sound levels (Off, Low, Medium, High).
+Version 1.2.0 remains the published release; see its [release record](docs/releases/1.2.0.md).
 
 **Download:** [Pebble App Store](https://apps.repebble.com/e9cb2950ca21440798fb1db8) ·
 [GitHub release v1.2.0](https://github.com/ewijaya/popeye-gw/releases/tag/v1.2.0)
