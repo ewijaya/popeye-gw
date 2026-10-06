@@ -1,0 +1,37 @@
+{
+  "name": "popeye-gw-clock",
+  "author": "Edward Wijaya",
+  "version": "1.0.0",
+  "keywords": [
+    "pebble-app"
+  ],
+  "private": true,
+  "dependencies": {},
+  "pebble": {
+    "displayName": "Popeye G&W Clock",
+    "uuid": "9f808f24-978d-4e7d-9af1-16bd31e4b8c5",
+    "sdkVersion": "3",
+    "enableMultiJS": false,
+    "targetPlatforms": [
+      "emery"
+    ],
+    "watchapp": {
+      "watchface": true
+    },
+    "resources": {
+      "media": [
+        {
+          "type": "bitmap",
+          "name": "BACKDROP_GHOSTS",
+          "file": "../../resources/images/backdrop-ghosts.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "SEGMENTS",
+          "file": "../../resources/images/segments.png",
+          "memoryFormat": "1BitPalette"
+        }
+      ]
+    }
+  }
+}

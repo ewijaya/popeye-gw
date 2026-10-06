@@ -1,0 +1,57 @@
+#
+# Popeye G&W Clock. A separate watchface package that reuses the game's pure
+# modules and artwork from the repository root instead of copying them.
+#
+import sys
+
+top = '.'
+out = 'build'
+
+# Shared with the game app: scene model, clock scene and rules (for the demo pose).
+SHARED_SOURCES = ['../src/c/scene.c', '../src/c/clock.c', '../src/c/game.c']
+SHARED_INCLUDES = ['../src/c']
+
+
+def options(ctx):
+    ctx.load('pebble_sdk')
+
+
+def configure(ctx):
+    ctx.load('pebble_sdk')
+
+
+def build(ctx):
+    ctx.load('pebble_sdk')
+    ctx.env.BUNDLE_NAME = 'popeye-gw-clock.pbw'
+    ctx.add_post_fun(check_app_size)
+
+    binaries = []
+    shared = [ctx.path.find_node(path) for path in SHARED_SOURCES]
+    if None in shared:
+        ctx.fatal('Shared game sources not found next to watchface/')
+    shared_includes = [ctx.path.find_node(path) for path in SHARED_INCLUDES]
+
+    cached_env = ctx.env
+    for platform in ctx.env.TARGET_PLATFORMS:
+        ctx.env = ctx.all_envs[platform]
+        ctx.set_group(ctx.env.PLATFORM_NAME)
+        app_elf = '{}/pebble-app.elf'.format(ctx.env.BUILD_DIR)
+        ctx.pbl_build(source=ctx.path.ant_glob('src/c/**/*.c') + shared,
+                      includes=shared_includes, target=app_elf, bin_type='app')
+        binaries.append({'platform': platform, 'app_elf': app_elf})
+    ctx.env = cached_env
+
+    ctx.set_group('bundle')
+    ctx.pbl_bundle(binaries=binaries)
+
+
+def check_app_size(ctx):
+    """Check the linked image against the repository budget with SDK binutils."""
+    checker = ctx.path.find_node('../tools/check_app_size.py').abspath()
+    for platform in ctx.env.TARGET_PLATFORMS:
+        platform_env = ctx.all_envs[platform]
+        elf = ctx.bldnode.make_node(
+            '{}/pebble-app.elf'.format(platform_env.BUILD_DIR)).abspath()
+        if ctx.exec_command([sys.executable, checker, '--size-tool',
+                             platform_env.SIZE, elf]):
+            ctx.fatal('App image budget check failed for {}'.format(platform))
