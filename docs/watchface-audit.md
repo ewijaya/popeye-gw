@@ -219,3 +219,20 @@ checks only, not the cancelled battery-consumption test.
 Host C suites and all19 phone tests passed; SDK build succeeded.
 App image23,111/61,440 bytes; resources12,558 bytes.
 PBW SHA256 `6631fc45bd7cf2db7cde1ef778af3ec3f468a29f9e2842dd780d1bad3bf0ecdf`.
+
+
+## First-release preparation — 2026-10-06
+
+Clean source preparation commit32a48ad on isolated release/clock-1.0.0,
+integrated with published origin/main7bfb39a. Published game src/resources,
+root package and wscript unchanged; local main's unreleased game1.2 work is
+excluded. Full normal/sanitizer suites and19phone checks passed;14uploader
+checks passed with SDK Python. GitHub push/PR CI passed. Clean SDK4.33.1 build
+completed with Pebble Tool5.0.40; app image23,111/61,440, resources12,558,
+PBW1,140,400 bytes. Heap is not a clock release gate; unused game-engine
+functions are removed by section garbage collection (same clock image size).
+PBW SHA256111f8bb595f4938b841e5c030ee9af4eaaad35d92bb4221fd712311afb5fe1be.
+Four native release gallery captures verified after owner-authorized emulator
+reinstall; initial launcher captures discarded. Only gallery/docs changed
+following the build. Public UUID lookup404 and refreshed Dashboard list both
+showed no watchface registration. No store/game publication performed.

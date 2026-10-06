@@ -5,18 +5,22 @@ These assets belong to the clock; the game's listing remains unchanged.
 
 | Asset | Dimensions | Source |
 |---|---|---|
-| [Static clock](01-clock.png) | 200 × 228 | Native Emery watchface screenshot |
-| [Minute demo](02-minute-demo.png) | 200 × 228 | Native Emery watchface screenshot |
+| [Classic](01-clock.png) | 200 × 228 | Native Emery release candidate screenshot |
+| [Everyday](02-everyday.png) | 200 × 228 | Native Emery release candidate screenshot |
+| [Large Time](03-large-time.png) | 200 × 228 | Native Emery release candidate screenshot |
+| [Japanese / Green LCD](04-japanese-green.png) | 200 × 228 | Native Emery release candidate screenshot |
 | [Banner](banner-720x320.png) | 720 × 320 | Generated clock-specific marketing illustration |
 | [Large icon](icon-144.png) | 144 × 144 | Generated clock-specific icon |
 | [Small icon](icon-80.png) | 80 × 80 | Same icon master |
 | [Alternate small icon](icon-48.png) | 48 × 48 | Same master; original game PRD size |
 
-Screenshots came from the running 1.0.0 watchface PBW, SHA-256
-`12bf420c966e08e227daba870e8a6e8fb353cd021f330ccda435586d8ed420a8`.
-The emulator clock was set to 10:09:50 for the static scene, then 10:09:59
-and allowed to cross the minute for the demo. Captures were not retouched,
-resized or generated. No game screenshots were reused.
+The four gallery screenshots came from the clean 1.0.0 release build, SHA-256
+`111f8bb595f4938b841e5c030ee9af4eaaad35d92bb4221fd712311afb5fe1be`.
+They are native 200×228 captures, without retouching or resizing. The Classic
+capture uses 10:09; the remaining captures show current time after the SDK
+resynchronized it. The prior minute-demo gallery image is archived. The owner
+confirmed the shared emulator was free and authorized reinstall/captures after
+the first attempt showed the launcher; that failed set was discarded.
 
 The current banner was completely redesigned with the built-in image generator
 on 2026-10-06: an early-1980s electronics-advertising layout with vermilion/navy

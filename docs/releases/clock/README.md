@@ -1,13 +1,12 @@
 # Popeye G&W Clock 1.0.0 preparation
 
-Status: local preparation only, not frozen or published.
+Status: 1.0.0 candidate prepared; final owner approval and publication pending.
 
-The rich watchface update supersedes the original minute-demo build described
-below. It adds continuous motion, Clay settings and configurable information
-rows. See [the implementation audit](../../watchface-audit.md). The gallery
-screenshots in `listing/` still depict the earlier build and must be refreshed
-from the final frozen candidate before publication. Banner and icons remain
-usable; the subtitle artwork is generic and says “The Popeye watchface.”
+The current watchface includes Clay settings, independent continuous animation,
+four layout presets, information rows, accessible text and Japanese dates.
+The four native gallery screenshots were refreshed from the release build.
+See [the implementation audit](../../watchface-audit.md) and the final review
+under `.release/popeye-gw-clock/1.0.0/` in the isolated release checkout.
 
 | Listing field | Proposed value |
 |---|---|
