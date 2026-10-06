@@ -5,6 +5,7 @@
 #include "game.h"
 #include "feedback_service.h"
 #include "glance.h"
+#include "online_net.h"
 #include "orientation.h"
 #include "replay.h"
 #include "storage.h"
@@ -16,11 +17,11 @@ typedef enum { PAGE_CLOCK, PAGE_GAME, PAGE_MENU, PAGE_SCORES,
                PAGE_ORIENTATION, PAGE_STATS, PAGE_STATS_RESET } Page;
 
 typedef enum { SETTING_ORIENTATION, SETTING_BUTTONS, SETTING_SWAP,
-               SETTING_VIBRATION, SETTING_SOUND, SETTING_GHOSTS, SETTING_DEMO } SettingItem;
+               SETTING_VIBRATION, SETTING_SOUND, SETTING_GHOSTS, SETTING_DEMO, SETTING_ONLINE } SettingItem;
 
-#define HELP_PAGES 5u
+#define HELP_PAGES 6u
 #define STATS_PAGES 3u
-#define SCORES_PAGES 2u
+#define SCORES_PAGES 3u
 #define MENU_ROWS 8u
 
 /* What is being played. Sprint and Daily are Game B rules with a 60 s active-play limit;
@@ -40,6 +41,7 @@ static uint8_t s_edit_value;
 static bool s_scores_dirty, s_scores_error, s_settings_error;
 static bool s_stats_dirty, s_stats_error, s_game_counted;
 static bool s_modes_dirty, s_modes_error, s_warned;
+static bool s_online_dirty, s_online_error;
 static Round s_round;
 static Replay s_replay;
 static uint32_t s_round_date, s_daily_baseline;
@@ -58,6 +60,7 @@ static void render(void);
 static void sync_ticks(void);
 static void ring_tick(void *data);
 static void arm_idle(void);
+static void log_heap(const char *moment);
 
 static uint64_t now_ms(void) {
   time_t seconds;
@@ -65,7 +68,7 @@ static uint64_t now_ms(void) {
   return (uint64_t)seconds * 1000u + millis;
 }
 
-static bool save_error(void) { return s_scores_error || s_settings_error || s_stats_error || s_modes_error; }
+static bool save_error(void) { return s_scores_error || s_settings_error || s_stats_error || s_modes_error || s_online_error; }
 
 static bool timed_round(void) { return s_round >= ROUND_SPRINT; }
 /* Only Daily rounds are recorded; a NULL recorder makes the replay calls plain engine calls. */
@@ -80,6 +83,10 @@ static void flush_scores(void) {
   if (s_modes_dirty) {
     s_modes_error = !storage_save_modes(&s_data.modes);
     if (!s_modes_error) s_modes_dirty = false;
+  }
+  if (s_online_dirty) {
+    s_online_error = !storage_save_online(&s_data.online);
+    if (!s_online_error) s_online_dirty = false;
   }
   if (!s_scores_dirty) return;
   s_scores_error = !storage_save_scores(&s_data.scores);
@@ -119,6 +126,7 @@ static bool save_settings(const Settings *settings) {
   s_game.controls_swapped = settings->swap_buttons;
   if (!settings->vibration) vibes_cancel();
   if (!settings->sound) feedback_service_stop_sound();
+  if (!settings->online) online_net_cancel();
   alarm_refresh(settings, time(NULL));
   sync_ticks();
   return true;
@@ -146,12 +154,51 @@ static void schedule_timer(void) {
   s_timer = app_timer_register(s_timer_delay, timer_fired, NULL);
 }
 
+/* Only outside a round: a transfer never runs while the game is being played or paused. */
+static bool round_in_progress(void) {
+  return s_page == PAGE_GAME && s_game.status != GAME_OVER;
+}
+
+static void online_done(OnlineNetResult result, uint32_t rank, uint32_t total) {
+  if (result == ONLINE_NET_OK) online_succeeded(&s_data.online, rank, total);
+  else if (result != ONLINE_NET_UNAVAILABLE) online_failed(&s_data.online, result == ONLINE_NET_REJECTED);
+  s_online_dirty = true;
+  flush_scores();
+  log_heap("online done");
+  render();
+}
+
+/* Sends the kept replay to the phone if Online is on and it has not been accepted yet. */
+static void online_try_send(void) {
+  if (!s_data.settings.online || !online_should_send(&s_data.online) || online_net_busy() || round_in_progress()) return;
+  if (storage_replay_length() == 0u) {
+    online_clear(&s_data.online); /* The replay is gone: nothing to send. */
+    s_online_dirty = true;
+    flush_scores();
+    return;
+  }
+  if (!online_net_start(online_done)) {
+    online_failed(&s_data.online, false);
+    s_online_dirty = true;
+    flush_scores();
+  }
+  log_heap("online start");
+  render();
+}
+
 /* The Daily replay worth keeping is the best of the day: sealed when a round ends above
  * the day's earlier best. Anything that cannot be stored verifiably is not kept. */
 static void keep_daily_replay(void) {
   size_t length = replay_finish(&s_replay, &s_game);
   if (length == 0u || s_game.score <= s_daily_baseline) return;
-  if (s_replay.overflow || !storage_save_replay(s_replay.bytes, length)) storage_clear_replay();
+  if (s_replay.overflow || !storage_save_replay(s_replay.bytes, length)) {
+    storage_clear_replay();
+    online_net_cancel();
+    online_clear(&s_data.online);
+  } else online_queue(&s_data.online, s_round_date, s_game.score);
+  s_online_dirty = true;
+  flush_scores();
+  online_try_send();
 }
 
 static void timer_fired(void *data) {
@@ -183,6 +230,7 @@ static void timer_fired(void *data) {
 static void start_game(Round round) {
   time_t now = time(NULL);
   uint32_t seed;
+  online_net_cancel(); /* Never while a round is played. */
   feedback_service_reset();
   flush_scores();
   s_round = round;
@@ -330,7 +378,7 @@ static void sync_ticks(void) {
 static const char *on_off(bool value) { return value ? "On" : "Off"; }
 
 static unsigned settings_row_count(void) {
-  return s_data.settings.landscape ? 7u : 6u;
+  return s_data.settings.landscape ? 8u : 7u;
 }
 
 /* Button position has no visible row in Vertical mode. */
@@ -382,7 +430,8 @@ static void render_panel(void) {
       snprintf(panel.rows[row++], sizeof(panel.rows[0]), "Vibrate: %s", on_off(settings->vibration));
       snprintf(panel.rows[row++], sizeof(panel.rows[0]), "Sound: %s", on_off(settings->sound));
       snprintf(panel.rows[row++], sizeof(panel.rows[0]), "Ghosts: %s", on_off(settings->ghosts));
-      snprintf(panel.rows[row], sizeof(panel.rows[0]), "Demo: %s", on_off(settings->attract));
+      snprintf(panel.rows[row++], sizeof(panel.rows[0]), "Demo: %s", on_off(settings->attract));
+      snprintf(panel.rows[row], sizeof(panel.rows[0]), "Online: %s", on_off(settings->online));
       snprintf(panel.footer, sizeof(panel.footer), "Select: change  Back: menu");
       if (settings_item(s_row) == SETTING_ORIENTATION)
         snprintf(panel.footer, sizeof(panel.footer), "%s\nSelect: open  Back: menu",
@@ -392,6 +441,8 @@ static void render_panel(void) {
                  settings->buttons_bottom ? "below" : "above");
       else if (settings_item(s_row) == SETTING_SOUND)
         snprintf(panel.footer, sizeof(panel.footer), "Muted by Quiet Time\nSelect: change  Back: menu");
+      else if (settings_item(s_row) == SETTING_ONLINE)
+        snprintf(panel.footer, sizeof(panel.footer), "Daily rank via phone\nSelect: change  Back: menu");
       break;
     }
     case PAGE_ORIENTATION:
@@ -403,7 +454,7 @@ static void render_panel(void) {
                s_row == 0u ? "Upright on wrist" : "Hold watch sideways");
       break;
     case PAGE_SCORES:
-      panel.title = s_row == 0u ? "High scores 1/2" : "High scores 2/2";
+      panel.title = s_row == 0u ? "High scores 1/3" : s_row == 1u ? "High scores 2/3" : "High scores 3/3";
       panel.selected = -1;
       if (s_row == 0u) {
         snprintf(panel.rows[0], sizeof(panel.rows[0]), "Game A: %lu", (unsigned long)s_data.scores.best[0]);
@@ -414,12 +465,21 @@ static void render_panel(void) {
                  settings->landscape ? "Left/Right" : "Up/Down");
       } else {
         time_t now = time(NULL);
-        uint32_t today = modes_daily_today(&s_data.modes, clock_date(localtime(&now)));
-        snprintf(panel.rows[0], sizeof(panel.rows[0]), "Sprint: %lu", (unsigned long)s_data.modes.sprint_best);
-        score_date(panel.rows[1], sizeof(panel.rows[1]), s_data.modes.sprint_date);
-        snprintf(panel.rows[2], sizeof(panel.rows[2]), "Daily: %lu", (unsigned long)s_data.modes.daily_best);
-        score_date(panel.rows[3], sizeof(panel.rows[3]), s_data.modes.daily_best_date);
-        snprintf(panel.footer, sizeof(panel.footer), "Daily today: %lu\nSelect: reset  Back: clock", (unsigned long)today);
+        uint32_t date = clock_date(localtime(&now));
+        uint32_t today = modes_daily_today(&s_data.modes, date);
+        if (s_row == 1u) {
+          snprintf(panel.rows[0], sizeof(panel.rows[0]), "Sprint: %lu", (unsigned long)s_data.modes.sprint_best);
+          score_date(panel.rows[1], sizeof(panel.rows[1]), s_data.modes.sprint_date);
+          snprintf(panel.rows[2], sizeof(panel.rows[2]), "Daily: %lu", (unsigned long)s_data.modes.daily_best);
+          score_date(panel.rows[3], sizeof(panel.rows[3]), s_data.modes.daily_best_date);
+          snprintf(panel.footer, sizeof(panel.footer), "Daily today: %lu\nSelect: reset  Back: clock", (unsigned long)today);
+        } else {
+          snprintf(panel.rows[0], sizeof(panel.rows[0]), "Daily today");
+          snprintf(panel.rows[1], sizeof(panel.rows[1]), "Score: %lu", (unsigned long)today);
+          online_text(panel.rows[2], sizeof(panel.rows[2]), settings->online, online_net_busy(), &s_data.online, date);
+          panel.count = 3;
+          snprintf(panel.footer, sizeof(panel.footer), "Needs phone link\nSelect: reset  Back: clock");
+        }
       }
       break;
     case PAGE_STATS: {
@@ -487,7 +547,7 @@ static void render_panel(void) {
       panel.selected = -1;
       snprintf(panel.footer, sizeof(panel.footer), "Select: next  Back: menu");
       if (s_row == 0u) {
-        panel.title = "Help 1/5";
+        panel.title = "Help 1/6";
         snprintf(panel.rows[0], sizeof(panel.rows[0]), "Tap Select: A");
         snprintf(panel.rows[1], sizeof(panel.rows[1]), "Hold Select: B");
         snprintf(panel.rows[2], sizeof(panel.rows[2]), "%s: move",
@@ -495,14 +555,14 @@ static void render_panel(void) {
         snprintf(panel.rows[3], sizeof(panel.rows[3]), "Select: pause/play");
         snprintf(panel.footer, sizeof(panel.footer), "Holding shows best score\nSelect: next  Back: menu");
       } else if (s_row == 1u) {
-        panel.title = "Help 2/5";
+        panel.title = "Help 2/6";
         snprintf(panel.rows[0], sizeof(panel.rows[0]), "Catch food: +1");
         snprintf(panel.rows[1], sizeof(panel.rows[1]), "Center can't catch");
         snprintf(panel.rows[2], sizeof(panel.rows[2]), "2 drops = 1 MISS");
         snprintf(panel.rows[3], sizeof(panel.rows[3]), "Hit = 1 MISS");
         snprintf(panel.footer, sizeof(panel.footer), "3 MISS ends game\nSelect: next  Back: menu");
       } else if (s_row == 2u) {
-        panel.title = "Help 3/5";
+        panel.title = "Help 3/6";
         snprintf(panel.rows[0], sizeof(panel.rows[0]), "Quit play: 2x Back");
         snprintf(panel.rows[1], sizeof(panel.rows[1]), "Clock %s: scores",
                  settings->landscape ? "Left" : "Up");
@@ -510,19 +570,26 @@ static void render_panel(void) {
                  settings->landscape ? "Right" : "Down");
         snprintf(panel.rows[3], sizeof(panel.rows[3]), "Settings: screen");
       } else if (s_row == 3u) {
-        panel.title = "Help 4/5";
+        panel.title = "Help 4/6";
         snprintf(panel.rows[0], sizeof(panel.rows[0]), "Settings: Orientation");
         snprintf(panel.rows[1], sizeof(panel.rows[1]), "Vertical / Horizontal");
         snprintf(panel.rows[2], sizeof(panel.rows[2]), "Horizontal: Buttons");
         snprintf(panel.rows[3], sizeof(panel.rows[3]), "Bottom / Top");
         snprintf(panel.footer, sizeof(panel.footer), "Swap: reverse movement\nSelect: next  Back: menu");
-      } else {
-        panel.title = "Help 5/5";
+      } else if (s_row == 4u) {
+        panel.title = "Help 5/6";
         snprintf(panel.rows[0], sizeof(panel.rows[0]), "Menu: Daily, Sprint");
         snprintf(panel.rows[1], sizeof(panel.rows[1]), "60 s of Game B play");
         snprintf(panel.rows[2], sizeof(panel.rows[2]), "Pause stops the clock");
         snprintf(panel.rows[3], sizeof(panel.rows[3]), "Daily: same food today");
         snprintf(panel.footer, sizeof(panel.footer), "Beep at 10 s left\nSelect: next  Back: menu");
+      } else {
+        panel.title = "Help 6/6";
+        snprintf(panel.rows[0], sizeof(panel.rows[0]), "Online: Settings");
+        snprintf(panel.rows[1], sizeof(panel.rows[1]), "Off by default");
+        snprintf(panel.rows[2], sizeof(panel.rows[2]), "Sends best Daily");
+        snprintf(panel.rows[3], sizeof(panel.rows[3]), "Needs phone + net");
+        snprintf(panel.footer, sizeof(panel.footer), "Server not live yet\nSelect: next  Back: menu");
       }
       break;
     case PAGE_ABOUT:
@@ -656,6 +723,9 @@ static void select_handler(ClickRecognizerRef recognizer, void *context) {
         s_data.modes = modes;
         s_scores_dirty = s_modes_dirty = false;
         storage_clear_replay(); /* It belonged to today's cleared Daily best. */
+        online_net_cancel();
+        online_clear(&s_data.online);
+        s_online_dirty = true;
       }
       open_page(PAGE_SCORES);
       return;
@@ -668,9 +738,12 @@ static void select_handler(ClickRecognizerRef recognizer, void *context) {
         case SETTING_SOUND: settings.sound = !settings.sound; break;
         case SETTING_GHOSTS: settings.ghosts = !settings.ghosts; break;
         case SETTING_DEMO: settings.attract = !settings.attract; break;
+        case SETTING_ONLINE: settings.online = !settings.online; break;
       }
-      if (save_settings(&settings) && settings_item(s_row) == SETTING_SOUND)
-        feedback_service_play(CUE_CATCH, settings.sound); /* Preview the beep. */
+      if (save_settings(&settings)) {
+        if (settings_item(s_row) == SETTING_SOUND) feedback_service_play(CUE_CATCH, settings.sound); /* Preview the beep. */
+        else if (settings_item(s_row) == SETTING_ONLINE) online_try_send();
+      }
       break;
     case PAGE_ORIENTATION:
       settings.landscape = s_row == 1u;
@@ -790,6 +863,7 @@ static void glance_reload(AppGlanceReloadSession *session, size_t limit, void *c
 }
 
 static void window_unload(Window *window) {
+  online_net_cancel();
   feedback_service_set_running(false);
   feedback_service_reset();
   cancel_timer();
@@ -812,6 +886,9 @@ static void window_unload(Window *window) {
   view_deinit();
 }
 
+/* A pending replay gets one more try a few seconds after launch, so the phone link is up. */
+static void launch_send(void *data) { online_try_send(); }
+
 int main(void) {
   feedback_service_init(render);
   storage_load(&s_data);
@@ -821,6 +898,7 @@ int main(void) {
   window_set_window_handlers(s_window, (WindowHandlers) { .load = window_load, .unload = window_unload });
   window_stack_push(s_window, true);
   alarm_init(&s_data.settings, begin_ring);
+  if (s_data.settings.online && online_should_send(&s_data.online)) app_timer_register(4000, launch_send, NULL);
   app_focus_service_subscribe_handlers((AppFocusHandlers) { .will_focus = will_focus });
   sync_ticks();
   app_event_loop();
