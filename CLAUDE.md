@@ -13,7 +13,9 @@
   explicit approval of the exact build after the required watch play-test.
 - Releases follow `docs/releasing.md` through the `popeye-gw-build-audit`,
   `popeye-gw-release` and `popeye-gw-appstore` skills. Keep
-  `.claude/skills/` and `.agents/skills/` identical.
+  `.claude/skills/` and `.agents/skills/` identical. Select `popeye-gw` (default)
+  or `popeye-gw-clock`; release identity and paths come from `apps` in
+  `docs/release-config.json`.
 
 ## Code and verification
 
@@ -36,8 +38,11 @@
 - Use the SDK's bundled compiler at
   `toolchain/arm-none-eabi/bin/arm-none-eabi-gcc` under that root; do not install
   another compiler. Host tests use `/usr/bin/cc` explicitly because `cc` may be
-  aliased. Treat the shell's default `node` as broken; this C-only project needs
-  no Node tooling. Check any explicitly selected runtime before using it.
+  aliased. Treat the shell's default `node` as broken. The game is C-only, but
+  the companion watchface now needs Node for Clay and phone tests. The verified
+  local runtime is `~/.nvm/versions/node/v20.19.5/bin/node`; prepend its directory
+  to `PATH` for `npm ci --prefix watchface` and watchface SDK builds. Check any
+  explicitly selected runtime before using it.
 - Check both the build exit status and the literal `'build' finished` in its
   output. Terminal/tput output has previously hidden a failed build. If needed,
   use `TERM=xterm pebble build` and inspect the saved log.

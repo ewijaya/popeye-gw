@@ -13,4 +13,11 @@
  * of the food demonstration. Pure: no platform calls, wall clock is the caller's. */
 void face_scene(Scene *scene, const struct tm *local, bool style_24h, int frame);
 
+/* Continuous, stepped LCD cycle. Activity bits select motion, never visibility:
+ * Olive=1, Popeye=2, Brutus=4. Pause adds quiet beats after each food catch.
+ * The caller advances frame at the selected cadence; no timer lives here. */
+void face_scene_active(Scene *scene, const struct tm *local, bool style_24h,
+                       uint32_t frame, unsigned activity, bool celebration,
+                       unsigned pause);
+
 #endif

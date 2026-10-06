@@ -160,10 +160,9 @@ The details live in `docs/releasing.md` and the three release skills
 ### Two important "gotchas"
 - **You release from `main`, not from a draft branch.** So you merge first,
   then release, in whichever folder has `main` open. Only one folder can.
-- **The release skills currently only know the game.** They have the game's ID
-  and file name built in and would refuse the watchface. *Planned:* the
-  watchface session will upgrade them to handle both, with the app as a
-  parameter (`popeye-gw` or `popeye-gw-clock`).
+- **The release skills handle both apps.** Select `popeye-gw` (default) or
+  `popeye-gw-clock`. They use separate IDs, artifacts, listing material and
+  release records. The uploader accepts `--app popeye-gw-clock`.
 
   Skills are files on a branch, so a folder sees the upgraded skills only once
   its branch contains that upgrade:
@@ -184,7 +183,7 @@ cd ~/Desktop/popeye-gw-watchface && claude
 ```
 Then ask Claude to release the watchface. Claude will:
 
-1. Finish the watchface work and the skills upgrade on `feat/watchface`.
+1. Finish watch testing and listing artwork on `feat/watchface`.
 2. Ask you, then switch **this folder** to `main`, merge `feat/watchface` and
    push. This is allowed because the game folder is on `feat/v1.1`, not `main`.
 3. Freeze `popeye-gw-clock.pbw`. **You play-test it on the watch and approve it.**
@@ -304,8 +303,10 @@ two jobs going at once; clear it away when you're done.
 
 1. **Game folder (`feat/v1.1`):** finish the v1.1 features: leaderboard, docs
    and GIF, then a final check. Not pushed, not released.
-2. **Watchface folder (`feat/watchface`):** play-test, upgrade the release
-   skills for two apps, prepare store material, release **`clock-v1.0.0`**.
+2. **Watchface folder (`feat/watchface`):** release tooling now handles both apps;
+   normal-use watch feedback received and listing drafts prepared;
+   finish edge-case watch testing and approve the listing, then request publication
+   of **`clock-v1.0.0`**.
 3. **Give `main` back** (section 9).
 4. **Game folder:** pull `main`, play-test v1.1 on the watch, release **v1.1.0**.
 5. **Remove the watchface worktree** when you no longer need two jobs at once.

@@ -41,7 +41,7 @@ class UploadTests(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         self.folder = Path(self.tmp.name)
-        self.config = json.loads((store.ROOT / 'docs/release-config.json').read_text())
+        self.config = store.app_config()
         self.notes = 'Approved notes'
         with zipfile.ZipFile(self.folder / 'popeye-gw.pbw', 'w') as archive:
             archive.writestr('appinfo.json', json.dumps({
@@ -85,6 +85,59 @@ class UploadTests(unittest.TestCase):
             store.candidate(self.folder, self.config, True)
         (self.folder / 'notes.md').write_text('changed')
         with self.assertRaises(store.Stop):
+            store.candidate(self.folder, self.config)
+
+    def test_app_selection_and_candidate_isolation(self):
+        game = store.app_config()
+        clock = store.app_config('popeye-gw-clock')
+        self.assertEqual(game['store_app_id'], 'e9cb2950ca21440798fb1db8')
+        self.assertEqual(game['release_dir'], '.release')
+        self.assertIsNone(clock['store_app_id'])
+        self.assertEqual(clock['tag_prefix'], 'clock-v')
+        for app, folder in ((game, '.release/1.0.2'),
+                            (clock, '.release/popeye-gw-clock/1.0.0')):
+            self.assertEqual(store.candidate_folder(store.ROOT / folder, app), store.ROOT / folder)
+        with self.assertRaises(store.Stop):
+            store.app_config('typo')
+        with self.assertRaises(store.Stop):
+            store.candidate_folder(store.ROOT / '.release/1.0.0', clock)
+        with self.assertRaises(store.Stop):
+            store.candidate_folder(store.ROOT / '.release/popeye-gw-clock/1.0.0', game)
+
+    def test_clock_identity_registration_and_upload(self):
+        self.config = store.app_config('popeye-gw-clock')
+        self.manifest['app'] = 'popeye-gw-clock'
+        pbw_path = self.folder / self.config['artifact_name']
+        def write_candidate(watchface=True, uuid=None):
+            with zipfile.ZipFile(pbw_path, 'w') as archive:
+                archive.writestr('appinfo.json', json.dumps({
+                    'uuid': uuid or self.config['uuid'], 'versionLabel': '1.0.2',
+                    'targetPlatforms': ['emery'], 'watchapp': {'watchface': watchface},
+                    'shortName': self.config['display_name'], 'longName': self.config['display_name']}))
+            self.pbw = pbw_path.read_bytes()
+            self.manifest.update(pbw_sha256=store.digest(self.pbw), pbw_bytes=len(self.pbw),
+                                 store_app_id=self.config['store_app_id'])
+            self.manifest['approval']['pbw_sha256'] = store.digest(self.pbw)
+            (self.folder / 'manifest.json').write_text(json.dumps(self.manifest))
+        write_candidate()
+        with self.assertRaisesRegex(store.Stop, 'Existing store App ID'):
+            store.candidate(self.folder, self.config)
+        self.config['store_app_id'] = '0123456789abcdef01234567'
+        write_candidate(False)
+        with self.assertRaisesRegex(store.Stop, 'identity mismatch'):
+            store.candidate(self.folder, self.config)
+        write_candidate(uuid=store.app_config()['uuid'])
+        with self.assertRaisesRegex(store.Stop, 'identity mismatch'):
+            store.candidate(self.folder, self.config)
+        write_candidate()
+        store.candidate(self.folder, self.config, True)
+        self.app.update(id=self.config['store_app_id'], app_uuid=self.config['uuid'])
+        self.publish()
+        self.publish()
+        self.assertEqual(self.posts, 1)
+        self.manifest['app'] = 'popeye-gw'
+        (self.folder / 'manifest.json').write_text(json.dumps(self.manifest))
+        with self.assertRaisesRegex(store.Stop, 'another app'):
             store.candidate(self.folder, self.config)
 
     def test_upload_preserves_metadata_and_is_idempotent(self):
