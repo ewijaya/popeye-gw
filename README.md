@@ -10,15 +10,15 @@ black segments, a white field, and vivid red, orange, blue and turquoise.
 
 *Real gameplay from the Emery emulator (a sped-up highlight, shown at half of its 2x size).*
 
-**Status:** Version 1.1.0 is being prepared for PT2 testing and publication.
+**Status:** Version 1.1.0 is published on GitHub and the Pebble App Store.
 It adds Sprint and Daily rounds, LCD-style beeps, Stats and an App Glance; see the
-[changelog](CHANGELOG.md) and [v1.1 notes](docs/v1.1-notes.md). Version 1.0.2
-remains the published release; see its [release record](docs/releases/1.0.2.md).
+[changelog](CHANGELOG.md), [v1.1 notes](docs/v1.1-notes.md) and the
+[release record](docs/releases/1.1.0.md).
 
 **Download:** [Pebble App Store](https://apps.repebble.com/e9cb2950ca21440798fb1db8) ·
-[GitHub release v1.0.2](https://github.com/ewijaya/popeye-gw/releases/tag/v1.0.2)
-([PBW](https://github.com/ewijaya/popeye-gw/releases/download/v1.0.2/popeye-gw.pbw)).
-Both downloads match the approved SHA-256 recorded in the [release record](docs/releases/1.0.2.md).
+[GitHub release v1.1.0](https://github.com/ewijaya/popeye-gw/releases/tag/v1.1.0)
+([PBW](https://github.com/ewijaya/popeye-gw/releases/download/v1.1.0/popeye-gw.pbw)).
+Both downloads match the approved SHA-256 recorded in the [release record](docs/releases/1.1.0.md).
 
 This is a watch adaptation, not an exact ROM recreation. The
 [fidelity ledger](docs/pp23-fidelity.md) separates confirmed rules from provisional
