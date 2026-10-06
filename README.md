@@ -10,9 +10,10 @@ black segments, a white field, and vivid red, orange, blue and turquoise.
 
 *Real gameplay from the Emery emulator (a sped-up highlight, shown at half of its 2x size).*
 
-**Status:** Version 1.0.2 is the published release, on GitHub and the Pebble App Store.
-The 1.1 features below are **in development and not yet released**; see the
-[v1.1 notes](docs/v1.1-notes.md) and the [changelog](CHANGELOG.md).
+**Status:** Version 1.1.0 is being prepared for PT2 testing and publication.
+It adds Sprint and Daily rounds, LCD-style beeps, Stats and an App Glance; see the
+[changelog](CHANGELOG.md) and [v1.1 notes](docs/v1.1-notes.md). Version 1.0.2
+remains the published release; see its [release record](docs/releases/1.0.2.md).
 
 **Download:** [Pebble App Store](https://apps.repebble.com/e9cb2950ca21440798fb1db8) ·
 [GitHub release v1.0.2](https://github.com/ewijaya/popeye-gw/releases/tag/v1.0.2)

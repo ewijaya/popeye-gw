@@ -4,10 +4,10 @@ There was a time when a whole afternoon could fit in your hands. A little boat, 
 
 Popeye G&W returns to the harbour of Nintendo's 1981 Wide Screen handheld. Olive Oyl stands beside her car, tossing food across the water. Popeye reaches from his rowboat. Brutus waits for you to lean a little too far. The figures move in those familiar little jumps, and you remember how much could happen with so few pictures.
 
-Play Game A or B, turn the watch sideways, and leave your best score for tomorrow. Between games, the harbour keeps time, with a daily alarm to bring you back to the present.
+Play Game A or B, race a 60-second Sprint, or try the Daily round that everyone gets the same day. Turn the watch sideways, and leave your best score for tomorrow. Between games, the harbour keeps time, with a daily alarm to bring you back to the present.
 
 Somewhere, it is still the afternoon you didn't want to end.
 
-An unofficial fan adaptation for Pebble Time 2, with vivid scenery, saved scores and gentle vibration cues. Runs entirely on the watch. Gameplay is adapted for Pebble; this is not an exact emulation.
+An unofficial fan adaptation for Pebble Time 2, with vivid scenery, saved scores and stats, LCD-style beeps and gentle vibration cues. Runs entirely on the watch. Gameplay is adapted for Pebble; this is not an exact emulation.
 
 Controls and Help: https://github.com/ewijaya/popeye-gw#help

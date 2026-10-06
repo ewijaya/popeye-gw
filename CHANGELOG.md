@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased (1.1 draft, not yet released)
+## 1.1.0 — 2026-10-06
 
 - Add **Sprint** and **Daily**: 60 seconds of Game B rules. Sprint is random; Daily gives everyone the same round on a date. Pausing and MISS recovery do not use the clock, and the watch beeps and pulses at 10 seconds left.
 - Add LCD-style beeps (Settings → Sound, default On) for catches, drops, bonuses, game over, new bests and the alarm. Sound follows the watch's speaker mute and Quiet Time.
@@ -12,8 +12,6 @@
 - Extend on-watch Help with pages for Daily and Sprint, Online and a Quick Launch tip (Settings → Quick Launch on the watch).
 - Add an optional **Online** setting (off by default) that sends your best Daily round through your phone to a leaderboard that replays your inputs to check the score. The leaderboard server is not live yet.
 - Keep existing settings, alarms and scores when upgrading.
-
-Developer details are in [docs/v1.1-notes.md](docs/v1.1-notes.md).
 
 ## 1.0.2 — 2026-10-06
 
