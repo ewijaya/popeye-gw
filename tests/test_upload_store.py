@@ -92,7 +92,8 @@ class UploadTests(unittest.TestCase):
         clock = store.app_config('popeye-gw-clock')
         self.assertEqual(game['store_app_id'], 'e9cb2950ca21440798fb1db8')
         self.assertEqual(game['release_dir'], '.release')
-        self.assertIsNone(clock['store_app_id'])
+        # Registration state is data, not a constant: accept null or a recorded ID.
+        self.assertRegex(clock['store_app_id'] or '0' * 24, r'^[0-9a-f]{24}$')
         self.assertEqual(clock['tag_prefix'], 'clock-v')
         for app, folder in ((game, '.release/1.0.2'),
                             (clock, '.release/popeye-gw-clock/1.0.0')):
@@ -106,6 +107,7 @@ class UploadTests(unittest.TestCase):
 
     def test_clock_identity_registration_and_upload(self):
         self.config = store.app_config('popeye-gw-clock')
+        self.config['store_app_id'] = None  # Exercise the unregistered path whatever the config holds.
         self.manifest['app'] = 'popeye-gw-clock'
         pbw_path = self.folder / self.config['artifact_name']
         def write_candidate(watchface=True, uuid=None):
