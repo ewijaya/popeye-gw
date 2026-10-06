@@ -7,7 +7,11 @@ void feedback_service_init(void (*redraw)(void));
 /* Freeze visuals and cancel the timer while paused, hidden or unfocused. */
 void feedback_service_set_running(bool running);
 void feedback_service_reset(void);
-void feedback_service_events(uint32_t events, bool record, bool vibration);
+/* A running game's events: haptics plus one beep when Sound is on. */
+void feedback_service_events(uint32_t events, bool record, bool vibration, bool sound);
+/* One cue outside the game (alarm ring, setting preview). Stop on pause, focus loss, exit. */
+void feedback_service_play(SoundCue cue, bool sound);
+void feedback_service_stop_sound(void);
 void feedback_service_apply(Scene *scene);
 
 #endif

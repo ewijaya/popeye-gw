@@ -6,6 +6,8 @@ static AppTimer *s_timer;
 static uint64_t s_started;
 static bool s_running;
 static void (*s_redraw)(void);
+/* Kept static in case the Speaker keeps reading the notes after the call returns. */
+static SpeakerNote s_notes[FEEDBACK_SOUND_MAX_NOTES];
 
 static uint64_t now_ms(void) {
   time_t seconds;
@@ -44,6 +46,20 @@ static void fired(void *data) {
   if (s_redraw != NULL) s_redraw();
 }
 
+void feedback_service_stop_sound(void) { speaker_stop(); }
+
+/* Same rule as vibration plus the system speaker mute, which also covers Quiet Time. */
+void feedback_service_play(SoundCue cue, bool sound) {
+  unsigned count, i;
+  const SoundNote *notes = feedback_sound_notes(cue, &count);
+  if (notes == NULL || !sound || speaker_is_muted() || quiet_time_is_active()) return;
+  for (i = 0u; i < count; ++i)
+    s_notes[i] = (SpeakerNote) { .midi_note = notes[i].midi, .waveform = SpeakerWaveformSquare,
+                                 .duration_ms = notes[i].ms };
+  speaker_stop(); /* Replace a cue that is still sounding. */
+  speaker_play_notes(s_notes, count, FEEDBACK_SOUND_VOLUME);
+}
+
 void feedback_service_init(void (*redraw)(void)) {
   feedback_service_reset();
   s_running = false;
@@ -51,24 +67,28 @@ void feedback_service_init(void (*redraw)(void)) {
 }
 
 void feedback_service_reset(void) {
+  speaker_stop();
   cancel();
   feedback_reset(&s_feedback);
   s_started = now_ms();
 }
 
 void feedback_service_set_running(bool running) {
+  if (!running) speaker_stop();
   if (s_running == running) return;
   advance();
   s_running = running;
   schedule();
 }
 
-void feedback_service_events(uint32_t events, bool record, bool vibration) {
+void feedback_service_events(uint32_t events, bool record, bool vibration, bool sound) {
   FeedbackPulse pulse;
   advance();
   pulse = feedback_trigger(&s_feedback, events, record);
   schedule();
-  if (!s_running || !vibration || quiet_time_is_active() || pulse == FEEDBACK_SILENT) return;
+  if (!s_running) return;
+  feedback_service_play(feedback_sound_cue(events, record), sound);
+  if (!vibration || quiet_time_is_active() || pulse == FEEDBACK_SILENT) return;
   /* Pebble ignores a new pulse while another is running. Replace it once,
    * and combine game-over + record into one long-then-double pattern. */
   vibes_cancel();

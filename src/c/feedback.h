@@ -1,6 +1,8 @@
 #ifndef POPEYE_GW_FEEDBACK_H
 #define POPEYE_GW_FEEDBACK_H
 
+#include <stddef.h>
+
 #include "scene.h"
 
 /* Presentation timing, independent of the provisional PP-23 gameplay tables. */
@@ -10,6 +12,19 @@
 typedef enum { FEEDBACK_SILENT, FEEDBACK_SHORT, FEEDBACK_LONG,
                FEEDBACK_RECORD } FeedbackPulse;
 typedef struct { uint32_t events, elapsed_ms; } Feedback;
+
+/* LCD-style beeps. One cue per game tick; the table is plain C so it is host-tested
+ * and the Speaker adapter only turns it into square-wave notes. */
+#define FEEDBACK_SOUND_VOLUME 60u
+#define FEEDBACK_SOUND_MAX_NOTES 8u
+typedef enum { CUE_NONE, CUE_CATCH, CUE_MISS, CUE_BONUS, CUE_OVER, CUE_RECORD,
+               CUE_ALARM } SoundCue;
+typedef struct { uint8_t midi; uint16_t ms; } SoundNote; /* midi 0 is a rest */
+
+/* Priority: game over (ascending when it set a record) > bonus > drop/miss > catch.
+ * The third miss and game over therefore yield only the game-over cue. */
+SoundCue feedback_sound_cue(uint32_t events, bool record);
+const SoundNote *feedback_sound_notes(SoundCue cue, unsigned *count);
 
 void feedback_reset(Feedback *feedback);
 FeedbackPulse feedback_trigger(Feedback *feedback, uint32_t events, bool record);

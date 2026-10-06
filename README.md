@@ -136,6 +136,14 @@ play, the bell flashes and the watch pulses once while the game keeps running.
 A press also dismisses that indicator while performing its normal game action.
 Vibration respects both the app setting and Quiet Time.
 
+Sound (1.1) plays short square-wave LCD beeps through the watch speaker: a high
+blip for a catch, a lower tone for a drop or MISS, two notes for a 200/500
+bonus, a short falling motif at game over and a rising one for a new best. One
+beep plays per game step, so the third MISS and game over give only the
+game-over sound. The alarm beeps in step with its pulses while idle. Sound
+follows the Settings → Sound switch and the watch's speaker mute / Quiet Time;
+it stops on pause, focus loss, restart and exit. Melodies are original.
+
 Settings and high scores use separate versioned, checksummed byte records.
 Missing, corrupt or unknown records fall back to defaults independently. Best
 scores retain their full 32-bit totals and local dates. Writes happen at pause,

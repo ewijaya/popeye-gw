@@ -71,6 +71,7 @@ static bool save_settings(const Settings *settings) {
   s_data.settings = *settings;
   s_game.controls_swapped = settings->swap_buttons;
   if (!settings->vibration) vibes_cancel();
+  if (!settings->sound) feedback_service_stop_sound();
   alarm_refresh(settings, time(NULL));
   sync_ticks();
   return true;
@@ -103,7 +104,7 @@ static void timer_fired(void *data) {
   s_timer = NULL;
   game_step(&s_game);
   feedback_service_events(game_take_events(&s_game), s_game.new_high_score,
-                          s_data.settings.vibration);
+                          s_data.settings.vibration, s_data.settings.sound);
   record_score();
   if (s_game.status == GAME_OVER) { flush_scores(); log_heap("over"); }
   schedule_timer();
@@ -182,6 +183,7 @@ static void stop_ring(void) {
   s_ring_timer = NULL;
   s_ringing = false;
   feedback_service_set_running(s_focused && s_page == PAGE_GAME && s_game.status != GAME_PAUSED);
+  feedback_service_stop_sound();
   vibes_cancel();
   sync_ticks();
   render();
@@ -199,6 +201,7 @@ static bool dismiss_ring(void) {
 
 static void pulse(void) {
   if (s_data.settings.vibration && !quiet_time_is_active()) vibes_short_pulse();
+  feedback_service_play(CUE_ALARM, s_data.settings.sound);
 }
 
 static void begin_ring(void) {
@@ -493,7 +496,8 @@ static void select_handler(ClickRecognizerRef recognizer, void *context) {
         case SETTING_GHOSTS: settings.ghosts = !settings.ghosts; break;
         case SETTING_DEMO: settings.attract = !settings.attract; break;
       }
-      save_settings(&settings);
+      if (save_settings(&settings) && settings_item(s_row) == SETTING_SOUND)
+        feedback_service_play(CUE_CATCH, settings.sound); /* Preview the beep. */
       break;
     case PAGE_ORIENTATION:
       settings.landscape = s_row == 1u;
@@ -583,6 +587,7 @@ static void will_focus(bool in_focus) {
     flush_scores();
     if (s_ring_timer != NULL) app_timer_cancel(s_ring_timer);
     s_ring_timer = NULL;
+    feedback_service_stop_sound();
     vibes_cancel();
   } else {
     alarm_refresh(&s_data.settings, time(NULL));
@@ -621,6 +626,7 @@ static void window_unload(Window *window) {
   s_tick_units = 0;
   flush_scores();
   /* One update as the app closes; the launcher shows it until the next launch. */
+  feedback_service_stop_sound();
   glance_text(s_glance_text, sizeof(s_glance_text), &s_data.scores, &s_data.settings, clock_is_24h_style());
   app_glance_reload(glance_reload, NULL);
   vibes_cancel();

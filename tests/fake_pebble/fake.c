@@ -79,7 +79,16 @@ static uint16_t s_millis;
 bool fake_quiet, fake_timer_fail, fake_timer_pending;
 unsigned fake_short_pulses, fake_long_pulses, fake_patterns, fake_vibe_cancels;
 uint32_t fake_pattern[5], fake_timer_delay;
+bool fake_muted;
+unsigned fake_speaker_plays, fake_speaker_stops, fake_speaker_count, fake_speaker_volume;
+uint8_t fake_speaker_midi[8], fake_speaker_waveform[8];
+uint16_t fake_speaker_ms[8];
 void fake_feedback_reset(void) {
+  fake_muted = false;
+  fake_speaker_plays = fake_speaker_stops = fake_speaker_count = fake_speaker_volume = 0;
+  memset(fake_speaker_midi, 0, sizeof(fake_speaker_midi));
+  memset(fake_speaker_waveform, 0, sizeof(fake_speaker_waveform));
+  memset(fake_speaker_ms, 0, sizeof(fake_speaker_ms));
   s_millis = 0;
   fake_quiet = fake_timer_fail = fake_timer_pending = false;
   fake_short_pulses = fake_long_pulses = fake_patterns = fake_vibe_cancels = 0;
@@ -120,4 +129,17 @@ void vibes_enqueue_custom_pattern(VibePattern pattern) {
   assert(pattern.num_segments == 5);
   memcpy(fake_pattern, pattern.durations, sizeof(fake_pattern));
   ++fake_patterns;
+}
+bool speaker_is_muted(void) { return fake_muted; }
+void speaker_stop(void) { ++fake_speaker_stops; }
+bool speaker_play_notes(const SpeakerNote *notes, uint32_t count, uint8_t volume) {
+  uint32_t i;
+  assert(count >= 1 && count <= 8 && volume <= 100);
+  for (i = 0; i < count; ++i) {
+    fake_speaker_midi[i] = notes[i].midi_note; fake_speaker_waveform[i] = notes[i].waveform;
+    fake_speaker_ms[i] = notes[i].duration_ms;
+    assert(notes[i].midi_note <= 127 && notes[i].duration_ms > 0 && notes[i].duration_ms <= 10000);
+  }
+  fake_speaker_count = count; fake_speaker_volume = volume; ++fake_speaker_plays;
+  return true;
 }

@@ -34,4 +34,13 @@ void vibes_cancel(void);
 void vibes_short_pulse(void);
 void vibes_long_pulse(void);
 void vibes_enqueue_custom_pattern(VibePattern pattern);
+typedef enum { SpeakerWaveformSine, SpeakerWaveformSquare, SpeakerWaveformTriangle } SpeakerWaveform;
+typedef struct __attribute__((__packed__)) {
+  uint8_t midi_note, waveform;
+  uint16_t duration_ms;
+  uint8_t velocity, reserved;
+} SpeakerNote;
+bool speaker_play_notes(const SpeakerNote *notes, uint32_t num_notes, uint8_t volume);
+void speaker_stop(void);
+bool speaker_is_muted(void);
 #endif
