@@ -50,12 +50,13 @@ the middle of the three buttons above or below the screen.
 | Menu: Daily (1.1) | Select Daily | A 60 s round of Game B rules with the same food and Brutus pattern for everyone on today's date. Every attempt counts toward today's best. |
 | Menu: Sprint (1.1) | Select Sprint | A 60 s round of Game B rules with a random pattern. |
 | Daily / Sprint: time | Pause | The pause title shows the seconds left. Paused and MISS-recovery time do not count. A beep and pulse warn at 10 s; at 0 the round ends with "Time up!". |
-| Menu: High scores (1.1) | Select; movement buttons | Page 1 shows Game A and B; page 2 shows the Sprint best, the Daily best and today's Daily best. Reset clears all of them. |
+| Menu: High scores (1.1) | Select; movement buttons | Page 1 shows Game A and B; page 2 shows the Sprint best, the Daily best and today's Daily best; page 3 shows today's Daily score and the Online row. Reset clears all of them. |
 | Menu: Stats (1.1) | Select Stats; Select; movement buttons | Three pages of lifetime totals (the last has Sprint and Daily rounds). Select on the last page offers Reset stats; high scores are untouched. |
 | Settings: Orientation (1.0.1) | Select Orientation, choose Vertical or Horizontal, then Select | Change screen orientation. Back cancels. |
 | Settings: Buttons (1.0.1, Horizontal only) | Select Buttons | Toggle Bottom / Top. The choice is remembered in Vertical mode. |
 | Settings: Swap | Select Swap | Reverse game movement. |
 | Settings: Sound (1.1) | Select Sound | Turn the LCD-style beeps On or Off (default On). |
+| Settings: Online (1.1) | Select Online | Off by default. When On, your best Daily round of the day is sent through the phone to a leaderboard server (needs the phone connected and internet). High scores page 3 shows `Online #12/140`, `Online: not sent` or `Online: off`. The server is not live yet; see below. |
 | Help pages | Select; movement buttons; Back | Select advances, movement buttons browse both ways, Back returns to the menu. |
 
 ## Host tests
@@ -163,8 +164,16 @@ exactly on the limit is resolved first, then the round ends ("Time up!"). Sprint
 uses a random seed. Daily seeds the game from the local date, so everyone gets the
 same food and Brutus pattern that day; every attempt counts toward today's best, and
 the all-time Daily best is kept as well. The best Daily round of the day is saved as
-an input replay (below) for a future online leaderboard; nothing is sent from the watch.
-The replay format and persist keys are in [docs/v1.1-notes.md](docs/v1.1-notes.md).
+an input replay (below). The replay format and persist keys are in [docs/v1.1-notes.md](docs/v1.1-notes.md).
+
+**Online leaderboard (1.1, optional, off by default).** With **Settings → Online** on, a finished
+Daily round that beats the day's earlier best is sent to the phone over AppMessage, which posts
+the replay to a leaderboard server; the server re-runs the same game engine over the inputs and
+ranks only scores it can reproduce. Nothing is sent during a round, and a failed send is retried once
+at the next launch. It needs the phone connected and internet, and the **leaderboard server is not
+live yet**: the endpoint in `src/js/pebble-js-app.js` is empty, so with Online on the watch
+shows `Online: not sent`. What the server does and does not prove, the privacy details and how to
+run it are in [server/README.md](server/README.md).
 
 Lifetime stats (1.1, **Menu → Stats**) keep games played per mode (counted once a
 round scores or ends), catches, drops, Brutus hits, 200/500 bonus clears, the
@@ -246,6 +255,14 @@ Every SDK build checks `.text + .data + .bss` against the **61,440-byte** app
 budget and fails if it exceeds that limit. The playable app links the game
 engine and loads the complete art set. The bundle is named `popeye-gw.pbw`
 regardless of the checkout directory name, so pass its path when installing.
+
+### Leaderboard server and phone code
+
+`server/leaderboard.py` (Python 3 standard library) and `tools/replay_verify.c` (a native verifier
+built from the real `game.c` and `replay.c`) are tested by `./tools/test.sh`. The phone side is
+`src/js/pebble-js-app.js` (PebbleKit JS, `enableMultiJS: false`; the SDK build needs no Node).
+`tests/test_pkjs.py` runs its tests with Node when a working `node` exists and skips with a message
+otherwise. Nothing is deployed.
 
 ## Companion watchface
 

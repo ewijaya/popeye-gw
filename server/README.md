@@ -1,7 +1,7 @@
 # Popeye G&W Daily leaderboard server
 
 A small, optional service that ranks Daily rounds. It is **not deployed**: the game ships with
-the leaderboard disabled (empty endpoint URL in `src/pkjs/pebble-js-app.js`). Nothing here
+the leaderboard disabled (empty endpoint URL in `src/js/pebble-js-app.js`). Nothing here
 runs unless the owner starts it.
 
 Python 3 standard library only (`http.server`, `sqlite3`, `hmac`, `subprocess`), plus one
@@ -94,7 +94,7 @@ Nothing has been deployed, registered or paid for.
   proxy sets `X-Forwarded-For` itself (it must overwrite, not forward, a client-supplied value).
 - Put the secret in the service manager's environment, not in the repository or command line.
   Back up the SQLite file; the process is a single writer and a single node.
-- Then set `LEADERBOARD_URL` in `src/pkjs/pebble-js-app.js` (for example
+- Then set `LEADERBOARD_URL` in `src/js/pebble-js-app.js` (for example
   `https://leaderboard.example.org`), rebuild and play-test on a watch before any release.
 
 ## Privacy
@@ -104,7 +104,7 @@ Nothing has been deployed, registered or paid for.
 - The server stores only: the date, an **HMAC-SHA256 of the token** under the server secret
   (not the token), the nickname, the score and a timestamp in milliseconds. It does not keep
   the replay, an IP address or a request log (the access log is disabled; the rate limiter holds
-  addresses in memory for a minute).
+  client addresses in memory only, never on disk).
 - The nickname is public on the board. The default is `Sailor` plus four characters derived
   from the token, so it names nobody.
 - A reverse proxy in front of the server may keep its own logs; configure it accordingly.

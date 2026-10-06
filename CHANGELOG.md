@@ -9,7 +9,8 @@
 - Return to the clock after five minutes on the game-over screen.
 - Add Daily (the same 60-second round for everyone on a date) and Sprint (60 seconds, random pattern) at the top of the menu. Pausing and MISS recovery do not use the clock; the pause screen shows the seconds left, and the watch beeps and pulses at 10 seconds.
 - Keep a Sprint best, a Daily best and today's Daily best on a second High scores page, and show today's Daily score in the launcher.
-- Keep the best Daily round of the day as a verifiable input recording for a future leaderboard.
+- Keep the best Daily round of the day as a verifiable input recording.
+- Add an optional **Online** setting (off by default): your best Daily round of the day is sent through your phone to a leaderboard, where the server replays your inputs to check the score. High scores page 3 shows your rank, `Online: not sent` or `Online: off`. It needs the phone and internet, and the leaderboard server is not live yet.
 - Keep existing settings, alarms and scores when upgrading.
 
 ## 1.0.2 — 2026-10-06
