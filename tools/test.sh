@@ -24,6 +24,10 @@ cflags="-std=c99 -Wall -Wextra -Werror -pedantic"
 # shellcheck disable=SC2086
 /usr/bin/cc $cflags "$@" -I"$repo_dir/src/c" "$repo_dir/src/c/game.c" \
   "$repo_dir/tests/test_game.c" -o "$test_dir/test_game"
+# Replay recorder and simulator (pure C99), checked against the engine.
+# shellcheck disable=SC2086
+/usr/bin/cc $cflags "$@" -I"$repo_dir/src/c" "$repo_dir/src/c/game.c" "$repo_dir/src/c/replay.c" \
+  "$repo_dir/tests/test_replay.c" -o "$test_dir/test_replay"
 # Compile the real persistence/wakeup adapters against a small in-memory SDK fake.
 # shellcheck disable=SC2086
 /usr/bin/cc $cflags "$@" -I"$repo_dir/tests/fake_pebble" -I"$repo_dir/src/c" \
@@ -41,6 +45,7 @@ TZ=UTC UBSAN_OPTIONS=halt_on_error=1 "$test_dir/test_m4"
 TZ=America/New_York UBSAN_OPTIONS=halt_on_error=1 "$test_dir/test_m4"
 UBSAN_OPTIONS=halt_on_error=1 "$test_dir/test_scene"
 UBSAN_OPTIONS=halt_on_error=1 "$test_dir/test_game"
+UBSAN_OPTIONS=halt_on_error=1 "$test_dir/test_replay"
 # Companion watchface scene logic and its no-copy guard.
 # shellcheck disable=SC2086
 sh "$repo_dir/watchface/test.sh" $watch_args
