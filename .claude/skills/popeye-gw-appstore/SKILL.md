@@ -54,19 +54,28 @@ the store generate replacement icons.
 
 ## Existing listing
 
-Read back the Dashboard app; its ID and UUID must both match. Save the first
+Prefer the programmatic workflow in releasing.md section 9 using
+`tools/upload_store.py`; routine release uploads need no browser. Use the
+installed Pebble Tool's Python and existing `pebble login` credentials.
+Browser fallback is for owner login, first registration, or an unsupported
+operation after identifying the specific API/helper limitation. Reconcile an
+uncertain upload before switching transports.
+
+Read back the Dashboard API app; its ID and UUID must both match. Save the first
 baseline (title, description, website, source, category, visibility,
 companions, icons, banners, screenshots, every prior release) and keep it
 across retries. A draft, a different PBW for the same version, or a newer
 version stops the workflow for review. Upload only the frozen PBW and approved
-notes through the guarded path in releasing.md section 9. Don't call the Pebble
-Tool's private uploader ad hoc. Then confirm that only the new release
+notes through `tools/upload_store.py --publish` as detailed in releasing.md
+section 9. It wraps the inspected SDK upload method without rebuilding or
+replacing screenshots. Don't call the private uploader ad hoc. Confirm only the new release
 changed. Never supply guessed empty defaults for fields you didn't read.
 
 Change description or artwork only on an explicit request with the exact text
-or files approved and hashed. Use Dashboard Edit Listing, with before and after
-read-backs of every other field. Never reset the baseline to hide a
-difference.
+or files approved and hashed. The release helper deliberately doesn't edit
+listing content. Prefer a separately inspected programmatic operation with
+before/after read-backs; use Dashboard Edit Listing when that operation isn't
+supported. Never reset the baseline to hide a difference.
 
 ## Login and credentials
 

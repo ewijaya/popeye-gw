@@ -35,7 +35,11 @@ the RePebble listing.
    `pebble install --cloudpebble`.
 6. **Stop for approval** (below).
 7. **Publish** the GitHub release, then the store (releasing.md 6–9), using
-   only the frozen PBW.
+   only the frozen PBW. For the existing store listing, use
+   `tools/upload_store.py` by default, with the installed Pebble Tool's Python.
+   Use programmatic read-backs and verification. Browser automation is a
+   fallback for login, first registration, or a specific operation the helper
+   cannot safely perform; explain the limitation before falling back.
 8. **Verify** read-only (releasing.md 10): two attempts, then report what is
    still pending.
 9. **Record** the verified destinations in the README, then commit and push
@@ -64,6 +68,8 @@ ask separately for permission to register.
   freeze. A source, notes or listing change means a new candidate and a new
   approval.
 - Never run top-level `pebble publish`. It rebuilds and can create a listing.
+- A failed or timed-out programmatic upload must be reconciled read-only before
+  any browser fallback or retry; never submit the same release blindly.
 - Never overwrite or delete an existing tag, release asset or store version.
   The same bytes mean that step is done; different bytes mean stop. Never
   publish a store draft silently.

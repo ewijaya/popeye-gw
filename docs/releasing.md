@@ -152,7 +152,7 @@ newline) and `$D/manifest.json` with: `version`, `commit` (`git rev-parse
 HEAD`), `pbw_bytes`, `pbw_sha256`, the app image line, `resources_bytes`, the
 heap result or `"unmeasured"`, both test results, `notes_sha256`,
 `description_sha256`, the SHA-256 of each listing asset for a first
-registration, `destinations: ["github", "appstore"]` and `frozen_at`.
+registration, `store_app_id`, `destinations: ["github", "appstore"]` and `frozen_at`.
 
 From this point the frozen file is the only source. Never copy from `build/`
 again. If source, notes or listing change, freeze a new candidate; any earlier
@@ -180,6 +180,11 @@ owner's words, time) only after it is given. If the session already holds
 approval for this exact digest and these destinations, continue without
 asking again. An approval for other bytes does not carry over.
 
+Use the existing manifest keys: `approval.pbw_sha256`,
+`approval.destinations`, `approval.owner_words`, `approval.time`,
+`installed_on_pt2_at`, and `owner_playtest`. The store helper checks these
+records; it never creates approval or play-test evidence.
+
 ## 6. Publish GitHub
 
 Recheck first: the frozen file's SHA-256 equals the approved one,
@@ -200,8 +205,10 @@ gh release create "v$V" "$D/popeye-gw.pbw" --verify-tag \
 ## 7. Publish the store
 
 Follow the `popeye-gw-appstore` skill: Dashboard **New** for the first
-registration (section 8), otherwise an upload to the existing listing
-(section 9). Upload only the frozen PBW. Never run top-level
+registration (section 8), otherwise the programmatic existing-listing helper
+(section 9). Prefer API read-backs and public HTTP verification throughout.
+Use the browser for login or operations not supported by the inspected helper,
+and state the specific limitation. Upload only the frozen PBW. Never run top-level
 `pebble publish`: it rebuilds the PBW and can create a listing on its own.
 
 ## 8. First registration (Dashboard New)
@@ -233,7 +240,33 @@ registration (section 8), otherwise an upload to the existing listing
 
 ## 9. Update the existing listing
 
-1. In the owner's logged-in Dashboard, read back the app. Its ID and UUID must
+Use `tools/upload_store.py` for routine release updates. It uses the existing
+Pebble Firebase login, creates an in-memory Dashboard session, and wraps the
+installed SDK's `_upload_release` method with a restricted transport. It
+does not build, create a developer account or app, change listing text or
+artwork, or replace screenshots. The default command checks local files only.
+
+Run with the Python interpreter from the installed `pebble` script's shebang
+(locally `~/.local/share/uv/tools/pebble-tool/bin/python3`):
+
+```sh
+PEBBLE_PYTHON=$(sed -n '1s/^#!//p' "$(command -v pebble)")
+"$PEBBLE_PYTHON" tools/upload_store.py .release/X.Y.Z
+"$PEBBLE_PYTHON" tools/upload_store.py .release/X.Y.Z --inspect
+# Only after section 5 approval is recorded:
+"$PEBBLE_PYTHON" tools/upload_store.py .release/X.Y.Z --publish
+```
+
+If credentials are missing, the owner runs `pebble login`; never request or
+copy tokens into command arguments. If the SDK signatures or API schema
+change, inspect and update the helper before using it. Offline helper tests:
+`PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -p test_upload_store.py`.
+The same command with the Pebble Python also exercises the installed SDK
+uploader using a fake POST transport, without credentials or network traffic.
+
+The helper performs these steps:
+
+1. Read back the authenticated Dashboard API app. Its ID and UUID must
    both match. Save a baseline in `$D/store-baseline.json`: title,
    description, website, source, category, visibility, companions, icons,
    banners, screenshots and every prior release (version, notes, published
@@ -244,21 +277,25 @@ registration (section 8), otherwise an upload to the existing listing
    - a newer version exists.
 
    If it exists, is published and has the same PBW, the step is already done.
-3. Upload the frozen PBW with the approved notes. The installed Pebble Tool's
-   `PublishCommand._upload_release` is the inspected upload path that the
-   sibling KasugaBus project wraps in `guarded_store_publisher` and
-   `upload_store`. Don't call it ad hoc. Before the first update release, port
-   that guarded helper into `tools/` with offline tests. It must check the
-   method signature, post only to `{appstore_api}/api/dashboard/apps/{id}/releases`,
-   refuse redirects, keep the token in memory and compare against the
-   baseline. Alternatively, use an official Dashboard release upload if the
-   current UI offers one, after inspecting it.
+3. Upload the frozen PBW with the approved notes. The helper checks both SDK
+   method signatures and the actual multipart fields/bytes, posts once only
+   to `{appstore_api}/api/dashboard/apps/{id}/releases`, refuses redirects,
+   keeps the token in memory and compares against the original baseline.
+   `store-attempt.json` is written before POST. If the response is lost, rerun
+   only after read-back: a published version with identical bytes and notes
+   completes without another POST. If still absent or a draft, keep pending
+   and reconcile; don't delete the journal or switch to browser submission.
 4. Read back again. Everything in the baseline must be unchanged apart from the
    added release. Restore any change before retrying; never reset the
    baseline to hide one.
 5. Change description or artwork only when the owner asked and approved the
-   exact text or files. Use Dashboard Edit Listing and check that all other
-   fields survived.
+   exact text or files. This helper intentionally supports release uploads
+   only. Prefer a separately inspected API operation; otherwise use Dashboard
+   Edit Listing and check that all other fields survived.
+
+Old browser-created `store-baseline.json` files have a different schema.
+Do not replace them to make this helper pass. Finish those candidates using
+their original evidence or explicitly migrate and review the baseline.
 
 ## 10. Verify (read-only)
 

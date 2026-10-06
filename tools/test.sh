@@ -14,6 +14,7 @@ case "${1:-}" in
 esac
 
 python3 "$repo_dir/tools/build_art.py" --check
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s "$repo_dir/tests" -p test_upload_store.py
 
 cflags="-std=c99 -Wall -Wextra -Werror -pedantic"
 # shellcheck disable=SC2086
