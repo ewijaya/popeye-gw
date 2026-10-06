@@ -17,6 +17,7 @@ typedef struct {
   bool swap_buttons, vibration, ghosts, attract, alarm_on, landscape, buttons_bottom, sound, online;
   uint8_t alarm_hour, alarm_minute;
   uint8_t theme; /* Theme from theme.h; Classic by default. */
+  uint8_t sound_level; /* 0 Low, 1 Medium (default), 2 High; used while sound is on. */
 } Settings;
 
 typedef struct {

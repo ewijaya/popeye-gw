@@ -8,12 +8,13 @@ void feedback_service_init(void (*redraw)(void));
 void feedback_service_set_running(bool running);
 void feedback_service_reset(void);
 /* A running game's events: haptics plus one beep when Sound is on. */
-void feedback_service_events(uint32_t events, bool record, bool vibration, bool sound);
+/* volume is a speaker level from feedback_sound_volume(); 0 plays nothing. */
+void feedback_service_events(uint32_t events, bool record, bool vibration, uint8_t volume);
 /* One cue outside the game (alarm ring, setting preview). Stop on pause, focus loss, exit. */
-void feedback_service_play(SoundCue cue, bool sound);
+void feedback_service_play(SoundCue cue, uint8_t volume);
 void feedback_service_stop_sound(void);
 /* The ten-seconds-left cue of a timed round; only while the round is running. */
-void feedback_service_warn(bool vibration, bool sound);
+void feedback_service_warn(bool vibration, uint8_t volume);
 void feedback_service_apply(Scene *scene);
 
 #endif

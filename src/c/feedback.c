@@ -80,3 +80,11 @@ void feedback_apply(const Feedback *feedback, Scene *scene) {
     hide(scene, SEG_HI, 1u);
   }
 }
+
+uint8_t feedback_sound_volume(bool on, unsigned level) {
+  static const uint8_t volumes[FEEDBACK_SOUND_LEVELS] = {
+    FEEDBACK_SOUND_LOW, FEEDBACK_SOUND_MEDIUM, FEEDBACK_SOUND_HIGH
+  };
+  if (!on) return 0u;
+  return volumes[level < FEEDBACK_SOUND_LEVELS ? level : 1u];
+}

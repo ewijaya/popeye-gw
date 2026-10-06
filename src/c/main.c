@@ -202,18 +202,22 @@ static void keep_daily_replay(void) {
   online_try_send();
 }
 
+static uint8_t sound_volume(const Settings *settings) {
+  return feedback_sound_volume(settings->sound, settings->sound_level);
+}
+
 static void timer_fired(void *data) {
   uint32_t events;
   s_timer = NULL;
   replay_step(recorder(), &s_game);
   events = game_take_events(&s_game);
   feedback_service_events(events, s_game.new_high_score, s_data.settings.vibration,
-                          s_data.settings.sound);
+                          sound_volume(&s_data.settings));
   if (timed_round() && !s_warned && s_game.status == GAME_PLAYING &&
       s_game.time_left_ms <= PGW_SPRINT_WARNING_MS &&
       (events & (GAME_EVENT_CATCH | GAME_EVENT_DROP | GAME_EVENT_MISS | GAME_EVENT_BONUS)) == 0u) {
     s_warned = true; /* Ten seconds left: a cue on the first quiet tick. */
-    feedback_service_warn(s_data.settings.vibration, s_data.settings.sound);
+    feedback_service_warn(s_data.settings.vibration, sound_volume(&s_data.settings));
   }
   stats_note_events(&s_data.stats, events, &s_streak);
   note_play_ms(s_timer_delay);
@@ -332,7 +336,7 @@ static bool dismiss_ring(void) {
 
 static void pulse(void) {
   if (s_data.settings.vibration && !quiet_time_is_active()) vibes_short_pulse();
-  feedback_service_play(CUE_ALARM, s_data.settings.sound);
+  feedback_service_play(CUE_ALARM, sound_volume(&s_data.settings));
 }
 
 static void begin_ring(void) {
@@ -377,6 +381,11 @@ static void sync_ticks(void) {
 }
 
 static const char *on_off(bool value) { return value ? "On" : "Off"; }
+
+static const char *sound_name(const Settings *settings) {
+  static const char *const levels[] = { "Low", "Medium", "High" };
+  return !settings->sound ? "Off" : levels[settings->sound_level < 3u ? settings->sound_level : 1u];
+}
 
 static unsigned settings_row_count(void) {
   return s_data.settings.landscape ? 9u : 8u;
@@ -429,7 +438,7 @@ static void render_panel(void) {
                  settings->buttons_bottom ? "Bottom" : "Top");
       snprintf(panel.rows[row++], sizeof(panel.rows[0]), "Swap: %s", on_off(settings->swap_buttons));
       snprintf(panel.rows[row++], sizeof(panel.rows[0]), "Vibrate: %s", on_off(settings->vibration));
-      snprintf(panel.rows[row++], sizeof(panel.rows[0]), "Sound: %s", on_off(settings->sound));
+      snprintf(panel.rows[row++], sizeof(panel.rows[0]), "Sound: %s", sound_name(settings));
       snprintf(panel.rows[row++], sizeof(panel.rows[0]), "Ghosts: %s", on_off(settings->ghosts));
       snprintf(panel.rows[row++], sizeof(panel.rows[0]), "Theme: %s",
                settings->theme == THEME_IVORY ? "Ivory" : "Classic");
@@ -748,14 +757,18 @@ static void select_handler(ClickRecognizerRef recognizer, void *context) {
         case SETTING_BUTTONS: settings.buttons_bottom = !settings.buttons_bottom; break;
         case SETTING_SWAP: settings.swap_buttons = !settings.swap_buttons; break;
         case SETTING_VIBRATION: settings.vibration = !settings.vibration; break;
-        case SETTING_SOUND: settings.sound = !settings.sound; break;
+        case SETTING_SOUND: /* Off, Low, Medium, High, then Off again. */
+          if (!settings.sound) { settings.sound = true; settings.sound_level = 0u; }
+          else if (settings.sound_level < 2u) ++settings.sound_level;
+          else settings.sound = false;
+          break;
         case SETTING_GHOSTS: settings.ghosts = !settings.ghosts; break;
         case SETTING_THEME: settings.theme = (uint8_t)((settings.theme + 1u) % THEME_COUNT); break;
         case SETTING_DEMO: settings.attract = !settings.attract; break;
         case SETTING_ONLINE: settings.online = !settings.online; break;
       }
       if (save_settings(&settings)) {
-        if (settings_item(s_row) == SETTING_SOUND) feedback_service_play(CUE_CATCH, settings.sound); /* Preview the beep. */
+        if (settings_item(s_row) == SETTING_SOUND) feedback_service_play(CUE_CATCH, sound_volume(&settings)); /* Preview the level. */
         else if (settings_item(s_row) == SETTING_ONLINE) online_try_send();
       }
       break;

@@ -49,20 +49,20 @@ static void fired(void *data) {
 void feedback_service_stop_sound(void) { speaker_stop(); }
 
 /* Same rule as vibration plus the system speaker mute, which also covers Quiet Time. */
-void feedback_service_play(SoundCue cue, bool sound) {
+void feedback_service_play(SoundCue cue, uint8_t volume) {
   unsigned count, i;
   const SoundNote *notes = feedback_sound_notes(cue, &count);
-  if (notes == NULL || !sound || speaker_is_muted() || quiet_time_is_active()) return;
+  if (notes == NULL || volume == 0u || speaker_is_muted() || quiet_time_is_active()) return;
   for (i = 0u; i < count; ++i)
     s_notes[i] = (SpeakerNote) { .midi_note = notes[i].midi, .waveform = SpeakerWaveformSquare,
                                  .duration_ms = notes[i].ms };
   speaker_stop(); /* Replace a cue that is still sounding. */
-  speaker_play_notes(s_notes, count, FEEDBACK_SOUND_VOLUME);
+  speaker_play_notes(s_notes, count, volume);
 }
 
-void feedback_service_warn(bool vibration, bool sound) {
+void feedback_service_warn(bool vibration, uint8_t volume) {
   if (!s_running) return;
-  feedback_service_play(CUE_WARNING, sound);
+  feedback_service_play(CUE_WARNING, volume);
   if (vibration && !quiet_time_is_active()) vibes_short_pulse();
 }
 
@@ -87,13 +87,13 @@ void feedback_service_set_running(bool running) {
   schedule();
 }
 
-void feedback_service_events(uint32_t events, bool record, bool vibration, bool sound) {
+void feedback_service_events(uint32_t events, bool record, bool vibration, uint8_t volume) {
   FeedbackPulse pulse;
   advance();
   pulse = feedback_trigger(&s_feedback, events, record);
   schedule();
   if (!s_running) return;
-  feedback_service_play(feedback_sound_cue(events, record), sound);
+  feedback_service_play(feedback_sound_cue(events, record), volume);
   if (!vibration || quiet_time_is_active() || pulse == FEEDBACK_SILENT) return;
   /* Pebble ignores a new pulse while another is running. Replace it once,
    * and combine game-over + record into one long-then-double pattern. */
