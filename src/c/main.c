@@ -4,6 +4,7 @@
 #include "clock.h"
 #include "game.h"
 #include "feedback_service.h"
+#include "glance.h"
 #include "orientation.h"
 #include "storage.h"
 #include "tuning.h"
@@ -36,6 +37,7 @@ static TimeUnits s_tick_units;
 static bool s_ringing, s_passive_ring;
 static time_t s_ring_end;
 static Hold s_hold;
+static char s_glance_text[64];
 static bool s_select_down, s_select_handled;
 
 static void render(void);
@@ -592,6 +594,17 @@ static void will_focus(bool in_focus) {
 
 static void window_load(Window *window) { view_init(window_get_root_layer(window), s_data.settings.ghosts); render(); }
 
+static void glance_reload(AppGlanceReloadSession *session, size_t limit, void *context) {
+  AppGlanceSlice slice = {
+    .layout = { .icon = APP_GLANCE_SLICE_DEFAULT_ICON, .subtitle_template_string = s_glance_text },
+    .expiration_time = APP_GLANCE_SLICE_NO_EXPIRATION
+  };
+  AppGlanceResult result;
+  if (limit == 0u) return;
+  result = app_glance_add_slice(session, slice);
+  if (result != APP_GLANCE_RESULT_SUCCESS) APP_LOG(APP_LOG_LEVEL_ERROR, "glance slice %d", (int)result);
+}
+
 static void window_unload(Window *window) {
   feedback_service_set_running(false);
   feedback_service_reset();
@@ -603,6 +616,9 @@ static void window_unload(Window *window) {
   tick_timer_service_unsubscribe();
   s_tick_units = 0;
   flush_scores();
+  /* One update as the app closes; the launcher shows it until the next launch. */
+  glance_text(s_glance_text, sizeof(s_glance_text), &s_data.scores, &s_data.settings, clock_is_24h_style());
+  app_glance_reload(glance_reload, NULL);
   vibes_cancel();
   view_deinit();
 }

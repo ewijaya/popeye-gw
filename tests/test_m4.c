@@ -3,6 +3,7 @@
 #include <string.h>
 #include "alarm.h"
 #include "clock.h"
+#include "glance.h"
 #include "storage.h"
 #include "fake.h"
 #include "orientation.h"
@@ -304,7 +305,37 @@ static void test_oriented_controls(void) {
   }
 }
 
+static void test_glance(void) {
+  HighScores scores;
+  Settings settings;
+  char text[64], small[10];
+  scores_defaults(&scores); settings_defaults(&settings);
+  glance_text(text, sizeof(text), &scores, &settings, true);
+  assert(strcmp(text, "No scores yet") == 0);
+  scores.best[0] = 214; scores.best[1] = 187;
+  glance_text(text, sizeof(text), &scores, &settings, true);
+  assert(strcmp(text, "Best A 214 / B 187") == 0); /* Alarm off adds nothing. */
+  settings.alarm_on = true; settings.alarm_hour = 7; settings.alarm_minute = 5;
+  glance_text(text, sizeof(text), &scores, &settings, true);
+  assert(strcmp(text, "Best A 214 / B 187 - 07:05") == 0);
+  glance_text(text, sizeof(text), &scores, &settings, false);
+  assert(strcmp(text, "Best A 214 / B 187 - 7:05 AM") == 0);
+  settings.alarm_hour = 0;
+  glance_text(text, sizeof(text), &scores, &settings, false);
+  assert(strstr(text, "12:05 AM") != NULL);
+  settings.alarm_hour = 23; settings.alarm_minute = 59;
+  glance_text(text, sizeof(text), &scores, &settings, false);
+  assert(strstr(text, "11:59 PM") != NULL);
+  scores.best[0] = scores.best[1] = UINT32_MAX;
+  glance_text(text, sizeof(text), &scores, &settings, false);
+  assert(strlen(text) < 150 && strchr(text, '{') == NULL);
+  glance_text(small, sizeof(small), &scores, &settings, true); /* Truncates, stays terminated. */
+  assert(strlen(small) == 9);
+  glance_text(small, 0, &scores, &settings, true);
+}
+
 int main(void) {
+  test_glance();
   test_records(); test_storage(); test_clock(); test_alarm(); test_orientation();
   test_saved_orientation_preferences(); test_oriented_controls();
   puts("M4 tests passed: versioned storage, corrupt records, clock, calendar/DST recurrence and wakeup lifecycle");
