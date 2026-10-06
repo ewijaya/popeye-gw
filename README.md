@@ -10,14 +10,13 @@ black segments, a white field, and vivid red, orange, blue and turquoise.
 
 *Real gameplay from the Emery emulator (a sped-up highlight, shown at half of its 2x size).*
 
-**Status:** Version 1.2.0 is being prepared for PT2 testing and publication.
-It adds an Ivory LCD theme (Settings → Theme) matching the companion watchface.
-Version 1.1.0 remains the published release; see its [release record](docs/releases/1.1.0.md).
+**Status:** Version 1.2.0 is published on GitHub and the Pebble App Store.
+It adds an Ivory LCD theme (Settings → Theme); see the [release record](docs/releases/1.2.0.md).
 
 **Download:** [Pebble App Store](https://apps.repebble.com/e9cb2950ca21440798fb1db8) ·
-[GitHub release v1.1.0](https://github.com/ewijaya/popeye-gw/releases/tag/v1.1.0)
-([PBW](https://github.com/ewijaya/popeye-gw/releases/download/v1.1.0/popeye-gw.pbw)).
-Both downloads match the approved SHA-256 recorded in the [release record](docs/releases/1.1.0.md).
+[GitHub release v1.2.0](https://github.com/ewijaya/popeye-gw/releases/tag/v1.2.0)
+([PBW](https://github.com/ewijaya/popeye-gw/releases/download/v1.2.0/popeye-gw.pbw)).
+Both downloads match the approved SHA-256 recorded in the [release record](docs/releases/1.2.0.md).
 
 This is a watch adaptation, not an exact ROM recreation. The
 [fidelity ledger](docs/pp23-fidelity.md) separates confirmed rules from provisional
