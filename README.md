@@ -22,7 +22,7 @@ Both downloads match the approved SHA-256 recorded in the [release record](docs/
 This is a watch adaptation, not an exact ROM recreation. The
 [fidelity ledger](docs/pp23-fidelity.md) separates confirmed rules from provisional
 timing, paths and input behavior. The app name is **Popeye G&W**; the
-repository/package/build slug is `popeye-gw`. More: [PRD](PRD.md),
+repository/package/build slug is `popeye-gw`. More: the archived PRD (`git show v1.0.2:PRD.md`),
 [repository conventions](CLAUDE.md), [1.0.0 store description and checks](docs/releases/1.0.0.md),
 [PT2 play-test checklist](docs/pt2-playtest.md) and [results](docs/pt2-playtest-results.md),
 [M5 notes](docs/m5-notes.md) and [audit](docs/m5-audit.md). Earlier scene/M3/M4 audits

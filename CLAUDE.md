@@ -2,8 +2,10 @@
 
 ## Product and scope
 
-- Read `PRD.md` in full before changing game rules or architecture. Ask the
-  owner before editing the PRD; record implementation interpretations elsewhere.
+- The PRD was retired after v1.0.2; read the archived copy with
+  `git show v1.0.2:PRD.md` before changing game rules or architecture. "PRD
+  section N" references point to it. Record later decisions and interpretations
+  in `docs/` (e.g. `docs/v1.1-notes.md`), and ask the owner about scope changes.
 - Popeye G&W is a fan-made LCD-style catch game for Pebble Time 2 only:
   Emery, 200 × 228, 64 colours, inspired by Nintendo’s Popeye Game & Watch.
   Use the approved cast: Popeye, Olive Oyl and Brutus.

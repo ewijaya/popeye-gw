@@ -2,7 +2,8 @@
 
 This is the maintained procedure behind the `popeye-gw-build-audit`,
 `popeye-gw-release` and `popeye-gw-appstore` skills (`.claude/skills/`,
-mirrored in `.agents/skills/`). It implements PRD sections 12, 13 and 15.
+mirrored in `.agents/skills/`). It implements PRD sections 12, 13 and 15. The PRD
+was retired after v1.0.2; read those sections with `git show v1.0.2:PRD.md`.
 
 Identity lives in [release-config.json](release-config.json). `uuid` identifies
 the PBW; `store_app_id` is a separate ID the RePebble store assigns at first
