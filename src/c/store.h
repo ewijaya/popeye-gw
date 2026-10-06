@@ -12,7 +12,7 @@
 
 typedef struct {
   /* buttons_bottom is remembered even when landscape is false. */
-  bool swap_buttons, vibration, ghosts, attract, alarm_on, landscape, buttons_bottom, sound;
+  bool swap_buttons, vibration, ghosts, attract, alarm_on, landscape, buttons_bottom, sound, online;
   uint8_t alarm_hour, alarm_minute;
 } Settings;
 

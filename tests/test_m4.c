@@ -35,7 +35,7 @@ static void test_records(void) {
   assert(restored.swap_buttons && !restored.ghosts && !restored.attract && restored.alarm_on);
   assert(restored.vibration && restored.sound && restored.alarm_hour == 23 && restored.alarm_minute == 59);
   settings.sound = false; settings_encode(&settings, settings_bytes);
-  assert(settings_bytes[0] == 5u && (settings_bytes[1] & 0x80u) == 0u);
+  assert(settings_bytes[0] == 6u && (settings_bytes[1] & 0x80u) == 0u && (settings_bytes[3] & 0x80u) == 0u);
   assert(settings_decode(&restored, settings_bytes, sizeof(settings_bytes)));
   assert(!restored.sound && restored.vibration && restored.landscape && restored.alarm_on);
   settings.sound = true; settings_encode(&settings, settings_bytes);
@@ -257,7 +257,7 @@ static void test_saved_orientation_preferences(void) {
     { 3, 63, 23, 59, 1, 67, 49, 21 },
     { 3, 127, 23, 59, 193, 21, 222, 206 }
   };
-  const uint8_t future[] = { 6, 0, 23, 59, 202, 123, 241, 253 };
+  uint8_t future[SETTINGS_RECORD_SIZE] = { 7, 0, 23, 59 };
   Settings settings, restored;
   uint8_t bytes[SETTINGS_RECORD_SIZE];
   unsigned i, bottom;
@@ -276,19 +276,55 @@ static void test_saved_orientation_preferences(void) {
    * bit 7 is invalid before v5, and v5 may clear it. */
   {
     unsigned version, flags;
-    for (version = 1; version <= 5; ++version) {
+    for (version = 1; version <= 6; ++version) {
       for (flags = 0; flags < 256; ++flags) {
         uint8_t record[SETTINGS_RECORD_SIZE] = { (uint8_t)version, (uint8_t)flags, 6, 30 };
-        bool valid = version == 5u || (flags & (version == 1u ? 0xe0u : version == 2u ? 0xc0u : 0x80u)) == 0u;
+        bool valid = version >= 5u || (flags & (version == 1u ? 0xe0u : version == 2u ? 0xc0u : 0x80u)) == 0u;
         write_checksum(record);
         assert(settings_decode(&settings, record, sizeof(record)) == valid);
         if (!valid) continue;
         assert(settings.sound == (version < 5u || (flags & 0x80u) != 0u));
         assert(settings.swap_buttons == ((flags & 1u) != 0u) && settings.vibration == ((flags & 2u) != 0u));
         assert(settings.alarm_hour == 6u && settings.alarm_minute == 30u && settings.alarm_on == ((flags & 16u) != 0u));
+        assert(!settings.online);
         assert(settings.buttons_bottom == (version >= 4u ? (flags & 64u) != 0u :
                                            !settings.landscape || (version == 3u && (flags & 64u) != 0u)));
       }
+    }
+  }
+  /* v6 adds Online in the top bit of the minute byte: earlier records keep it Off, and an
+   * earlier record with that bit set (a minute above 59) is still invalid. */
+  {
+    unsigned version, minute_byte;
+    for (version = 1; version <= 6; ++version) {
+      for (minute_byte = 0; minute_byte < 256; ++minute_byte) {
+        uint8_t record[SETTINGS_RECORD_SIZE] = { (uint8_t)version, 0x1e, 6, (uint8_t)minute_byte };
+        bool valid = (version >= 6u ? (minute_byte & 0x7fu) : minute_byte) <= 59u;
+        write_checksum(record);
+        assert(settings_decode(&settings, record, sizeof(record)) == valid);
+        if (!valid) continue;
+        assert(settings.alarm_minute == (minute_byte & 0x7fu));
+        assert(settings.online == (version >= 6u && (minute_byte & 0x80u) != 0u));
+        assert(settings.sound == (version < 5u) && settings.vibration && settings.alarm_hour == 6u);
+      }
+    }
+    settings_defaults(&settings);
+    assert(!settings.online);
+    settings.online = true; settings.alarm_minute = 59;
+    settings_encode(&settings, bytes);
+    assert(bytes[0] == 6u && bytes[3] == (59u | 0x80u));
+    assert(settings_decode(&restored, bytes, sizeof(bytes)) && restored.online && restored.alarm_minute == 59u);
+    assert(restored.sound && restored.vibration && restored.buttons_bottom && !restored.landscape);
+    settings.online = false;
+    settings_encode(&settings, bytes);
+    assert(settings_decode(&restored, bytes, sizeof(bytes)) && !restored.online && restored.alarm_minute == 59u);
+    fake_reset();
+    settings.online = true; settings.alarm_minute = 7;
+    assert(storage_save_settings(&settings));
+    {
+      SaveData loaded;
+      storage_load(&loaded);
+      assert(loaded.settings.online && loaded.settings.alarm_minute == 7u);
     }
   }
   /* A horizontal side survives Vertical, app exit/reload, and unrelated edits. */
@@ -312,6 +348,7 @@ static void test_saved_orientation_preferences(void) {
       assert(loaded.settings.landscape && loaded.settings.buttons_bottom == (bottom != 0));
     }
   }
+  write_checksum(future);
   assert(!settings_decode(&settings, future, sizeof(future)));
   assert(!settings.landscape && settings.buttons_bottom && !settings.alarm_on);
 }

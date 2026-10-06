@@ -20,7 +20,7 @@ static uint32_t checksum(const uint8_t *p, size_t size) {
 
 void settings_defaults(Settings *settings) {
   memset(settings, 0, sizeof(*settings));
-  settings->vibration = settings->ghosts = settings->attract = settings->sound = true;
+  settings->vibration = settings->ghosts = settings->attract = settings->sound = true; /* online stays Off */
   settings->buttons_bottom = true;
   settings->alarm_hour = 7u;
 }
@@ -28,20 +28,22 @@ void settings_defaults(Settings *settings) {
 void scores_defaults(HighScores *scores) { memset(scores, 0, sizeof(*scores)); }
 
 void settings_encode(const Settings *s, uint8_t out[SETTINGS_RECORD_SIZE]) {
-  out[0] = 5u;
+  out[0] = 6u;
   out[1] = (uint8_t)(s->swap_buttons | s->vibration << 1 | s->ghosts << 2 |
                      s->attract << 3 | s->alarm_on << 4 | s->landscape << 5 |
                      s->buttons_bottom << 6 | s->sound << 7);
   out[2] = s->alarm_hour;
-  out[3] = s->alarm_minute;
+  out[3] = (uint8_t)(s->alarm_minute | s->online << 7); /* v6: Online in the spare top bit of the minute */
   write32(out + 4, checksum(out, 4));
 }
 
 bool settings_decode(Settings *s, const uint8_t *data, size_t size) {
+  uint8_t minute;
   settings_defaults(s);
-  if (size != SETTINGS_RECORD_SIZE || data == NULL || data[0] < 1u || data[0] > 5u ||
-      (data[1] & (data[0] == 1u ? 0xe0u : data[0] == 2u ? 0xc0u : data[0] < 5u ? 0x80u : 0u)) != 0u || data[2] > 23u || data[3] > 59u ||
-      read32(data + 4) != checksum(data, 4)) return false;
+  if (size != SETTINGS_RECORD_SIZE || data == NULL || data[0] < 1u || data[0] > 6u) return false;
+  minute = data[0] >= 6u ? (uint8_t)(data[3] & 0x7fu) : data[3];
+  if ((data[1] & (data[0] == 1u ? 0xe0u : data[0] == 2u ? 0xc0u : data[0] < 5u ? 0x80u : 0u)) != 0u || data[2] > 23u ||
+      minute > 59u || read32(data + 4) != checksum(data, 4)) return false;
   s->swap_buttons = (data[1] & 1u) != 0;
   s->vibration = (data[1] & 2u) != 0;
   s->ghosts = (data[1] & 4u) != 0;
@@ -56,7 +58,8 @@ bool settings_decode(Settings *s, const uint8_t *data, size_t size) {
   s->buttons_bottom = data[0] >= 4u ? (data[1] & 64u) != 0 :
                       !s->landscape || (data[0] == 3u && (data[1] & 64u) != 0);
   s->alarm_hour = data[2];
-  s->alarm_minute = data[3];
+  s->alarm_minute = minute;
+  s->online = data[0] >= 6u && (data[3] & 0x80u) != 0u; /* v6 adds Online; earlier records keep it Off. */
   return true;
 }
 
