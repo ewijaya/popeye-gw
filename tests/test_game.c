@@ -589,6 +589,149 @@ static void test_fairness(void) {
          (unsigned long long)total_strikes[0], (unsigned long long)total_strikes[1]);
 }
 
+/* Sprint / Daily: an active-play limit on Game B rules. */
+static uint32_t test_rand(uint32_t *state) {
+  uint32_t x = *state;
+  x ^= x << 13; x ^= x >> 17; x ^= x << 5;
+  return *state = x;
+}
+
+/* Imperfect player used by the timing tests: follows the soonest food but errs sometimes. */
+static void sloppy_input(Game *game, uint32_t *rng, unsigned error_in) {
+  unsigned target = 2u, i;
+  uint64_t soonest = UINT64_MAX;
+  for (i = 0u; i < GAME_MAX_CARGO; ++i)
+    if (game->cargo[i].active && game->cargo[i].landing_step < soonest) {
+      soonest = game->cargo[i].landing_step;
+      target = game_lane_pose(game->cargo[i].lane);
+    }
+  if (test_rand(rng) % error_in == 0u) target = test_rand(rng) % GAME_POSES;
+  while (game->status == GAME_PLAYING && game->popeye_pose != target) press(game, game->popeye_pose > target ? GAME_UP : GAME_DOWN);
+}
+
+/* Plays one timed round with inputs every 100 active-ms mark, advancing in `chunk`-sized
+ * calls, pausing now and then. Returns playing and recovery milliseconds consumed. */
+static void play_timed(Game *game, GameMode mode, uint32_t seed, uint32_t limit, uint32_t chunk,
+                       uint32_t *playing_ms, uint32_t *recovery_ms, bool check_clock) {
+  uint32_t rng = seed * 2654435761u + 1u, mark;
+  game_init(game, mode, seed);
+  game_start_timed(game, mode, seed, limit);
+  *playing_ms = *recovery_ms = 0u;
+  for (mark = 0u; mark < 1000u && game->status != GAME_OVER; ++mark) {
+    uint32_t left = 100u;
+    sloppy_input(game, &rng, 3u);
+    if (test_rand(&rng) % 7u == 0u) {
+      Game frozen;
+      assert(game_pause(game));
+      frozen = *game;
+      assert(!game_advance(game, 5000u) && !game_step(game));
+      assert(memcmp(&frozen, game, sizeof(frozen)) == 0); /* Pause neither ticks nor spends time. */
+      assert(game_resume(game));
+    }
+    while (left != 0u && game->status != GAME_OVER) {
+      uint32_t ms = left < chunk ? left : chunk, before_left = game->time_left_ms;
+      GameStatus before = game->status;
+      game_advance(game, ms);
+      if (check_clock) {
+        assert(ms == 1u);
+        if (before == GAME_PLAYING) { ++*playing_ms; assert(game->status == GAME_OVER || game->time_left_ms == before_left - 1u); }
+        else { ++*recovery_ms; assert(game->time_left_ms == before_left); } /* Recovery freezes the clock. */
+      }
+      left -= ms;
+    }
+  }
+}
+
+static void test_time_limit(void) {
+  Game a, b, c;
+  unsigned seed, timeups = 0u, early = 0u, recoveries = 0u;
+  uint32_t consumed = 0u;
+  /* Untimed rounds are untouched: no limit fields, no time-up, identical to game_start. */
+  game_init(&a, GAME_B, 5u);
+  game_init(&b, GAME_B, 5u);
+  game_start_timed(&b, GAME_B, 5u, 0u);
+  assert(memcmp(&a, &b, sizeof(a)) == 0 && a.time_limit_ms == 0u && !a.time_up);
+  (void)game_advance(&a, 10u * 60u * 1000u);
+  assert(a.status == GAME_OVER && !a.time_up && !(game_take_events(&a) & GAME_EVENT_TIME_UP));
+  assert(game_next_boundary_ms(&a) == 0u);
+  /* A perfect player is stopped exactly at the limit, mid-step. */
+  game_init(&a, GAME_B, 11u);
+  game_start_timed(&a, GAME_B, 11u, 5000u);
+  assert(a.time_left_ms == 5000u && game_next_boundary_ms(&a) == game_step_interval(&a));
+  while (a.status != GAME_OVER) {
+    unsigned destination = bot_choose_pose(&a);
+    uint32_t ms;
+    if (destination < a.popeye_pose) press(&a, GAME_UP);
+    else if (destination > a.popeye_pose) press(&a, GAME_DOWN);
+    ms = game_next_boundary_ms(&a);
+    assert(ms != 0u && ms <= a.step_ms_left && ms <= a.time_left_ms);
+    assert(game_step(&a));
+    consumed += ms;
+    assert(a.total_misses == 0u);
+  }
+  assert(consumed == 5000u && a.time_up && a.time_left_ms == 0u && a.misses == 0u);
+  assert((game_take_events(&a) & (GAME_EVENT_TIME_UP | GAME_EVENT_OVER)) == (GAME_EVENT_TIME_UP | GAME_EVENT_OVER));
+  b = a;
+  assert(!game_advance(&a, 60000u) && !game_step(&a) && !game_pause(&a) && memcmp(&a, &b, sizeof(a)) == 0);
+  /* The tick landing exactly on the limit resolves before time is called. */
+  game_init(&a, GAME_B, 3u);
+  game_start_timed(&a, GAME_B, 3u, 2u * game_step_interval(&b));
+  assert(game_advance(&a, 2u * game_step_interval(&b) - 1u) && a.status == GAME_PLAYING && a.step == 1u);
+  assert(a.time_left_ms == 1u && a.step_ms_left == 1u);
+  assert(game_advance(&a, 1u) && a.step == 2u && a.time_up && (game_take_events(&a) & GAME_EVENT_TIME_UP));
+  /* Time-up, three-miss end and the event pair, over many sloppy rounds. */
+  for (seed = 1u; seed <= 300u; ++seed) {
+    uint32_t playing, recovery, p2, r2;
+    play_timed(&a, GAME_B, seed, 20000u, 1u, &playing, &recovery, true);
+    assert(a.status == GAME_OVER);
+    if (a.time_up) {
+      ++timeups;
+      assert(playing == 20000u && a.time_left_ms == 0u && a.misses < GAME_MAX_MISSES);
+      assert((game_take_events(&a) & (GAME_EVENT_TIME_UP | GAME_EVENT_OVER)) == (GAME_EVENT_TIME_UP | GAME_EVENT_OVER));
+    } else {
+      ++early;
+      assert(a.misses >= GAME_MAX_MISSES && playing < 20000u && a.time_left_ms == 20000u - playing);
+      assert(!(game_take_events(&a) & GAME_EVENT_TIME_UP));
+    }
+    if (recovery != 0u) ++recoveries;
+    /* Chunked advances land in exactly the same state as one-millisecond ones. */
+    play_timed(&b, GAME_B, seed, 20000u, 7u, &p2, &r2, false);
+    play_timed(&c, GAME_B, seed, 20000u, 100u, &p2, &r2, false);
+    (void)game_take_events(&b); (void)game_take_events(&c);
+    assert(memcmp(&a, &b, sizeof(a)) == 0 && memcmp(&a, &c, sizeof(a)) == 0);
+  }
+  assert(timeups > 5u && early > 5u && recoveries > 50u);
+}
+
+static void test_timed_fairness(void) {
+  unsigned seed;
+  uint64_t steps = 0u, catches = 0u;
+  for (seed = 0u; seed < 10000u; ++seed) {
+    Game game;
+    uint32_t consumed = 0u;
+    game_init(&game, GAME_B, seed);
+    game_start_timed(&game, GAME_B, seed, PGW_SPRINT_MS);
+    while (game.status != GAME_OVER) {
+      unsigned destination = bot_choose_pose(&game);
+      uint32_t ms;
+      if (destination < game.popeye_pose) press(&game, GAME_UP);
+      else if (destination > game.popeye_pose) press(&game, GAME_DOWN);
+      assert(game.popeye_pose == destination);
+      ms = game_next_boundary_ms(&game);
+      assert(game_step(&game));
+      consumed += ms;
+      ++steps;
+      assert(game.drops == 0u && game.hits == 0u && game.total_misses == 0u);
+      assert(game.misses == 0u && !game.half_ring && consumed <= PGW_SPRINT_MS);
+    }
+    assert(consumed == PGW_SPRINT_MS && game.time_up && game.time_left_ms == 0u);
+    assert(game.catches >= 20u);
+    catches += game.catches;
+  }
+  printf("Timed 60 s: 10,000 seeds through time-up; zero unavoidable misses (%llu steps, %llu catches)\n",
+         (unsigned long long)steps, (unsigned long long)catches);
+}
+
 int main(void) {
   test_inputs();
   test_cargo_and_feedback();
@@ -600,9 +743,11 @@ int main(void) {
   test_game_over_movement();
   test_pause_and_elapsed();
   test_determinism();
+  test_time_limit();
   puts("Rule tests passed");
   fflush(stdout);
   test_fairness();
+  test_timed_fairness();
   puts("All Popeye G&W tests passed");
   return 0;
 }

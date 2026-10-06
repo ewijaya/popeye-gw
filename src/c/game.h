@@ -26,7 +26,8 @@ enum {
   GAME_EVENT_BONUS = 1u << 3,
   GAME_EVENT_HIGH_SCORE = 1u << 4,
   GAME_EVENT_OVER = 1u << 5,
-  GAME_EVENT_LAUNCH = 1u << 6
+  GAME_EVENT_LAUNCH = 1u << 6,
+  GAME_EVENT_TIME_UP = 1u << 7 /* timed rounds only; always accompanied by GAME_EVENT_OVER */
 };
 
 typedef struct {
@@ -104,12 +105,23 @@ typedef struct {
   uint32_t drops;
   uint32_t hits;
   uint32_t total_misses;
+  /* Optional active-time limit (Sprint, Daily); zero limit means untimed. Only time
+   * consumed while PLAYING counts: MISS recovery, pause and game over do not. */
+  uint32_t time_limit_ms;
+  uint32_t time_left_ms;
+  bool time_up; /* the round ended by reaching the limit, not by three misses */
 } Game;
 
 /* init clears all records; start keeps mode-specific highs and the swap setting.
  * Seed zero is valid and maps to a fixed nonzero xorshift state. */
 void game_init(Game *game, GameMode mode, uint32_t seed);
 void game_start(Game *game, GameMode mode, uint32_t seed);
+/* Same rules with an active-play limit. When time_left_ms reaches zero the round
+ * ends like game over, with GAME_EVENT_TIME_UP | GAME_EVENT_OVER. The tick that lands
+ * exactly on the limit is still resolved first; three misses still end it early. */
+void game_start_timed(Game *game, GameMode mode, uint32_t seed, uint32_t limit_ms);
+/* Seed shared by everyone on a local calendar date YYYYMMDD (Daily). */
+uint32_t game_daily_seed(uint32_t date);
 /* A repeated pressed=true for a held button does nothing. Release it before
  * another press. Input moves and clamps immediately; paused/recovery input
  * records button edges but cannot move Popeye. Movement remains active after
@@ -123,6 +135,9 @@ bool game_resume(Game *game);
 bool game_advance(Game *game, uint32_t elapsed_ms);
 /* Advance to the next tick, or the end of recovery; respects partial timers. */
 bool game_step(Game *game);
+/* Milliseconds until game_step's next boundary: the end of recovery, the next tick or the
+ * time limit, whichever is first. Zero when paused or over. */
+uint32_t game_next_boundary_ms(const Game *game);
 uint32_t game_take_events(Game *game);
 uint32_t game_step_interval(const Game *game);
 uint16_t game_display_score(const Game *game);

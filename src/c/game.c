@@ -52,6 +52,14 @@ void game_init(Game *game, GameMode mode, uint32_t seed) {
 }
 
 void game_start(Game *game, GameMode mode, uint32_t seed) {
+  game_start_timed(game, mode, seed, 0u);
+}
+
+uint32_t game_daily_seed(uint32_t date) {
+  return date * UINT32_C(2654435761) ^ PGW_DAILY_SEED_SALT;
+}
+
+void game_start_timed(Game *game, GameMode mode, uint32_t seed, uint32_t limit_ms) {
   uint32_t highs[2] = { game->high_scores[0], game->high_scores[1] };
   bool swapped = game->controls_swapped;
   memset(game, 0, sizeof(*game));
@@ -70,6 +78,7 @@ void game_start(Game *game, GameMode mode, uint32_t seed) {
   game->attack.rng = seed_nonzero(seed ^ UINT32_C(0xc8013ea4));
   game->attack.idle_ms_left = next_idle(game);
   game->step_ms_left = game_step_interval(game);
+  game->time_limit_ms = game->time_left_ms = limit_ms;
 }
 
 bool game_input(Game *game, GameButton button, bool pressed) {
@@ -109,6 +118,14 @@ bool game_resume(Game *game) {
   if (game->status != GAME_PAUSED) return false;
   game->status = game->resume_status;
   return true;
+}
+
+uint32_t game_next_boundary_ms(const Game *game) {
+  uint32_t room = game->step_ms_left;
+  if (game->status == GAME_RECOVERING) return game->recovery_ms_left;
+  if (game->status != GAME_PLAYING) return 0u;
+  if (game->time_limit_ms != 0u && game->time_left_ms < room) room = game->time_left_ms;
+  return room;
 }
 
 uint32_t game_take_events(Game *game) {
@@ -317,6 +334,14 @@ static void tick(Game *game) {
   update_olive(game);
 }
 
+static void end_time(Game *game) {
+  unsigned i;
+  for (i = 0u; i < GAME_MAX_CARGO; ++i) game->cargo[i].active = false;
+  game->status = GAME_OVER;
+  game->time_up = true;
+  game->events |= GAME_EVENT_TIME_UP | GAME_EVENT_OVER;
+}
+
 static void elapse_idle(Game *game, uint32_t elapsed) {
   GameAttack *attack = &game->attack;
   if (attack->phase == GAME_ATTACK_IDLE) {
@@ -340,13 +365,19 @@ bool game_advance(Game *game, uint32_t elapsed_ms) {
         changed = true;
       }
     } else {
-      chunk = elapsed_ms < game->step_ms_left ? elapsed_ms : game->step_ms_left;
+      uint32_t room = game_next_boundary_ms(game);
+      chunk = elapsed_ms < room ? elapsed_ms : room;
       elapse_idle(game, chunk);
       game->step_ms_left -= chunk;
+      if (game->time_limit_ms != 0u) game->time_left_ms -= chunk;
       elapsed_ms -= chunk;
       if (game->step_ms_left == 0u) {
         tick(game);
         game->step_ms_left = game_step_interval(game);
+        changed = true;
+      }
+      if (game->time_limit_ms != 0u && game->time_left_ms == 0u && game->status != GAME_OVER) {
+        end_time(game);
         changed = true;
       }
     }
@@ -356,6 +387,6 @@ bool game_advance(Game *game, uint32_t elapsed_ms) {
 
 bool game_step(Game *game) {
   if (game->status == GAME_RECOVERING) return game_advance(game, game->recovery_ms_left);
-  if (game->status == GAME_PLAYING) return game_advance(game, game->step_ms_left);
+  if (game->status == GAME_PLAYING) return game_advance(game, game_next_boundary_ms(game));
   return false;
 }
