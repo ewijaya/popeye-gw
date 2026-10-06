@@ -47,7 +47,11 @@ the middle of the three buttons above or below the screen.
 | Quit a running game | Back twice | First pause, then return to the clock. |
 | Clock: high scores | Up in portrait; Left in landscape | Show saved Game A/B scores. |
 | Clock: menu | Down in portrait; Right in landscape | Open High scores, Stats, Alarm, Settings, Help or About. |
-| Menu: Stats (1.1) | Select Stats; Select; movement buttons | Two pages of lifetime totals. Select on the last page offers Reset stats; high scores are untouched. |
+| Menu: Daily (1.1) | Select Daily | A 60 s round of Game B rules with the same food and Brutus pattern for everyone on today's date. Every attempt counts toward today's best. |
+| Menu: Sprint (1.1) | Select Sprint | A 60 s round of Game B rules with a random pattern. |
+| Daily / Sprint: time | Pause | The pause title shows the seconds left. Paused and MISS-recovery time do not count. A beep and pulse warn at 10 s; at 0 the round ends with "Time up!". |
+| Menu: High scores (1.1) | Select; movement buttons | Page 1 shows Game A and B; page 2 shows the Sprint best, the Daily best and today's Daily best. Reset clears all of them. |
+| Menu: Stats (1.1) | Select Stats; Select; movement buttons | Three pages of lifetime totals (the last has Sprint and Daily rounds). Select on the last page offers Reset stats; high scores are untouched. |
 | Settings: Orientation (1.0.1) | Select Orientation, choose Vertical or Horizontal, then Select | Change screen orientation. Back cancels. |
 | Settings: Buttons (1.0.1, Horizontal only) | Select Buttons | Toggle Bottom / Top. The choice is remembered in Vertical mode. |
 | Settings: Swap | Select Swap | Reverse game movement. |
@@ -115,7 +119,7 @@ All four food arcs appear over 48 seconds. With attract animation disabled,
 it shows static poses and a steady colon and updates once per minute. Clock
 ticks stop on other pages and while the app is out of focus.
 
-The menu contains High scores, Stats, Alarm, Settings, Help and About. **Menu → Help**
+The menu contains Daily, Sprint, High scores, Stats, Alarm, Settings, Help and About. **Menu → Help**
 provides four short screens for controls, catches/misses, clock shortcuts and
 screen setup in 1.0.1.
 Press Select for the next screen or Back to return to the menu; the movement
@@ -151,6 +155,16 @@ once as the app closes, with no timer or background work.
 
 After game over, the app returns to the clock if no button is pressed for five
 minutes; that is the only timer on the game-over screen.
+
+Daily and Sprint (1.1) are 60 seconds of Game B rules, counted in active play
+time: the clock runs only while steps run, so pausing, leaving the app and MISS
+recovery do not use it. Three MISS still end a round early. The tick that lands
+exactly on the limit is resolved first, then the round ends ("Time up!"). Sprint
+uses a random seed. Daily seeds the game from the local date, so everyone gets the
+same food and Brutus pattern that day; every attempt counts toward today's best, and
+the all-time Daily best is kept as well. The best Daily round of the day is saved as
+an input replay (below) for a future online leaderboard; nothing is sent from the watch.
+The replay format and persist keys are in [docs/v1.1-notes.md](docs/v1.1-notes.md).
 
 Lifetime stats (1.1, **Menu → Stats**) keep games played per mode (counted once a
 round scores or ends), catches, drops, Brutus hits, 200/500 bonus clears, the
