@@ -6,9 +6,9 @@ left; Popeye catches it in his boat while Brutus threatens him with a hammer
 from the left pier or a fist from the right ship. The PT2 scene uses crisp
 black segments, a white field, and vivid red, orange, blue and turquoise.
 
-**Status:** Version 1.0.1 is published on GitHub and the Pebble App Store.
-It separates Vertical/Horizontal orientation from horizontal Bottom/Top button
-position and adds screen-setup Help. See the [release record](docs/releases/1.0.1.md).
+**Status:** Version 1.0.2 is being prepared for PT2 testing and publication.
+It fixes compressed clock and score digits in Horizontal mode. Version 1.0.1
+remains the published release; see its [release record](docs/releases/1.0.1.md).
 
 **Download:** [Pebble App Store](https://apps.repebble.com/e9cb2950ca21440798fb1db8) ·
 [GitHub release v1.0.0](https://github.com/ewijaya/popeye-gw/releases/tag/v1.0.1)

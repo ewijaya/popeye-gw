@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.2 — 2026-10-06
+
+- Keep the clock and score digits at their original proportions in Horizontal mode, with more space around the display edges.
+- Align the faint digit and MISS outlines with the updated layout for both Top and Bottom button positions.
+- Preserve the Vertical layout and existing gameplay, settings, alarms and high scores.
+
 ## 1.0.1 — 2026-10-05
 
 - Put Orientation first in Settings, with explicit Vertical and Horizontal choices.
