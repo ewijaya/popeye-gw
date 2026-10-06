@@ -269,9 +269,20 @@ def landscape_segments(segments, buttons_bottom=False):
     result = []
     for segment in segments:
         rows = [[CLEAR] * WIDTH for _ in range(HEIGHT)]
-        for x, y in segment["lit"]:
-            rows[y][x] = LIT
-        rows = landscape(rows, buttons_bottom)
+        name = segment["name"]
+        if name.startswith(("digit-", "miss-")) or name in ("colon", "am", "pm", "bell", "hi"):
+            # Lay out the right-hand register on the 228 x 200 canvas at
+            # original pixel size. Scaling the playfield shortens thin LCD
+            # bars and crowds the edge indicators. Leave a 10 px right margin.
+            for x, y in segment["lit"]:
+                sx, sy = WIDTH - 1 - (y + 2), x + 20
+                if buttons_bottom:
+                    sx, sy = WIDTH - 1 - sx, HEIGHT - 1 - sy
+                rows[sy][sx] = LIT
+        else:
+            for x, y in segment["lit"]:
+                rows[y][x] = LIT
+            rows = landscape(rows, buttons_bottom)
         lit = [(x, y) for y in range(HEIGHT) for x in range(WIDTH) if rows[y][x][3]]
         if not lit:
             raise ArtError(segment["name"] + ": lost in landscape conversion")
@@ -312,9 +323,16 @@ def build(out_root):
         turned = landscape_segments(segments, bottom)
         turned_sheet = pack(turned)
         write_png(os.path.join(images, f"segments-{slug}.png"), turned_sheet)
-        write_png(os.path.join(images, f"backdrop-{slug}.png"), landscape(backdrop, bottom))
-        # Transform the same ghost composite, so lit segments and ghosts stay aligned.
-        write_png(os.path.join(images, f"backdrop-ghosts-{slug}.png"), landscape(ghosts, bottom))
+        turned_backdrop = landscape(backdrop, bottom)
+        write_png(os.path.join(images, f"backdrop-{slug}.png"), turned_backdrop)
+        # Bake ghosts from the final segment positions, including the unscaled
+        # clock/score register. The opposite view uses the same dither pixels.
+        for seg in turned:
+            if seg["name"].startswith("digit-") or re.fullmatch(r"miss-[0-2]", seg["name"]):
+                for x, y in seg["lit"]:
+                    if (x + y) % 2 == 0:
+                        turned_backdrop[y][x] = GHOST
+        write_png(os.path.join(images, f"backdrop-ghosts-{slug}.png"), turned_backdrop)
         turned_header = header_text(turned, len(turned_sheet))
         turned_header = turned_header.replace("POPEYE_GW_SEGMENTS_H", f"POPEYE_GW_SEGMENTS_{symbol.upper()}_H")
         turned_header = turned_header.replace("#include \"scene.h\"", "#include \"segments.h\"")

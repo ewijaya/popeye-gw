@@ -32,7 +32,10 @@ selected orientation. Portrait remains the default.
 The original approved art remains the source. `tools/build_art.py` generates a
 228 × 200 logical landscape composition with nearest-neighbour sampling, then
 rotates it clockwise for Top and counterclockwise for Bottom into the native
-200 × 228 framebuffer. All three orientations
+200 × 228 framebuffer. The clock/score digits and adjacent MISS, AM/PM, alarm
+and high-score indicators retain their original pixel dimensions in landscape,
+with a separate inset placement. Their unlit ghosts use the same positions.
+All three orientations
 have complete 82-segment atlases and matching ghost/plain backdrops. No new
 image generation or network request is needed to rebuild these assets.
 

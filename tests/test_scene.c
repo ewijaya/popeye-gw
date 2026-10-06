@@ -98,6 +98,22 @@ static void test_numbers(void) {
   assert(digit_bits(&scene, 3u) == 0x7Fu);
 }
 
+static void test_landscape_register(void) {
+  unsigned seg;
+  /* Thin LCD bars must survive landscape at their original pixel dimensions,
+   * with room between the register and the display edges in either rotation. */
+  for (seg = SEG_DIGIT; seg < SEG_DIGIT + 28u; ++seg) {
+    const SegmentArt *portrait = &segment_art[seg];
+    const SegmentArt *top = &landscape_art[seg];
+    const SegmentArt *bottom = &landscape_bottom_art[seg];
+    assert(top->w == portrait->h && top->h == portrait->w);
+    assert(top->x >= 8 && top->x + top->w <= 192);
+    assert(top->y >= 8 && top->y + top->h <= 220);
+    assert(bottom->x >= 8 && bottom->x + bottom->w <= 192);
+    assert(bottom->y >= 8 && bottom->y + bottom->h <= 220);
+  }
+}
+
 static void test_static_scenes(void) {
   Scene scene;
   Game game = quiet_game(GAME_A);
@@ -204,6 +220,7 @@ static void test_rounds_to_game_over(void) {
 int main(void) {
   test_inventory_and_bits();
   test_numbers();
+  test_landscape_register();
   test_static_scenes();
   test_cargo_and_feedback();
   test_rounds_to_game_over();
