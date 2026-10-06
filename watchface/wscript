@@ -4,6 +4,8 @@
 #
 import sys
 
+from waflib.TaskGen import after_method, feature
+
 top = '.'
 out = 'build'
 
@@ -43,6 +45,16 @@ def build(ctx):
 
     ctx.set_group('bundle')
     ctx.pbl_bundle(binaries=binaries)
+
+
+@feature('c')
+@after_method('process_source')
+def wait_for_resource_ids(self):
+    """pebble.h includes the generated src/resource_ids.auto.h, but the scanner does not
+    record it for these sources, so a parallel build could compile before it exists."""
+    header = self.path.get_bld().make_node('{}/src/resource_ids.auto.h'.format(self.env.BUILD_DIR))
+    for task in getattr(self, 'compiled_tasks', []):
+        task.dep_nodes.append(header)
 
 
 def check_app_size(ctx):
