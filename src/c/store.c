@@ -19,7 +19,7 @@ static uint32_t checksum(const uint8_t *p, size_t size) {
 
 void settings_defaults(Settings *settings) {
   memset(settings, 0, sizeof(*settings));
-  settings->vibration = settings->ghosts = settings->attract = true;
+  settings->vibration = settings->ghosts = settings->attract = settings->sound = true;
   settings->buttons_bottom = true;
   settings->alarm_hour = 7u;
 }
@@ -27,10 +27,10 @@ void settings_defaults(Settings *settings) {
 void scores_defaults(HighScores *scores) { memset(scores, 0, sizeof(*scores)); }
 
 void settings_encode(const Settings *s, uint8_t out[SETTINGS_RECORD_SIZE]) {
-  out[0] = 4u;
+  out[0] = 5u;
   out[1] = (uint8_t)(s->swap_buttons | s->vibration << 1 | s->ghosts << 2 |
                      s->attract << 3 | s->alarm_on << 4 | s->landscape << 5 |
-                     s->buttons_bottom << 6);
+                     s->buttons_bottom << 6 | s->sound << 7);
   out[2] = s->alarm_hour;
   out[3] = s->alarm_minute;
   write32(out + 4, checksum(out, 4));
@@ -38,8 +38,8 @@ void settings_encode(const Settings *s, uint8_t out[SETTINGS_RECORD_SIZE]) {
 
 bool settings_decode(Settings *s, const uint8_t *data, size_t size) {
   settings_defaults(s);
-  if (size != SETTINGS_RECORD_SIZE || data == NULL || data[0] < 1u || data[0] > 4u ||
-      (data[1] & (data[0] == 1u ? 0xe0u : data[0] == 2u ? 0xc0u : 0x80u)) != 0u || data[2] > 23u || data[3] > 59u ||
+  if (size != SETTINGS_RECORD_SIZE || data == NULL || data[0] < 1u || data[0] > 5u ||
+      (data[1] & (data[0] == 1u ? 0xe0u : data[0] == 2u ? 0xc0u : data[0] < 5u ? 0x80u : 0u)) != 0u || data[2] > 23u || data[3] > 59u ||
       read32(data + 4) != checksum(data, 4)) return false;
   s->swap_buttons = (data[1] & 1u) != 0;
   s->vibration = (data[1] & 2u) != 0;
@@ -47,10 +47,12 @@ bool settings_decode(Settings *s, const uint8_t *data, size_t size) {
   s->attract = (data[1] & 8u) != 0;
   s->alarm_on = (data[1] & 16u) != 0;
   s->landscape = data[0] >= 2u && (data[1] & 32u) != 0;
+  /* v5 adds Sound in bit 7; earlier records default it On. */
+  s->sound = data[0] < 5u || (data[1] & 128u) != 0;
   /* v4 retains button position while Vertical. Earlier Vertical records had
    * no position preference; default their first Horizontal selection to Bottom.
    * Existing horizontal Top/Bottom selections keep their exact orientation. */
-  s->buttons_bottom = data[0] == 4u ? (data[1] & 64u) != 0 :
+  s->buttons_bottom = data[0] >= 4u ? (data[1] & 64u) != 0 :
                       !s->landscape || (data[0] == 3u && (data[1] & 64u) != 0);
   s->alarm_hour = data[2];
   s->alarm_minute = data[3];

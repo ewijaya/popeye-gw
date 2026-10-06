@@ -23,7 +23,7 @@ static void test_records(void) {
   settings_defaults(&settings);
   assert(!settings.swap_buttons && settings.vibration && settings.ghosts && settings.attract);
   assert(!settings.alarm_on && settings.alarm_hour == 7 && settings.alarm_minute == 0);
-  assert(!settings.landscape && settings.buttons_bottom);
+  assert(!settings.landscape && settings.buttons_bottom && settings.sound);
   settings.landscape = true;
   settings.buttons_bottom = true;
   settings.swap_buttons = true; settings.ghosts = false; settings.attract = false;
@@ -32,7 +32,13 @@ static void test_records(void) {
   assert(settings_decode(&restored, settings_bytes, sizeof(settings_bytes)));
   assert(restored.landscape && restored.buttons_bottom);
   assert(restored.swap_buttons && !restored.ghosts && !restored.attract && restored.alarm_on);
-  assert(restored.vibration && restored.alarm_hour == 23 && restored.alarm_minute == 59);
+  assert(restored.vibration && restored.sound && restored.alarm_hour == 23 && restored.alarm_minute == 59);
+  settings.sound = false; settings_encode(&settings, settings_bytes);
+  assert(settings_bytes[0] == 5u && (settings_bytes[1] & 0x80u) == 0u);
+  assert(settings_decode(&restored, settings_bytes, sizeof(settings_bytes)));
+  assert(!restored.sound && restored.vibration && restored.landscape && restored.alarm_on);
+  settings.sound = true; settings_encode(&settings, settings_bytes);
+  assert(settings_decode(&restored, settings_bytes, sizeof(settings_bytes)) && restored.sound);
   for (i = 0; i < sizeof(settings_bytes); ++i) {
     for (bit = 0; bit < 8; ++bit) {
       settings_bytes[i] ^= (uint8_t)(1u << bit);
@@ -77,11 +83,12 @@ static void test_storage(void) {
   first.settings.buttons_bottom = true;
   first.settings.swap_buttons = true; first.settings.alarm_on = true;
   first.settings.alarm_minute = 31;
+  first.settings.sound = false;
   assert(scores_record(&first.scores, 1, 5000, 20261005));
   assert(storage_save_settings(&first.settings) && storage_save_scores(&first.scores));
   memset(&second, 0, sizeof(second)); storage_load(&second);
   assert(second.settings.landscape && second.settings.buttons_bottom);
-  assert(second.settings.swap_buttons && second.settings.alarm_minute == 31);
+  assert(second.settings.swap_buttons && second.settings.alarm_minute == 31 && !second.settings.sound);
   assert(second.scores.best[1] == 5000 && second.scores.date[1] == 20261005);
   fake_write_fail = true;
   first.settings.alarm_on = false; first.scores.best[1] = 7000;
@@ -233,6 +240,13 @@ static void test_orientation(void) {
   assert(target[50 * 52] == 0 && target[50 * 52 + 49] == 0);
 }
 
+static void write_checksum(uint8_t record[SETTINGS_RECORD_SIZE]) {
+  uint32_t hash = UINT32_C(2166136261);
+  unsigned i;
+  for (i = 0; i < 4; ++i) hash = (hash ^ record[i]) * UINT32_C(16777619);
+  for (i = 0; i < 4; ++i) record[4 + i] = (uint8_t)(hash >> (8u * i));
+}
+
 static void test_saved_orientation_preferences(void) {
   /* Actual earlier wire formats: v2 Vertical, then v3 Vertical/Top/Bottom.
    * The first two have no saved horizontal side and should start at Bottom. */
@@ -242,7 +256,7 @@ static void test_saved_orientation_preferences(void) {
     { 3, 63, 23, 59, 1, 67, 49, 21 },
     { 3, 127, 23, 59, 193, 21, 222, 206 }
   };
-  const uint8_t future[] = { 5, 0, 23, 59, 202, 123, 241, 253 };
+  const uint8_t future[] = { 6, 0, 23, 59, 202, 123, 241, 253 };
   Settings settings, restored;
   uint8_t bytes[SETTINGS_RECORD_SIZE];
   unsigned i, bottom;
@@ -256,6 +270,25 @@ static void test_saved_orientation_preferences(void) {
     assert(settings_decode(&restored, bytes, sizeof(bytes)));
     assert(restored.landscape == settings.landscape && restored.buttons_bottom == settings.buttons_bottom);
     assert(restored.alarm_on && restored.alarm_hour == 23u && restored.alarm_minute == 59u);
+  }
+  /* Real v4 records (before Sound): Sound defaults On, everything else is kept. A set
+   * bit 7 is invalid before v5, and v5 may clear it. */
+  {
+    unsigned version, flags;
+    for (version = 1; version <= 5; ++version) {
+      for (flags = 0; flags < 256; ++flags) {
+        uint8_t record[SETTINGS_RECORD_SIZE] = { (uint8_t)version, (uint8_t)flags, 6, 30 };
+        bool valid = version == 5u || (flags & (version == 1u ? 0xe0u : version == 2u ? 0xc0u : 0x80u)) == 0u;
+        write_checksum(record);
+        assert(settings_decode(&settings, record, sizeof(record)) == valid);
+        if (!valid) continue;
+        assert(settings.sound == (version < 5u || (flags & 0x80u) != 0u));
+        assert(settings.swap_buttons == ((flags & 1u) != 0u) && settings.vibration == ((flags & 2u) != 0u));
+        assert(settings.alarm_hour == 6u && settings.alarm_minute == 30u && settings.alarm_on == ((flags & 16u) != 0u));
+        assert(settings.buttons_bottom == (version >= 4u ? (flags & 64u) != 0u :
+                                           !settings.landscape || (version == 3u && (flags & 64u) != 0u)));
+      }
+    }
   }
   /* A horizontal side survives Vertical, app exit/reload, and unrelated edits. */
   for (bottom = 0; bottom < 2u; ++bottom) {

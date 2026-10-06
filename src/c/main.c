@@ -15,7 +15,7 @@ typedef enum { PAGE_CLOCK, PAGE_GAME, PAGE_MENU, PAGE_SCORES,
                PAGE_ORIENTATION } Page;
 
 typedef enum { SETTING_ORIENTATION, SETTING_BUTTONS, SETTING_SWAP,
-               SETTING_VIBRATION, SETTING_GHOSTS, SETTING_DEMO } SettingItem;
+               SETTING_VIBRATION, SETTING_SOUND, SETTING_GHOSTS, SETTING_DEMO } SettingItem;
 
 #define HELP_PAGES 4u
 
@@ -245,7 +245,7 @@ static void sync_ticks(void) {
 static const char *on_off(bool value) { return value ? "On" : "Off"; }
 
 static unsigned settings_row_count(void) {
-  return s_data.settings.landscape ? 6u : 5u;
+  return s_data.settings.landscape ? 7u : 6u;
 }
 
 /* Button position has no visible row in Vertical mode. */
@@ -284,6 +284,7 @@ static void render_panel(void) {
                  settings->buttons_bottom ? "Bottom" : "Top");
       snprintf(panel.rows[row++], sizeof(panel.rows[0]), "Swap: %s", on_off(settings->swap_buttons));
       snprintf(panel.rows[row++], sizeof(panel.rows[0]), "Vibrate: %s", on_off(settings->vibration));
+      snprintf(panel.rows[row++], sizeof(panel.rows[0]), "Sound: %s", on_off(settings->sound));
       snprintf(panel.rows[row++], sizeof(panel.rows[0]), "Ghosts: %s", on_off(settings->ghosts));
       snprintf(panel.rows[row], sizeof(panel.rows[0]), "Demo: %s", on_off(settings->attract));
       snprintf(panel.footer, sizeof(panel.footer), "Select: change  Back: menu");
@@ -293,6 +294,8 @@ static void render_panel(void) {
       else if (settings_item(s_row) == SETTING_BUTTONS)
         snprintf(panel.footer, sizeof(panel.footer), "Buttons %s screen\nSelect: change  Back: menu",
                  settings->buttons_bottom ? "below" : "above");
+      else if (settings_item(s_row) == SETTING_SOUND)
+        snprintf(panel.footer, sizeof(panel.footer), "Muted by Quiet Time\nSelect: change  Back: menu");
       break;
     }
     case PAGE_ORIENTATION:
@@ -486,6 +489,7 @@ static void select_handler(ClickRecognizerRef recognizer, void *context) {
         case SETTING_BUTTONS: settings.buttons_bottom = !settings.buttons_bottom; break;
         case SETTING_SWAP: settings.swap_buttons = !settings.swap_buttons; break;
         case SETTING_VIBRATION: settings.vibration = !settings.vibration; break;
+        case SETTING_SOUND: settings.sound = !settings.sound; break;
         case SETTING_GHOSTS: settings.ghosts = !settings.ghosts; break;
         case SETTING_DEMO: settings.attract = !settings.attract; break;
       }

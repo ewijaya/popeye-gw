@@ -50,6 +50,7 @@ the middle of the three buttons above or below the screen.
 | Settings: Orientation (1.0.1) | Select Orientation, choose Vertical or Horizontal, then Select | Change screen orientation. Back cancels. |
 | Settings: Buttons (1.0.1, Horizontal only) | Select Buttons | Toggle Bottom / Top. The choice is remembered in Vertical mode. |
 | Settings: Swap | Select Swap | Reverse game movement. |
+| Settings: Sound (1.1) | Select Sound | Turn the LCD-style beeps On or Off (default On). |
 | Help pages | Select; movement buttons; Back | Select advances, movement buttons browse both ways, Back returns to the menu. |
 
 ## Host tests
@@ -119,7 +120,7 @@ screen setup in 1.0.1.
 Press Select for the next screen or Back to return to the menu; the movement
 buttons also browse Help in either direction. Direction labels adapt to the view.
 Settings toggle
-swapped controls, vibration, ghost segments and attract animation. The renderer
+swapped controls, vibration, sound, ghost segments and attract animation. The renderer
 holds one backdrop at a time and swaps it only when the ghost preference
 changes, keeping free heap above the project budget.
 
