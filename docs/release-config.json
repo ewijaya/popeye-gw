@@ -44,8 +44,8 @@
         "emery"
       ],
       "artifact_name": "popeye-gw-clock.pbw",
-      "store_app_id": null,
-      "store_listing_url": null,
+      "store_app_id": "8e8e130581e7467d9d7b0138",
+      "store_listing_url": "https://apps.repebble.com/8e8e130581e7467d9d7b0138",
       "description_file": "docs/releases/clock/store-description.txt",
       "listing_assets_dir": "docs/releases/clock/listing",
       "budgets": {

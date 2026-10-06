@@ -1,6 +1,6 @@
 # Popeye G&W Clock 1.0.0 preparation
 
-Status: 1.0.0 candidate prepared; final owner approval and publication pending.
+Status: **1.0.0 published and verified**. See [publication record](1.0.0.md).
 
 The current watchface includes Clay settings, independent continuous animation,
 four layout presets, information rows, accessible text and Japanese dates.
@@ -19,7 +19,7 @@ under `.release/popeye-gw-clock/1.0.0/` in the isolated release checkout.
 | Gallery, banner and icons | [Listing assets](listing/README.md) |
 | Website / source | https://github.com/ewijaya/popeye-gw |
 | Companion apps | None |
-| Store App ID | Unregistered locally; discover before Dashboard New |
+| Store App ID | `8e8e130581e7467d9d7b0138` — registered and verified |
 | GitHub release tag | `clock-v1.0.0`, `--latest=false` |
 | Release notes | [Watchface changelog](../../../watchface/CHANGELOG.md) |
 

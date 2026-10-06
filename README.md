@@ -261,9 +261,11 @@ the chosen battery cutoff off power. The colon stays steady unless blinking is
 enabled. Disconnect vibration is optional and off by default; there is no sound.
 
 It shares the game's `scene.c`, `clock.c`, `game.c` and artwork by path, and has
-its own settings and UUID. Version 1.0.0 is prepared for its first store release.
-The owner has checked settings, motion, both clock layouts and information fonts;
-final frozen-build approval and untested physical edge cases remain pending. See the [implementation notes](docs/watchface-implementation.md),
+its own settings and UUID. **Version 1.0.0 is published:**
+[install from Pebble Store](https://apps.repebble.com/8e8e130581e7467d9d7b0138)
+or [download the watchface PBW from GitHub](https://github.com/ewijaya/popeye-gw/releases/tag/clock-v1.0.0).
+Both downloads were verified against the owner-approved frozen build. Detailed
+physical edge cases remain documented in the device checklist. See the [implementation notes](docs/watchface-implementation.md),
 [feature scope](docs/watchface-features.md) and
 [device checklist](docs/watchface-playtest.md).
 
