@@ -98,9 +98,11 @@ static void draw_overlay(GContext *ctx) {
       s_overlay == VIEW_OVERLAY_BEST_B) {
     graphics_context_set_text_color(ctx, GColorBlack);
     /* Both modes use the same physical Select button. Leave the food field
-     * clear and spell out tap versus hold beside the clock register. */
+     * clear and spell out tap versus hold beside the clock register. The best-score
+     * preview sits under its Game A/B lamp. */
     draw_text(ctx, s_overlay == VIEW_OVERLAY_CLOCK ? "Tap Select: A\nHold Select: B" : hints[s_overlay],
-              GRect(4, 3, 98, 38), false, GTextAlignmentLeft);
+              s_overlay == VIEW_OVERLAY_CLOCK ? GRect(4, 3, 98, 38) : GRect(4, 14, 98, 34),
+              false, GTextAlignmentLeft);
     return;
   }
   graphics_context_set_fill_color(ctx, GColorWhite);

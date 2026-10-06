@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased (1.1 draft)
+
+- Add LCD-style square-wave beeps (Settings → Sound, default On): catch, drop/MISS, 200/500 bonus, game over, new best and the alarm ring. Sound follows the watch's speaker mute and Quiet Time and stops on pause, focus loss and exit.
+- Show your best scores and alarm time in the launcher (App Glance), for example "Best A 214 / B 187".
+- Add Menu → Stats: games played per mode, catches, drops, Brutus hits, 200/500 bonuses, longest catch run and play time, with a separate reset.
+- On the clock, press and hold Select to see Game A's best score, keep holding for Game B's, and release to start the mode shown. Tap is still A and hold is still B.
+- Return to the clock after five minutes on the game-over screen.
+- Keep existing settings, alarms and scores when upgrading.
+
 ## 1.0.2 — 2026-10-06
 
 - Keep the clock and score digits at their original proportions in Horizontal mode, with more space around the display edges.
