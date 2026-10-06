@@ -6,58 +6,143 @@ left; Popeye catches it in his boat while Brutus threatens him with a hammer
 from the left pier or a fist from the right ship. The PT2 scene uses crisp
 black segments, a white field, and vivid red, orange, blue and turquoise.
 
-**Status:** Version 1.0.2 is published on GitHub and the Pebble App Store.
-It fixes compressed clock and score digits in Horizontal mode, with aligned
-ghost outlines and more edge spacing. See the [release record](docs/releases/1.0.2.md).
+<p align="center"><img src="docs/media/gameplay.gif" width="200" alt="Emulator capture of Game A: Popeye catches food, Brutus swings his hammer, and food drops add MISS marks"></p>
+
+*Real gameplay from the Emery emulator (a sped-up highlight, shown at half of its 2x size).*
+
+**Status:** Version 1.0.2 is the published release, on GitHub and the Pebble App Store.
+The 1.1 features below are **in development and not yet released**; see the
+[v1.1 notes](docs/v1.1-notes.md) and the [changelog](CHANGELOG.md).
 
 **Download:** [Pebble App Store](https://apps.repebble.com/e9cb2950ca21440798fb1db8) ·
 [GitHub release v1.0.2](https://github.com/ewijaya/popeye-gw/releases/tag/v1.0.2)
 ([PBW](https://github.com/ewijaya/popeye-gw/releases/download/v1.0.2/popeye-gw.pbw)).
-Both downloads match the approved SHA-256 recorded in the release checks.
+Both downloads match the approved SHA-256 recorded in the [release record](docs/releases/1.0.2.md).
 
-Review the [1.0.0 store description, screenshot gallery and release checks](docs/releases/1.0.0.md).
-See the [PT2 play-test checklist](docs/pt2-playtest.md)
-and [results record](docs/pt2-playtest-results.md). This is a watch adaptation, not an exact ROM recreation.
-[Reference observations and remaining fidelity gaps](docs/pp23-fidelity.md)
-distinguish confirmed rules from provisional timing, paths and input behavior.
-The app name is **Popeye G&W**; repository/package/build slug is `popeye-gw`.
-See the [PRD](PRD.md), [repository conventions](CLAUDE.md), and the
-[M5 notes and artwork](docs/m5-notes.md) and [M5 audit](docs/m5-audit.md). Earlier scene/M3/M4 audits describe their
-historical builds.
+This is a watch adaptation, not an exact ROM recreation. The
+[fidelity ledger](docs/pp23-fidelity.md) separates confirmed rules from provisional
+timing, paths and input behavior. The app name is **Popeye G&W**; the
+repository/package/build slug is `popeye-gw`. More: [PRD](PRD.md),
+[repository conventions](CLAUDE.md), [1.0.0 store description and checks](docs/releases/1.0.0.md),
+[PT2 play-test checklist](docs/pt2-playtest.md) and [results](docs/pt2-playtest-results.md),
+[M5 notes](docs/m5-notes.md) and [audit](docs/m5-audit.md). Earlier scene/M3/M4 audits
+describe their historical builds.
+
+## Features
+
+- **Game A and B**: catch food for one point; two drops or a Brutus hit make one MISS, and three MISS end
+  the round. Misses clear at 200/500, and pace resets every 100 points. A keeps Brutus on the left; B
+  has a single Brutus who changes sides. Separate best scores.
+- **LCD clock** that follows the watch's 12/24-hour setting and demonstrates a full throw, flight and catch.
+- **Daily alarm** that wakes the closed app, with a bell animation and pulses.
+- **Vertical or Horizontal** play, with the buttons below or above the screen (see below).
+- Settings for swapped controls, vibration (respects Quiet Time), ghost segments and the clock demonstration.
+
+### In development for 1.1 (not yet released)
+
+- **Sound**: short square-wave LCD beeps for catches, drops, bonuses, game over, new bests and the alarm
+  (Settings → Sound, default On). They follow the watch's speaker mute and Quiet Time.
+- **Sprint** and **Daily**: 60 seconds of Game B rules, counted in active play time (pausing and MISS
+  recovery do not use it), with a beep and pulse at 10 seconds left. Sprint is random; Daily gives
+  everyone the same food and Brutus pattern on a given date, and every attempt counts toward the day's best.
+- **Stats** (Menu → Stats): games, catches, drops, Brutus hits, bonuses, longest catch run and play time.
+- **Hold-to-preview best score**: on the clock, hold Select to see Game A's best, keep holding for Game B's,
+  and release to start the mode shown (tap is still A, hold is still B).
+- **5-minute return**: the game-over screen goes back to the clock after five minutes without a button press.
+- **App Glance**: the launcher shows both bests, today's Daily score once played, and the alarm time while it is on,
+  for example "Best A 214 / B 187 / Daily 42 - 07:00".
+- **Online leaderboard** (optional, **off by default**; Settings → Online): your best Daily round of the day is
+  sent through the phone, and a server would replay your inputs with the real game engine to check the score.
+  **The server is not deployed**, so with Online on the watch shows `Online: not sent`. What the server does
+  and does not prove, privacy and how to run it: [server/README.md](server/README.md).
+- A companion watchface, **Popeye G&W Clock**, is a separate package (see below).
+
+Formats, persist keys, the replay encoding and measurements are in [docs/v1.1-notes.md](docs/v1.1-notes.md).
 
 ## Help
 
-The same quick reference is available on the watch under **Menu → Help**.
-In portrait, Select is the middle button on the right. In landscape it is
-the middle of the three buttons above or below the screen.
+The same quick reference is on the watch under **Menu → Help** (seven short pages). In portrait, Select is
+the middle button on the right. In landscape it is the middle of the three buttons above or below the screen.
 
 | From / topic | Button or rule | What happens |
 |---|---|---|
 | Clock: Game A | Tap Select | Start Game A. Brutus attacks from the left. |
 | Clock: Game B | Hold Select | Start Game B. Brutus changes sides. |
-| Clock: best score | Press and hold Select | Pressing shows Game A's best with HI; holding past 0.6 s switches to Game B's best. Releasing starts the mode shown, so a tap is A and a hold is B. |
-| Game over | Leave it alone | After 5 minutes with no button press the app returns to the clock. |
+| Clock: best score (1.1) | Press and hold Select | Pressing shows Game A's best with HI; holding past 0.6 s switches to Game B's best. Releasing starts the mode shown. |
+| Clock: high scores | Up in portrait; Left in landscape | Show saved scores. |
+| Clock: menu | Down in portrait; Right in landscape | Open Daily, Sprint, High scores, Stats, Alarm, Settings, Help or About. |
 | Playing: move | Up / Down in portrait; Left / Right in landscape | Move one pose per press. Swap reverses movement. |
 | Playing: pause / resume | Select | Pause; press again to resume. |
+| Quit a running game | Back twice | First pause, then return to the clock. |
 | Catch food | Reach its matching catch pose | Add one point. |
 | Center pose | Stand upright | Safe from Brutus, but cannot catch food. |
 | Dropped food | Two drops | Add one MISS; the first drop shows a half-can. |
 | Brutus hit | Get hit | Add one MISS. |
-| Game over | Three MISS | The round ends. |
-| Quit a running game | Back twice | First pause, then return to the clock. |
-| Clock: high scores | Up in portrait; Left in landscape | Show saved Game A/B scores. |
-| Clock: menu | Down in portrait; Right in landscape | Open High scores, Stats, Alarm, Settings, Help or About. |
-| Menu: Daily (1.1) | Select Daily | A 60 s round of Game B rules with the same food and Brutus pattern for everyone on today's date. Every attempt counts toward today's best. |
-| Menu: Sprint (1.1) | Select Sprint | A 60 s round of Game B rules with a random pattern. |
-| Daily / Sprint: time | Pause | The pause title shows the seconds left. Paused and MISS-recovery time do not count. A beep and pulse warn at 10 s; at 0 the round ends with "Time up!". |
-| Menu: High scores (1.1) | Select; movement buttons | Page 1 shows Game A and B; page 2 shows the Sprint best, the Daily best and today's Daily best; page 3 shows today's Daily score and the Online row. Reset clears all of them. |
-| Menu: Stats (1.1) | Select Stats; Select; movement buttons | Three pages of lifetime totals (the last has Sprint and Daily rounds). Select on the last page offers Reset stats; high scores are untouched. |
+| Game over | Three MISS | The round ends. After 5 minutes with no button press the app returns to the clock (1.1). |
+| Menu: Daily, Sprint (1.1) | Select | 60 s of Game B rules: Daily with today's shared pattern, Sprint with a random one. The pause title shows the seconds left; a beep and pulse warn at 10 s; at 0 the round ends with "Time up!". |
+| Menu: High scores (1.1) | Select; movement buttons | Page 1 Game A and B; page 2 the Sprint, Daily and today's Daily bests; page 3 today's Daily score and the Online row. Reset clears all of them. |
+| Menu: Stats (1.1) | Select; movement buttons | Three pages of lifetime totals. Select on the last page offers Reset stats; high scores are untouched. |
 | Settings: Orientation (1.0.1) | Select Orientation, choose Vertical or Horizontal, then Select | Change screen orientation. Back cancels. |
 | Settings: Buttons (1.0.1, Horizontal only) | Select Buttons | Toggle Bottom / Top. The choice is remembered in Vertical mode. |
 | Settings: Swap | Select Swap | Reverse game movement. |
 | Settings: Sound (1.1) | Select Sound | Turn the LCD-style beeps On or Off (default On). |
-| Settings: Online (1.1) | Select Online | Off by default. When On, your best Daily round of the day is sent through the phone to a leaderboard server (needs the phone connected and internet). High scores page 3 shows `Online #12/140`, `Online: not sent` or `Online: off`. The server is not live yet; see below. |
+| Settings: Online (1.1) | Select Online | Off by default. When On, your best Daily round of the day is sent through the phone to a leaderboard server (needs the phone and internet). High scores page 3 shows `Online #12/140`, `Online: not sent` or `Online: off`. The server is not live yet. |
 | Help pages | Select; movement buttons; Back | Select advances, movement buttons browse both ways, Back returns to the menu. |
+
+### Quick Launch tip
+
+To open Popeye G&W from the watchface with one button, assign it on the watch: **Settings → Quick Launch**,
+select the button you want, then choose Popeye G&W. After that, press and hold that button (about two
+seconds) on the watchface. The last Help page repeats this; Pebble's
+[Quick Launch article](https://help.repebble.com/en/articles/14490338-quick-launch) has the details.
+
+## Playing
+
+| State | Up / Down | Select | Hold Select | Back |
+|---|---|---|---|---|
+| Clock | High scores / Menu | Game A (shows best A while held) | Game B (best B shown) | Exit |
+| Playing | Move Popeye one pose | Pause | — | Pause |
+| Paused | — | Resume | — | Quit to clock |
+| Game over | Move Popeye | Play again | Other mode | Clock |
+| Menu | Move selection | Choose / toggle | Choose | Return |
+| Alarm time editing | Increase / decrease | Save | Save | Cancel |
+| Alarm ringing while idle | Stop | Stop | Stop | Stop |
+
+The clock uses all four digits and demonstrates a complete throw/flight/catch sequence in two-second poses.
+All four food arcs appear over 48 seconds. With attract animation disabled, it shows static poses and a
+steady colon and updates once per minute. Clock ticks stop on other pages and while the app is out of focus.
+
+A daily alarm uses Pebble Wakeup to launch the closed app. After firing, it schedules the next local
+calendar day. A scheduling conflict gets one retry a minute later; the Alarm page shows the adjusted time or
+a visible error with Retry. Hour/minute editing uses 24-hour values: Select saves, Back cancels. Test alarm
+previews the bell animation without changing the daily schedule. While idle, an alarm animates Olive's bell
+and pulses every two seconds for up to a minute; any button dismisses it. During play, the bell flashes and the
+watch pulses once while the game keeps running. Vibration respects both the app setting and Quiet Time.
+
+A catch lights its final cargo segment and a catch flash for one step; a miss blinks its splash/dizzy pose
+through recovery. Bonuses flash MISS, and game over flashes the score and any new-best HI. Misses/bonuses give
+a short pulse; game over gives a long pulse, followed by two short pulses for a new record. All flashing finishes
+after 1.5 active seconds. The owner confirmed physical-watch controls, hit feedback, alarms and Quiet Time in the
+recorded PT2 play-test.
+
+Settings, high scores and stats use separate versioned, checksummed byte records. Missing, corrupt or unknown
+records fall back to defaults independently. Writes happen at pause, game over, focus loss and exit, avoiding a
+flash write for every catch. Reset requires a second selection, with Keep scores selected by default. Save
+failures are visible. The unchanged UUID preserves records across app updates.
+
+## How it works
+
+`src/c/game.c` and `game.h` have no platform dependencies. `game_init` starts a round; `game_input` handles
+press/release edges immediately; `game_advance` consumes active milliseconds; `game_step` advances to the next
+boundary for simulation. Pacing values live in `src/c/tuning.h`. `src/c/scene.c` turns game state into the
+PRD 9.2 set of 82 lit segments (pure C99, host-tested). `src/c/view.c` draws each segment from a packed sprite
+sheet using positions generated into `src/c/segments.h`; only unlit digit/MISS registers have baked grey ghosts.
+`src/c/main.c` runs one `AppTimer` per step or recovery and none while paused, over or in the clock. A separate
+presentation timer finishes a bounded 1.5-second feedback sequence and then stops. Pausing keeps the elapsed
+part of the current interval, and losing focus pauses a running game.
+
+The [PP-23 ledger](docs/pp23-fidelity.md) records the manual and recording observations. The numeric timing
+table, five player poses, four food arcs, spawn scheduler and precise miss/input behavior remain provisional.
 
 ## Host tests
 
@@ -78,123 +163,9 @@ pull request; neither requires the watch SDK. The M5 suite covers every attract
 food position, alarm override, finite flashing, pause/resume, delayed callbacks,
 timer allocation failure and haptic priority/settings/Quiet Time.
 
-`src/c/game.c` and `game.h` have no platform dependencies. `game_init` starts a
-round; `game_input` handles press/release edges immediately; `game_advance`
-consumes active milliseconds. Pause/resume preserves partial timers, and
-`game_step` advances to the next boundary for simulation. State and feedback
-feed the segment renderer. Pacing values live in `src/c/tuning.h`.
-
-The [PP-23 ledger](docs/pp23-fidelity.md) records the manual and recording
-observations. Catches score one point, two dropped foods or a Brutus hit make
-one miss, and misses clear at 200/500. Food pace and quantity reset every 100
-points. Game A keeps Brutus on the left; B has a single Brutus changing sides.
-The numeric timing table, five player poses, four food arcs, spawn scheduler
-and precise miss/input behavior remain provisional. The fairness bot verifies
-20,000 seeded games through 1,000 points, including side changes and resets.
-
-## Playing
-
-| State | Up / Down | Select | Hold Select | Back |
-|---|---|---|---|---|
-| Clock | High scores / Menu | Game A (shows best A while held) | Game B (best B shown) | Exit |
-| Playing | Move Popeye one pose | Pause | — | Pause |
-| Paused | — | Resume | — | Quit to clock |
-| Game over | Move Popeye | Play again | Other mode | Clock |
-| Menu | Move selection | Choose / toggle | Choose | Return |
-| Alarm time editing | Increase / decrease | Save | Save | Cancel |
-| Alarm ringing while idle | Stop | Stop | Stop | Stop |
-
-`src/c/scene.c` turns game state into the PRD 9.2 set of 82 lit segments; it
-is pure C99 and host-tested. `src/c/view.c` draws each segment from a packed
-sprite sheet using positions generated into `src/c/segments.h`. Only unlit digit/MISS registers have baked grey ghosts; the playfield stays
-clear of overlapping character silhouettes.
-`src/c/main.c` runs one `AppTimer` per step
-or recovery and none while paused, over or in the clock. A separate presentation
-timer finishes a bounded 1.5-second feedback sequence, including after game over,
-then stops. It freezes while paused or hidden. Pausing keeps the
-elapsed part of the current interval. Losing focus pauses a running game.
-
-The clock uses all four digits, follows the watch's 12/24-hour preference,
-and demonstrates a complete throw/flight/catch sequence in two-second poses.
-All four food arcs appear over 48 seconds. With attract animation disabled,
-it shows static poses and a steady colon and updates once per minute. Clock
-ticks stop on other pages and while the app is out of focus.
-
-The menu contains Daily, Sprint, High scores, Stats, Alarm, Settings, Help and About. **Menu → Help**
-provides four short screens for controls, catches/misses, clock shortcuts and
-screen setup in 1.0.1.
-Press Select for the next screen or Back to return to the menu; the movement
-buttons also browse Help in either direction. Direction labels adapt to the view.
-Settings toggle
-swapped controls, vibration, sound, ghost segments and attract animation. The renderer
-holds one backdrop at a time and swaps it only when the ghost preference
-changes, keeping free heap above the project budget.
-
-A daily alarm uses Pebble Wakeup to launch the closed app. After firing, it
-schedules the next local calendar day. A scheduling conflict gets one retry a
-minute later; the Alarm page shows the adjusted time or a visible error with
-Retry. Hour/minute editing uses 24-hour values: Select saves, Back cancels.
-Test alarm previews the bell animation without changing the daily schedule.
-
-While idle, an alarm animates Olive's bell and pulses every two seconds for up
-to a minute; any button dismisses it and restores the previous page. During
-play, the bell flashes and the watch pulses once while the game keeps running.
-A press also dismisses that indicator while performing its normal game action.
-Vibration respects both the app setting and Quiet Time.
-
-Sound (1.1) plays short square-wave LCD beeps through the watch speaker: a high
-blip for a catch, a lower tone for a drop or MISS, two notes for a 200/500
-bonus, a short falling motif at game over and a rising one for a new best. One
-beep plays per game step, so the third MISS and game over give only the
-game-over sound. The alarm beeps in step with its pulses while idle. Sound
-follows the Settings → Sound switch and the watch's speaker mute / Quiet Time;
-it stops on pause, focus loss, restart and exit. Melodies are original.
-
-In the launcher, the app's glance (1.1) reads like "Best A 214 / B 187 - 07:00":
-both best scores plus the alarm time while the alarm is on. It is refreshed
-once as the app closes, with no timer or background work.
-
-After game over, the app returns to the clock if no button is pressed for five
-minutes; that is the only timer on the game-over screen.
-
-Daily and Sprint (1.1) are 60 seconds of Game B rules, counted in active play
-time: the clock runs only while steps run, so pausing, leaving the app and MISS
-recovery do not use it. Three MISS still end a round early. The tick that lands
-exactly on the limit is resolved first, then the round ends ("Time up!"). Sprint
-uses a random seed. Daily seeds the game from the local date, so everyone gets the
-same food and Brutus pattern that day; every attempt counts toward today's best, and
-the all-time Daily best is kept as well. The best Daily round of the day is saved as
-an input replay (below). The replay format and persist keys are in [docs/v1.1-notes.md](docs/v1.1-notes.md).
-
-**Online leaderboard (1.1, optional, off by default).** With **Settings → Online** on, a finished
-Daily round that beats the day's earlier best is sent to the phone over AppMessage, which posts
-the replay to a leaderboard server; the server re-runs the same game engine over the inputs and
-ranks only scores it can reproduce. Nothing is sent during a round, and a failed send is retried once
-at the next launch. It needs the phone connected and internet, and the **leaderboard server is not
-live yet**: the endpoint in `src/js/pebble-js-app.js` is empty, so with Online on the watch
-shows `Online: not sent`. What the server does and does not prove, the privacy details and how to
-run it are in [server/README.md](server/README.md).
-
-Lifetime stats (1.1, **Menu → Stats**) keep games played per mode (counted once a
-round scores or ends), catches, drops, Brutus hits, 200/500 bonus clears, the
-longest run of catches without a MISS, and active play time (running steps and
-MISS recovery only; paused, hidden or menu time is excluded). They live in their
-own record and are saved at pause, game over, focus loss and exit.
-
-Settings and high scores use separate versioned, checksummed byte records.
-Missing, corrupt or unknown records fall back to defaults independently. Best
-scores retain their full 32-bit totals and local dates. Writes happen at pause,
-game over, focus loss and exit, avoiding a flash write for every catch. Reset
-requires a second selection, with Keep scores selected by default. Save
-failures are visible. The unchanged UUID preserves records across app updates.
-
-The game score still uses the right three digits without leading zeros. A
-catch lights its final cargo segment and a catch flash for one step; a miss
-blinks its splash/dizzy pose through recovery. Bonuses flash MISS, and game over
-flashes the score and any new-best HI. Misses/bonuses give a short pulse; game
-over gives a long pulse, followed by two short pulses for a new record. All
-flashing finishes after 1.5 active seconds. The owner confirmed physical-watch
-controls, hit feedback, alarms and Quiet Time in the recorded PT2 play-test.
+The fairness bot verifies 20,000 seeded games through 1,000 points, including side changes and resets; the
+timed modes are checked over 10,000 seeds through time-up. The suite also covers the replay format, the
+leaderboard server and the GIF writer in `tools/make_gif.py` (below).
 
 ## Handheld orientation
 
@@ -239,6 +210,13 @@ python3 tools/build_art.py --check
 The art check rejects missing, unexpected, empty or opaque full-screen
 segments, and validates the 25 × 25 launcher icon. Host tests check all 82
 generated entries, screen bounds, atlas bounds and non-overlapping atlas crops.
+
+## Gameplay GIF
+
+`docs/media/gameplay.gif` was captured from the Emery emulator: frames from the QEMU monitor's `screendump`
+while driving the buttons, then merged into a GIF by `tools/make_gif.py` (Python standard library only; at most
+64 colours, identical frames merged, only changed areas stored). Example: `python3 tools/make_gif.py --fps 12
+--scale 2 -o docs/media/gameplay.gif frames/*.ppm`.
 
 ## Build
 

@@ -1,17 +1,19 @@
 # Changelog
 
-## Unreleased (1.1 draft)
+## Unreleased (1.1 draft, not yet released)
 
-- Add LCD-style square-wave beeps (Settings → Sound, default On): catch, drop/MISS, 200/500 bonus, game over, new best and the alarm ring. Sound follows the watch's speaker mute and Quiet Time and stops on pause, focus loss and exit.
-- Show your best scores and alarm time in the launcher (App Glance), for example "Best A 214 / B 187".
-- Add Menu → Stats: games played per mode, catches, drops, Brutus hits, 200/500 bonuses, longest catch run and play time, with a separate reset.
-- On the clock, press and hold Select to see Game A's best score, keep holding for Game B's, and release to start the mode shown. Tap is still A and hold is still B.
+- Add **Sprint** and **Daily**: 60 seconds of Game B rules. Sprint is random; Daily gives everyone the same round on a date. Pausing and MISS recovery do not use the clock, and the watch beeps and pulses at 10 seconds left.
+- Add LCD-style beeps (Settings → Sound, default On) for catches, drops, bonuses, game over, new bests and the alarm. Sound follows the watch's speaker mute and Quiet Time.
+- Add Menu → Stats: games, catches, drops, Brutus hits, bonuses, longest catch run and play time, with a separate reset.
+- Keep Sprint, Daily and today's Daily bests on a second High scores page.
+- On the clock, hold Select to preview Game A's best score, keep holding for Game B's, and release to start the mode shown.
+- Show both best scores, today's Daily score and the alarm time in the launcher (App Glance).
 - Return to the clock after five minutes on the game-over screen.
-- Add Daily (the same 60-second round for everyone on a date) and Sprint (60 seconds, random pattern) at the top of the menu. Pausing and MISS recovery do not use the clock; the pause screen shows the seconds left, and the watch beeps and pulses at 10 seconds.
-- Keep a Sprint best, a Daily best and today's Daily best on a second High scores page, and show today's Daily score in the launcher.
-- Keep the best Daily round of the day as a verifiable input recording.
-- Add an optional **Online** setting (off by default): your best Daily round of the day is sent through your phone to a leaderboard, where the server replays your inputs to check the score. High scores page 3 shows your rank, `Online: not sent` or `Online: off`. It needs the phone and internet, and the leaderboard server is not live yet.
+- Extend on-watch Help with pages for Daily and Sprint, Online and a Quick Launch tip (Settings → Quick Launch on the watch).
+- Add an optional **Online** setting (off by default) that sends your best Daily round through your phone to a leaderboard that replays your inputs to check the score. The leaderboard server is not live yet.
 - Keep existing settings, alarms and scores when upgrading.
+
+Developer details are in [docs/v1.1-notes.md](docs/v1.1-notes.md).
 
 ## 1.0.2 — 2026-10-06
 
