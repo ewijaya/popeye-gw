@@ -1,42 +1,49 @@
 ---
 name: popeye-gw-release
-description: Prepares, freezes, publishes and verifies a Popeye G&W release to its GitHub release and RePebble listing, under the owner's approval of the exact PBW after a play-test on the watch, including the guarded first-registration handoff. Use only when the user explicitly asks to release, ship, publish or verify a Popeye G&W version; not for ordinary builds or audits. Loading or maintaining this skill does not authorize publication.
+description: Prepares, freezes, publishes and verifies a Popeye G&W game or Clock watchface release to its GitHub release and RePebble listing, under the owner's approval of the exact PBW after a play-test on the watch, including the guarded first-registration handoff. Use only when the user explicitly asks to release, ship, publish or verify a Popeye G&W version; not for ordinary builds or audits. Loading or maintaining this skill does not authorize publication.
 ---
 
 # Popeye G&W release
+
+Accept an app parameter: `popeye-gw` (default) or `popeye-gw-clock`.
+Resolve common configuration plus `apps[APP]` from release-config.json using
+`tools.upload_store.app_config(APP)`. Read docs/releasing.md “Select the app”.
+Use that app's project, artifact, UUID, display name, type, category, budgets,
+changelog, description, listing assets, tag prefix, release directory and
+registration journal throughout. Never reuse another app's listing or journal.
 
 Read [docs/releasing.md](../../../docs/releasing.md),
 [release-config.json](../../../docs/release-config.json), PRD sections 12–15,
 the [build audit](../popeye-gw-build-audit/SKILL.md) and the
 [store skill](../popeye-gw-appstore/SKILL.md) before acting.
 
-Identity: display name Popeye G&W, UUID
-`6b7c8c28-36f0-47ca-a073-3e8f33efcaf0`, Emery only, interactive watchapp,
-category Games, bundle `build/popeye-gw.pbw`. Read `store_app_id` from the
-configuration and `.release/registration.json`. Don't assume registration
-status from this skill. Destinations are the repository's GitHub release and
-the RePebble listing.
+Read identity and registration state from the selected app configuration and
+its registration journal. A null ID does not prove no listing exists.
+Destinations are the repository's GitHub release and that app's RePebble listing.
+The clock uses `clock-vX.Y.Z` and `gh release create --latest=false`, preserving
+the game's Latest release. Never bump the game when releasing the clock.
 
 ## Workflow
 
 1. **Preflight** (releasing.md 1): clean `main`, CI green on the release
-   commit, existing tags and releases checked. For 1.0.0, confirm with the
+   commit, existing tags and releases checked. For game 1.0.0 only, confirm with the
    owner that M1–M5 are accepted; don't infer it from the code.
 2. **Version:** choose semver from the diff since the previous tag and tell the
    owner before editing. The first release is 1.0.0, already in
-   `package.json`.
-3. **Prepare** (releasing.md 2): edit only the version, the CHANGELOG section,
+   the selected project’s `package.json`.
+3. **Prepare** (releasing.md 2): edit only the version, the configured changelog section,
    the README status and, if its wording changes, the store description. No
    game, tuning or art changes. Run the identity check, then commit.
 4. **Audit** the preparation commit with the build-audit skill. One clean
    build.
-5. **Freeze once** into `.release/X.Y.Z/` with `manifest.json` and
-   `notes.md`, then install **that file** on the owner's watch with
+5. **Freeze once** into the configured `release_dir` plus `/X.Y.Z/` with `manifest.json` and
+   `notes.md`, record `app` in its manifest, then install **that file** on the owner's watch with
    `pebble install --cloudpebble`.
-6. **Stop for approval** (below).
+6. **Stop for approval** (below). Use `docs/watchface-playtest.md` for the
+   clock, PRD 12.6 for the game; never infer device results.
 7. **Publish** the GitHub release, then the store (releasing.md 6–9), using
    only the frozen PBW. For the existing store listing, use
-   `tools/upload_store.py` by default, with the installed Pebble Tool's Python.
+   `tools/upload_store.py --app APP` by default, with the installed Pebble Tool's Python.
    Use programmatic read-backs and verification. Browser automation is a
    fallback for login, first registration, or a specific operation the helper
    cannot safely perform; explain the limitation before falling back.

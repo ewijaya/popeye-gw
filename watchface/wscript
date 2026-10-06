@@ -4,7 +4,7 @@
 #
 import sys
 
-from waflib.TaskGen import after_method, feature
+from waflib.TaskGen import after_method, before_method, feature
 
 top = '.'
 out = 'build'
@@ -44,7 +44,23 @@ def build(ctx):
     ctx.env = cached_env
 
     ctx.set_group('bundle')
-    ctx.pbl_bundle(binaries=binaries)
+    ctx.pbl_bundle(binaries=binaries,
+                   js=ctx.path.ant_glob(['src/pkjs/**/*.js', 'src/pkjs/**/*.json']),
+                   js_entry_file='src/pkjs/index.js',
+                   keep_debug_maps_local=True)
+
+
+@feature('js')
+@after_method('process_js')
+@before_method('make_pbl_bundle')
+def exclude_debug_maps_from_pbw(self):
+    """SDK 4.33.1's merge_js emits both JS and a source map, then make_pbl_bundle
+    packages everything in task_gen.js. Keep the generated map in build/ for
+    local debugging, while the PBW ships only the code needed by PebbleKit JS.
+    Use Waf's task-generator hook rather than changing the SDK or editing a PBW.
+    """
+    if getattr(self, 'keep_debug_maps_local', False):
+        self.js = [node for node in self.js if not node.name.endswith('.js.map')]
 
 
 @feature('c')

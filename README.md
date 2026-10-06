@@ -246,18 +246,42 @@ otherwise. Nothing is deployed.
 ## Companion watchface
 
 `watchface/` is a separate Pebble project, **Popeye G&W Clock** (`popeye-gw-clock`,
-Emery only): the game's LCD clock scene as a watchface, portrait, ghosts on, with
-AM/PM following the watch's 12/24h setting. Olive's food demonstration plays for
-about ten seconds after each minute change, and not at all in Quiet Time or on a
-low battery. It shares the game's `scene.c`, `clock.c`, `game.c` and artwork by
-path. Details: [v1.1 notes](docs/v1.1-notes.md).
+Emery only). The default **Everyday** preset shows local time, date and battery,
+with continuous fixed-pose animation for Olive, Popeye and Brutus. Phone settings
+use an offline Clay form: open **My Apps → Popeye G&W Clock → Settings** in the
+Pebble phone app. Choose Classic, Everyday, Traveller or Large Time,
+then adjust the information rows, animation, colours and accessibility options.
+
+The two rows can show date, battery, optional weather, daily steps, world time
+or an event countdown, with optional rotation. Weather uses Open-Meteo and needs
+explicit opt-in plus a phone Internet connection; world time uses bundled IANA
+rules for daylight saving time. Cached data shows a stale marker. Themes,
+custom colours, ghost strength, larger time and reduced motion are configurable.
+Motion pauses while covered, in Quiet Time or configured quiet hours, and at
+the chosen battery cutoff off power. The colon stays steady unless blinking is
+enabled. Disconnect vibration is optional and off by default; there is no sound.
+
+It shares the game's `scene.c`, `clock.c`, `game.c` and artwork by path, and has
+its own settings and UUID. The rich update is implemented and awaiting physical
+device checks. Earlier positive device feedback covered the original minute-demo
+build. See the [implementation notes](docs/watchface-implementation.md),
+[feature scope](docs/watchface-features.md) and
+[device checklist](docs/watchface-playtest.md).
 
 ```sh
 cd watchface
+npm ci
+./test.sh
+./test.sh --sanitize
+pebble clean
 TERM=xterm pebble build
 pebble install --emulator emery build/popeye-gw-clock.pbw
-./test.sh
 ```
+
+Use a working Node runtime for dependencies and phone tests. Set
+`WATCHFACE_NODE=/path/to/node` for the test runner if necessary. The separate
+bundle is `watchface/build/popeye-gw-clock.pbw`; the game's root build does not
+include it.
 
 ## Licence
 
