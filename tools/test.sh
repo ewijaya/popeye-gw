@@ -1,5 +1,5 @@
 #!/bin/sh
-# Host-only C99 suite plus the art pipeline check (Python 3 standard library);
+# Host-only C99 suite plus the art pipeline, upload and leaderboard checks (Python 3 standard library);
 # no SDK or Node runtime required.
 set -eu
 
@@ -15,7 +15,6 @@ case "${1:-}" in
 esac
 
 python3 "$repo_dir/tools/build_art.py" --check
-PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s "$repo_dir/tests" -p test_upload_store.py
 
 cflags="-std=c99 -Wall -Wextra -Werror -pedantic"
 # shellcheck disable=SC2086
@@ -46,6 +45,17 @@ TZ=America/New_York UBSAN_OPTIONS=halt_on_error=1 "$test_dir/test_m4"
 UBSAN_OPTIONS=halt_on_error=1 "$test_dir/test_scene"
 UBSAN_OPTIONS=halt_on_error=1 "$test_dir/test_game"
 UBSAN_OPTIONS=halt_on_error=1 "$test_dir/test_replay"
+# The leaderboard's native verifier and the replay generator its Python tests use, both built
+# from the real engine sources (sanitized under --sanitize).
+# shellcheck disable=SC2086
+/usr/bin/cc $cflags "$@" -I"$repo_dir/src/c" "$repo_dir/tools/replay_verify.c" \
+  "$repo_dir/src/c/game.c" "$repo_dir/src/c/replay.c" -o "$test_dir/replay_verify"
+# shellcheck disable=SC2086
+/usr/bin/cc $cflags "$@" -I"$repo_dir/src/c" "$repo_dir/tests/make_replay.c" \
+  "$repo_dir/src/c/game.c" "$repo_dir/src/c/replay.c" -o "$test_dir/make_replay"
+POPEYE_VERIFIER="$test_dir/replay_verify" POPEYE_MAKE_REPLAY="$test_dir/make_replay" \
+  UBSAN_OPTIONS=halt_on_error=1 PYTHONDONTWRITEBYTECODE=1 \
+  python3 -m unittest discover -s "$repo_dir/tests" -p 'test_*.py'
 # Companion watchface scene logic and its no-copy guard.
 # shellcheck disable=SC2086
 sh "$repo_dir/watchface/test.sh" $watch_args
