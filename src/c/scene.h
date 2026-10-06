@@ -48,5 +48,7 @@ void scene_digit(Scene *scene, unsigned digit, unsigned value);
 /* Static player pose, also useful for scene tests. */
 void scene_idle(Scene *scene);
 void scene_game(Scene *scene, const Game *game);
+/* Clock-page preview of a saved best: mode lamp, HI and the score modulo 1000. */
+void scene_best(Scene *scene, GameMode mode, uint32_t best);
 
 #endif

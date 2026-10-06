@@ -73,3 +73,13 @@ void scene_game(Scene *scene, const Game *game) {
   if (game->half_ring) scene_light(scene, SEG_MISS_HALF);
   if (game->status == GAME_OVER && game->new_high_score) scene_light(scene, SEG_HI);
 }
+
+void scene_best(Scene *scene, GameMode mode, uint32_t best) {
+  scene_clear(scene);
+  scene_light(scene, mode == GAME_A ? SEG_GAME_A : SEG_GAME_B);
+  scene_number(scene, (uint16_t)(best % 1000u));
+  scene_light(scene, SEG_HI);
+  scene_light(scene, SEG_OLIVE_READY);
+  scene_light(scene, SEG_POPEYE + 2u);
+  scene_light(scene, SEG_BRUTUS + (mode == GAME_A ? GAME_LEFT : GAME_RIGHT) * 3u);
+}

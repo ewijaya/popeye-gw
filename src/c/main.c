@@ -6,6 +6,7 @@
 #include "feedback_service.h"
 #include "orientation.h"
 #include "storage.h"
+#include "tuning.h"
 #include "view.h"
 
 typedef enum { PAGE_CLOCK, PAGE_GAME, PAGE_MENU, PAGE_SCORES,
@@ -17,6 +18,9 @@ typedef enum { SETTING_ORIENTATION, SETTING_BUTTONS, SETTING_SWAP,
 
 #define HELP_PAGES 4u
 
+/* Clock page: Select held shows the best score of the mode that release starts. */
+typedef enum { HOLD_NONE, HOLD_A, HOLD_B } Hold;
+
 static Window *s_window;
 static Game s_game;
 static SaveData s_data;
@@ -25,16 +29,19 @@ static unsigned s_row;
 static bool s_editing, s_focused = true;
 static uint8_t s_edit_value;
 static bool s_scores_dirty, s_scores_error, s_settings_error;
-static AppTimer *s_timer, *s_ring_timer;
+static AppTimer *s_timer, *s_ring_timer, *s_idle_timer;
 static uint32_t s_timer_delay;
 static uint64_t s_timer_start;
 static TimeUnits s_tick_units;
 static bool s_ringing, s_passive_ring;
 static time_t s_ring_end;
+static Hold s_hold;
+static bool s_select_down, s_select_handled;
 
 static void render(void);
 static void sync_ticks(void);
 static void ring_tick(void *data);
+static void arm_idle(void);
 
 static uint64_t now_ms(void) {
   time_t seconds;
@@ -80,6 +87,7 @@ static void cancel_timer(void) {
 static void timer_fired(void *data);
 
 static void schedule_timer(void) {
+  arm_idle();
   cancel_timer();
   if (!s_focused || s_page != PAGE_GAME) return;
   if (s_game.status == GAME_PLAYING) s_timer_delay = s_game.step_ms_left;
@@ -130,7 +138,14 @@ static void pause_game(void) {
   render();
 }
 
+static void cancel_hold(void) {
+  if (s_hold == HOLD_NONE) return;
+  s_hold = HOLD_NONE;
+  s_select_handled = true; /* The release must not act on a different page or state. */
+}
+
 static void open_page(Page page) {
+  cancel_hold();
   if (page != PAGE_GAME) {
     feedback_service_set_running(false);
     feedback_service_reset();
@@ -142,6 +157,22 @@ static void open_page(Page page) {
   if (page == PAGE_CLOCK || page == PAGE_ALARM) alarm_refresh(&s_data.settings, time(NULL));
   sync_ticks();
   render();
+}
+
+/* After game over, return to the clock once nothing has been pressed for 5 minutes.
+ * The only timer is armed on the game-over screen while focused. */
+static void idle_fired(void *data) {
+  s_idle_timer = NULL;
+  if (s_page != PAGE_GAME || s_game.status != GAME_OVER) return;
+  flush_scores();
+  open_page(PAGE_CLOCK);
+}
+
+static void arm_idle(void) {
+  if (s_idle_timer != NULL) app_timer_cancel(s_idle_timer);
+  s_idle_timer = NULL;
+  if (s_focused && s_page == PAGE_GAME && s_game.status == GAME_OVER)
+    s_idle_timer = app_timer_register(PGW_GAME_OVER_IDLE_MS, idle_fired, NULL);
 }
 
 static void stop_ring(void) {
@@ -171,6 +202,7 @@ static void pulse(void) {
 static void begin_ring(void) {
   if (s_ring_timer != NULL) app_timer_cancel(s_ring_timer);
   s_ringing = true;
+  cancel_hold();
   s_passive_ring = s_page == PAGE_GAME &&
       (s_game.status == GAME_PLAYING || s_game.status == GAME_RECOVERING);
   s_ring_end = time(NULL) + 60;
@@ -318,7 +350,7 @@ static void render_panel(void) {
         snprintf(panel.rows[2], sizeof(panel.rows[2]), "%s: move",
                  settings->landscape ? "Left/Right" : "Up/Down");
         snprintf(panel.rows[3], sizeof(panel.rows[3]), "Select: pause/play");
-        snprintf(panel.footer, sizeof(panel.footer), "Start A/B from clock\nSelect: next  Back: menu");
+        snprintf(panel.footer, sizeof(panel.footer), "Holding shows best score\nSelect: next  Back: menu");
       } else if (s_row == 1u) {
         panel.title = "Help 2/4";
         snprintf(panel.rows[0], sizeof(panel.rows[0]), "Catch food: +1");
@@ -370,6 +402,11 @@ static void render(void) {
     clock_scene(&scene, &local, clock_is_24h_style(), s_data.settings.attract,
                 s_data.settings.alarm_on, full_alarm);
     overlay = full_alarm ? VIEW_OVERLAY_ALARM : VIEW_OVERLAY_CLOCK;
+    if (s_hold != HOLD_NONE && !full_alarm) {
+      GameMode mode = s_hold == HOLD_B ? GAME_B : GAME_A;
+      scene_best(&scene, mode, s_data.scores.best[mode]);
+      overlay = s_hold == HOLD_B ? VIEW_OVERLAY_BEST_B : VIEW_OVERLAY_BEST_A;
+    }
   } else {
     scene_game(&scene, &s_game);
     feedback_service_apply(&scene);
@@ -386,6 +423,7 @@ static void move_down_handler(ClickRecognizerRef recognizer, void *context) {
   if (dismiss_ring()) return;
   if (s_page == PAGE_GAME) {
     if (game_input(&s_game, up ? GAME_UP : GAME_DOWN, true)) render();
+    arm_idle();
   } else if (s_page == PAGE_CLOCK) {
     open_page(up ? PAGE_SCORES : PAGE_MENU);
   } else if (s_editing) {
@@ -477,12 +515,37 @@ static void select_handler(ClickRecognizerRef recognizer, void *context) {
   render();
 }
 
-static void select_long_handler(ClickRecognizerRef recognizer, void *context) {
+static void select_long_action(ClickRecognizerRef recognizer, void *context) {
   if (dismiss_ring()) return;
   if (s_page == PAGE_CLOCK) start_game(GAME_B);
   else if (s_page == PAGE_GAME && s_game.status == GAME_OVER)
     start_game(s_game.mode == GAME_A ? GAME_B : GAME_A);
   else if (s_page != PAGE_GAME) select_handler(recognizer, context);
+}
+
+/* Select is raw so the clock can preview the best score while it is held: down
+ * shows A, passing the long-press delay shows B, release starts the shown mode.
+ * Everywhere else release is the click and the long press acts as before. */
+static void select_down_handler(ClickRecognizerRef recognizer, void *context) {
+  s_select_down = true;
+  s_select_handled = false;
+  if (s_page == PAGE_CLOCK && !s_ringing) { s_hold = HOLD_A; render(); }
+}
+
+static void select_up_handler(ClickRecognizerRef recognizer, void *context) {
+  Hold hold = s_hold;
+  if (!s_select_down) return;
+  s_select_down = false;
+  s_hold = HOLD_NONE;
+  if (hold != HOLD_NONE) start_game(hold == HOLD_B ? GAME_B : GAME_A);
+  else if (!s_select_handled) select_handler(recognizer, context);
+}
+
+static void select_long_handler(ClickRecognizerRef recognizer, void *context) {
+  if (!s_select_down || s_select_handled) return;
+  s_select_handled = true;
+  if (s_hold == HOLD_A) { s_hold = HOLD_B; render(); }
+  else select_long_action(recognizer, context);
 }
 
 static void back_handler(ClickRecognizerRef recognizer, void *context) {
@@ -501,7 +564,7 @@ static void back_handler(ClickRecognizerRef recognizer, void *context) {
 static void click_config(void *context) {
   window_raw_click_subscribe(BUTTON_ID_UP, move_down_handler, move_up_handler, NULL);
   window_raw_click_subscribe(BUTTON_ID_DOWN, move_down_handler, move_up_handler, NULL);
-  window_single_click_subscribe(BUTTON_ID_SELECT, select_handler);
+  window_raw_click_subscribe(BUTTON_ID_SELECT, select_down_handler, select_up_handler, NULL);
   window_long_click_subscribe(BUTTON_ID_SELECT, 600, select_long_handler, NULL);
   window_single_click_subscribe(BUTTON_ID_BACK, back_handler);
 }
@@ -509,6 +572,7 @@ static void click_config(void *context) {
 static void will_focus(bool in_focus) {
   s_focused = in_focus;
   if (!in_focus) {
+    cancel_hold();
     if (s_page == PAGE_GAME) pause_game();
     flush_scores();
     if (s_ring_timer != NULL) app_timer_cancel(s_ring_timer);
@@ -522,6 +586,7 @@ static void will_focus(bool in_focus) {
                                  !(s_ringing && !s_passive_ring));
     render();
   }
+  arm_idle();
   sync_ticks();
 }
 
@@ -531,6 +596,8 @@ static void window_unload(Window *window) {
   feedback_service_set_running(false);
   feedback_service_reset();
   cancel_timer();
+  if (s_idle_timer != NULL) app_timer_cancel(s_idle_timer);
+  s_idle_timer = NULL;
   if (s_ring_timer != NULL) app_timer_cancel(s_ring_timer);
   s_ring_timer = NULL;
   tick_timer_service_unsubscribe();

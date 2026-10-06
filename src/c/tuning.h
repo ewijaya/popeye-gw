@@ -14,5 +14,7 @@
 #define PGW_WINDUP_STEPS 2u
 #define PGW_STRIKE_STEPS 1u
 #define PGW_MISS_RECOVERY_MS 1500u
+/* App behaviour, not game pacing: return to the clock after game over. */
+#define PGW_GAME_OVER_IDLE_MS 300000u
 
 #endif

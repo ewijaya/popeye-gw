@@ -134,7 +134,7 @@ old records may contain scores earned under the previous adaptation's rules.
 | Miss sequence | Clear food; freeze attack/food timers for 1,500 ms; third miss stops timers. Measure original pause/reset behavior. |
 | Simultaneous events | Attack resolves before food and ends that tick on a hit. Needs original trace. |
 | Rollover | Three-digit display wraps, true score/high score continues. Verify original internal reset and milestone repetition beyond 999. |
-| Game over/restart | Movement remains enabled, score/timers remain stopped. Select restarts immediately. Original hold-to-show-high-score/release-to-start and ~5-minute return to clock are not reproduced. |
+| Game over/restart | Movement remains enabled, score/timers remain stopped. Select restarts immediately. 1.1 adapts the ~5-minute return to the clock (5 minutes without a button press on the game-over screen). The original hold-to-show-high-score/release-to-start is adapted to the clock page: pressing Select shows A's best with HI, holding past 0.6 s shows B's best, release starts the shown mode. It is not available on the game-over screen, where Select restarts immediately. |
 
 ## Reference replay work remaining
 

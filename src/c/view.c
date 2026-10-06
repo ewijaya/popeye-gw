@@ -88,16 +88,19 @@ static void draw_overlay(GContext *ctx) {
     "Select: Game A\nHold Select: Game B",
     "Select: resume\nBack: quit",
     "Select: play again\nHold Select: other mode",
-    "Any button: stop"
+    "Any button: stop",
+    "Let go: play A\nHold on: B",
+    "Let go: play B"
   };
   GRect box = GRect(16, s_landscape ? 65 : 78, 168, 60);
   if (s_overlay == VIEW_OVERLAY_NONE) return;
-  if (s_overlay == VIEW_OVERLAY_CLOCK) {
+  if (s_overlay == VIEW_OVERLAY_CLOCK || s_overlay == VIEW_OVERLAY_BEST_A ||
+      s_overlay == VIEW_OVERLAY_BEST_B) {
     graphics_context_set_text_color(ctx, GColorBlack);
     /* Both modes use the same physical Select button. Leave the food field
      * clear and spell out tap versus hold beside the clock register. */
-    draw_text(ctx, "Tap Select: A\nHold Select: B", GRect(4, 3, 98, 38), false,
-              GTextAlignmentLeft);
+    draw_text(ctx, s_overlay == VIEW_OVERLAY_CLOCK ? "Tap Select: A\nHold Select: B" : hints[s_overlay],
+              GRect(4, 3, 98, 38), false, GTextAlignmentLeft);
     return;
   }
   graphics_context_set_fill_color(ctx, GColorWhite);

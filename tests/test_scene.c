@@ -217,8 +217,25 @@ static void test_rounds_to_game_over(void) {
   }
 }
 
+static void test_best_preview(void) {
+  Scene scene;
+  scene_best(&scene, GAME_A, 214u);
+  assert(scene_lit(&scene, SEG_GAME_A) && !scene_lit(&scene, SEG_GAME_B) && scene_lit(&scene, SEG_HI));
+  assert(digit_bits(&scene, 0u) == 0u && digit_bits(&scene, 1u) == 0x5Bu);
+  assert(digit_bits(&scene, 2u) == 0x06u && digit_bits(&scene, 3u) == 0x66u);
+  assert(count_lit(&scene, SEG_POPEYE, 5u) == 1u && scene_lit(&scene, SEG_POPEYE + 2u));
+  assert(count_lit(&scene, SEG_BRUTUS, 6u) == 1u && scene_lit(&scene, SEG_OLIVE_READY));
+  assert(count_lit(&scene, SEG_MISS, 3u) == 0u && count_lit(&scene, SEG_CARGO, 20u) == 0u);
+  scene_best(&scene, GAME_B, 1187u); /* Saved totals display modulo 1000, like the game. */
+  assert(scene_lit(&scene, SEG_GAME_B) && !scene_lit(&scene, SEG_GAME_A));
+  assert(digit_bits(&scene, 1u) == 0x06u && digit_bits(&scene, 2u) == 0x7Fu && digit_bits(&scene, 3u) == 0x07u);
+  scene_best(&scene, GAME_A, 0u);
+  assert(digit_bits(&scene, 3u) == 0x3Fu && scene_lit(&scene, SEG_HI));
+}
+
 int main(void) {
   test_inventory_and_bits();
+  test_best_preview();
   test_numbers();
   test_landscape_register();
   test_static_scenes();

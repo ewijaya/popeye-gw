@@ -35,6 +35,8 @@ the middle of the three buttons above or below the screen.
 |---|---|---|
 | Clock: Game A | Tap Select | Start Game A. Brutus attacks from the left. |
 | Clock: Game B | Hold Select | Start Game B. Brutus changes sides. |
+| Clock: best score | Press and hold Select | Pressing shows Game A's best with HI; holding past 0.6 s switches to Game B's best. Releasing starts the mode shown, so a tap is A and a hold is B. |
+| Game over | Leave it alone | After 5 minutes with no button press the app returns to the clock. |
 | Playing: move | Up / Down in portrait; Left / Right in landscape | Move one pose per press. Swap reverses movement. |
 | Playing: pause / resume | Select | Pause; press again to resume. |
 | Catch food | Reach its matching catch pose | Add one point. |
@@ -87,7 +89,7 @@ and precise miss/input behavior remain provisional. The fairness bot verifies
 
 | State | Up / Down | Select | Hold Select | Back |
 |---|---|---|---|---|
-| Clock | High scores / Menu | Game A | Game B | Exit |
+| Clock | High scores / Menu | Game A (shows best A while held) | Game B (best B shown) | Exit |
 | Playing | Move Popeye one pose | Pause | — | Pause |
 | Paused | — | Resume | — | Quit to clock |
 | Game over | Move Popeye | Play again | Other mode | Clock |
