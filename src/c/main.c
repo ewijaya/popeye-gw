@@ -17,7 +17,8 @@ typedef enum { PAGE_CLOCK, PAGE_GAME, PAGE_MENU, PAGE_SCORES,
                PAGE_ORIENTATION, PAGE_STATS, PAGE_STATS_RESET } Page;
 
 typedef enum { SETTING_ORIENTATION, SETTING_BUTTONS, SETTING_SWAP,
-               SETTING_VIBRATION, SETTING_SOUND, SETTING_GHOSTS, SETTING_DEMO, SETTING_ONLINE } SettingItem;
+               SETTING_VIBRATION, SETTING_SOUND, SETTING_GHOSTS, SETTING_THEME, SETTING_DEMO,
+               SETTING_ONLINE } SettingItem;
 
 #define HELP_PAGES 7u
 #define STATS_PAGES 3u
@@ -378,7 +379,7 @@ static void sync_ticks(void) {
 static const char *on_off(bool value) { return value ? "On" : "Off"; }
 
 static unsigned settings_row_count(void) {
-  return s_data.settings.landscape ? 8u : 7u;
+  return s_data.settings.landscape ? 9u : 8u;
 }
 
 /* Button position has no visible row in Vertical mode. */
@@ -430,6 +431,8 @@ static void render_panel(void) {
       snprintf(panel.rows[row++], sizeof(panel.rows[0]), "Vibrate: %s", on_off(settings->vibration));
       snprintf(panel.rows[row++], sizeof(panel.rows[0]), "Sound: %s", on_off(settings->sound));
       snprintf(panel.rows[row++], sizeof(panel.rows[0]), "Ghosts: %s", on_off(settings->ghosts));
+      snprintf(panel.rows[row++], sizeof(panel.rows[0]), "Theme: %s",
+               settings->theme == THEME_IVORY ? "Ivory" : "Classic");
       snprintf(panel.rows[row++], sizeof(panel.rows[0]), "Demo: %s", on_off(settings->attract));
       snprintf(panel.rows[row], sizeof(panel.rows[0]), "Online: %s", on_off(settings->online));
       snprintf(panel.footer, sizeof(panel.footer), "Select: change  Back: menu");
@@ -443,6 +446,8 @@ static void render_panel(void) {
         snprintf(panel.footer, sizeof(panel.footer), "Muted by Quiet Time\nSelect: change  Back: menu");
       else if (settings_item(s_row) == SETTING_ONLINE)
         snprintf(panel.footer, sizeof(panel.footer), "Daily rank via phone\nSelect: change  Back: menu");
+      else if (settings_item(s_row) == SETTING_THEME)
+        snprintf(panel.footer, sizeof(panel.footer), "LCD colors\nSelect: change  Back: menu");
       break;
     }
     case PAGE_ORIENTATION:
@@ -648,7 +653,8 @@ static void render(void) {
       if (s_game.time_up) snprintf(note, sizeof(note), "Time up!");
     }
   }
-  view_show(&scene, overlay, note[0] != '\0' ? note : NULL, s_data.settings.ghosts, save_error());
+  view_show(&scene, overlay, note[0] != '\0' ? note : NULL, s_data.settings.ghosts,
+            (Theme)s_data.settings.theme, save_error());
 }
 
 static void move_down_handler(ClickRecognizerRef recognizer, void *context) {
@@ -744,6 +750,7 @@ static void select_handler(ClickRecognizerRef recognizer, void *context) {
         case SETTING_VIBRATION: settings.vibration = !settings.vibration; break;
         case SETTING_SOUND: settings.sound = !settings.sound; break;
         case SETTING_GHOSTS: settings.ghosts = !settings.ghosts; break;
+        case SETTING_THEME: settings.theme = (uint8_t)((settings.theme + 1u) % THEME_COUNT); break;
         case SETTING_DEMO: settings.attract = !settings.attract; break;
         case SETTING_ONLINE: settings.online = !settings.online; break;
       }
@@ -856,7 +863,7 @@ static void will_focus(bool in_focus) {
   sync_ticks();
 }
 
-static void window_load(Window *window) { view_init(window_get_root_layer(window), s_data.settings.ghosts); render(); }
+static void window_load(Window *window) { view_init(window_get_root_layer(window), s_data.settings.ghosts, (Theme)s_data.settings.theme); render(); }
 
 static void glance_reload(AppGlanceReloadSession *session, size_t limit, void *context) {
   AppGlanceSlice slice = {

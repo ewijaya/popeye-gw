@@ -4,6 +4,7 @@
 #include "segments_landscape.h"
 #include "segments_landscape_bottom.h"
 #include "orientation.h"
+#include "theme.h"
 
 /* Pixel placement is generated from the complete art/segments inventory. */
 typedef char CompleteSegmentArt[(SEGMENT_ART_COUNT == SEG_COUNT) ? 1 : -1];
@@ -14,6 +15,10 @@ static GBitmap *s_ui;
 static GColor s_ui_palette[4];
 static bool s_landscape, s_loaded_landscape, s_loaded_ghosts;
 static bool s_buttons_bottom, s_loaded_bottom;
+static Theme s_theme, s_loaded_theme;
+/* Ink and paper for clock hints, overlays and notices; themed in portrait. */
+static GColor s_ink = { .argb = GColorBlackARGB8 }, s_paper = { .argb = GColorWhiteARGB8 };
+static GColor s_lit_palette[2];
 static GBitmap *s_sheet;
 static GBitmap *s_art[SEG_COUNT];
 static Scene s_scene;
@@ -97,7 +102,7 @@ static void draw_overlay(GContext *ctx) {
   if (s_overlay == VIEW_OVERLAY_NONE) return;
   if (s_overlay == VIEW_OVERLAY_CLOCK || s_overlay == VIEW_OVERLAY_BEST_A ||
       s_overlay == VIEW_OVERLAY_BEST_B) {
-    graphics_context_set_text_color(ctx, GColorBlack);
+    graphics_context_set_text_color(ctx, s_ink);
     /* Both modes use the same physical Select button. Leave the food field
      * clear and spell out tap versus hold beside the clock register. The best-score
      * preview sits under its Game A/B lamp. */
@@ -106,11 +111,11 @@ static void draw_overlay(GContext *ctx) {
               false, GTextAlignmentLeft);
     return;
   }
-  graphics_context_set_fill_color(ctx, GColorWhite);
+  graphics_context_set_fill_color(ctx, s_paper);
   graphics_fill_rect(ctx, box, 4, GCornersAll);
-  graphics_context_set_stroke_color(ctx, GColorBlack);
+  graphics_context_set_stroke_color(ctx, s_ink);
   graphics_draw_round_rect(ctx, box, 4);
-  graphics_context_set_text_color(ctx, GColorBlack);
+  graphics_context_set_text_color(ctx, s_ink);
   graphics_draw_text(ctx, s_note[0] != '\0' ? s_note : titles[s_overlay], fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD),
                      GRect(box.origin.x, box.origin.y, box.size.w, 22),
                      GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
@@ -121,7 +126,8 @@ static void draw_overlay(GContext *ctx) {
 
 static void draw_notice(GContext *ctx) {
   if (!s_save_error) return;
-  graphics_context_set_fill_color(ctx, GColorWhite);
+  graphics_context_set_fill_color(ctx, s_paper);
+  graphics_context_set_text_color(ctx, s_ink);
   graphics_fill_rect(ctx, GRect(0, s_landscape ? 180 : 207, 200, 21), 0, GCornerNone);
   draw_text(ctx, "Save failed - open menu", GRect(0, s_landscape ? 180 : 207, 200, 21),
             false, GTextAlignmentCenter);
@@ -161,10 +167,18 @@ static void update_proc(Layer *layer, GContext *ctx) {
       (s_panel_visible || s_overlay != VIEW_OVERLAY_NONE || s_save_error)) {
     /* Native fonts are drawn once into a square scratch area, then packed into
      * a 10 KB rotated transparent bitmap. No allocation in the update loop. */
+    GColor ink = s_ink, paper = s_paper;
     graphics_context_set_fill_color(ctx, GColorMagenta);
     graphics_fill_rect(ctx, GRect(0, 0, 200, 200), 0, GCornerNone);
+    /* The packer keys on exact black and white; the palette applies the theme. */
+    s_ink = GColorBlack;
+    s_paper = GColorWhite;
     if (s_panel_visible) draw_panel(ctx);
     else { draw_overlay(ctx); draw_notice(ctx); }
+    s_ink = ink;
+    s_paper = paper;
+    s_ui_palette[1] = s_panel_visible ? GColorBlack : s_ink;
+    s_ui_palette[2] = s_panel_visible ? GColorWhite : s_paper;
     ui_ready = capture_ui(layer, ctx);
   }
   if (s_panel_visible) {
@@ -205,6 +219,43 @@ static void unload_scene(void) {
   s_art_ready = false;
 }
 
+/* Runs on freshly loaded resources only, so themes never tint cumulatively.
+ * Classic leaves the authored artwork and its palettes untouched. */
+static void apply_theme(void) {
+  ThemeColors colors;
+  GColor *palette;
+  unsigned i, count = 0u;
+  s_ink = GColorBlack;
+  s_paper = GColorWhite;
+  if (!theme_colors(s_loaded_theme, &colors)) return;
+  s_ink = (GColor){ .argb = colors.foreground };
+  s_paper = (GColor){ .argb = colors.background };
+  switch (gbitmap_get_format(s_backdrop)) {
+    case GBitmapFormat8Bit: {
+      uint8_t lookup[256], *pixels = gbitmap_get_data(s_backdrop);
+      GRect bounds = gbitmap_get_bounds(s_backdrop);
+      size_t stride = gbitmap_get_bytes_per_row(s_backdrop);
+      int x, y;
+      theme_backdrop_lookup(lookup, &colors);
+      for (y = 0; y < bounds.size.h; ++y)
+        for (x = 0; x < bounds.size.w; ++x)
+          pixels[(size_t)y * stride + (size_t)x] = lookup[pixels[(size_t)y * stride + (size_t)x]];
+      break;
+    }
+    case GBitmapFormat1BitPalette: count = 2u; break;
+    case GBitmapFormat2BitPalette: count = 4u; break;
+    case GBitmapFormat4BitPalette: count = 16u; break;
+    default: break;
+  }
+  palette = count != 0u ? gbitmap_get_palette(s_backdrop) : NULL;
+  for (i = 0u; palette != NULL && i < count; ++i)
+    palette[i].argb = theme_backdrop(palette[i].argb, &colors);
+  palette = gbitmap_get_palette(s_sheet);
+  if (palette == NULL || gbitmap_get_format(s_sheet) != GBitmapFormat1BitPalette) return;
+  for (i = 0u; i < 2u; ++i) s_lit_palette[i].argb = theme_ink(palette[i].argb, &colors);
+  for (i = 0u; i < SEG_COUNT; ++i) gbitmap_set_palette(s_art[i], s_lit_palette, false);
+}
+
 static void load_scene(void) {
   unsigned seg;
   uint32_t backdrop_id;
@@ -213,6 +264,7 @@ static void load_scene(void) {
   s_loaded_landscape = s_landscape;
   s_loaded_bottom = s_buttons_bottom;
   s_loaded_ghosts = s_show_ghosts;
+  s_loaded_theme = s_theme;
   backdrop_id = s_buttons_bottom ? (s_show_ghosts ? RESOURCE_ID_BACKDROP_GHOSTS_LANDSCAPE_BOTTOM : RESOURCE_ID_BACKDROP_LANDSCAPE_BOTTOM) :
                 s_landscape ? (s_show_ghosts ? RESOURCE_ID_BACKDROP_GHOSTS_LANDSCAPE : RESOURCE_ID_BACKDROP_LANDSCAPE)
                             : (s_show_ghosts ? RESOURCE_ID_BACKDROP_GHOSTS : RESOURCE_ID_BACKDROP);
@@ -231,10 +283,12 @@ static void load_scene(void) {
     }
   }
   if (!s_art_ready) APP_LOG(APP_LOG_LEVEL_ERROR, "Unable to load complete segment art");
+  else apply_theme();
 }
 
-void view_init(Layer *parent, bool ghosts) {
+void view_init(Layer *parent, bool ghosts, Theme theme) {
   s_show_ghosts = ghosts;
+  s_theme = theme;
   s_ui_palette[0] = GColorClear;
   s_ui_palette[1] = GColorBlack;
   s_ui_palette[2] = GColorWhite;
@@ -264,12 +318,14 @@ void view_set_landscape(bool landscape, bool buttons_bottom) {
   s_buttons_bottom = landscape && buttons_bottom;
 }
 
-void view_show(const Scene *scene, ViewOverlay overlay, const char *note, bool ghosts, bool save_error) {
+void view_show(const Scene *scene, ViewOverlay overlay, const char *note, bool ghosts,
+               Theme theme, bool save_error) {
   s_panel_visible = false;
   snprintf(s_note, sizeof(s_note), "%s", note != NULL ? note : "");
   s_show_ghosts = ghosts;
+  s_theme = theme;
   if (s_loaded_landscape != s_landscape || s_loaded_bottom != s_buttons_bottom ||
-      s_loaded_ghosts != ghosts) load_scene();
+      s_loaded_ghosts != ghosts || s_loaded_theme != theme) load_scene();
   s_save_error = save_error;
   s_scene = *scene;
   s_overlay = overlay;

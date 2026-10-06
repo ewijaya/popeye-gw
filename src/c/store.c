@@ -1,5 +1,6 @@
 #include "store.h"
 #include "game.h"
+#include "theme.h"
 #include <string.h>
 
 static uint32_t read32(const uint8_t *p) {
@@ -28,22 +29,24 @@ void settings_defaults(Settings *settings) {
 void scores_defaults(HighScores *scores) { memset(scores, 0, sizeof(*scores)); }
 
 void settings_encode(const Settings *s, uint8_t out[SETTINGS_RECORD_SIZE]) {
-  out[0] = 6u;
+  out[0] = 7u;
   out[1] = (uint8_t)(s->swap_buttons | s->vibration << 1 | s->ghosts << 2 |
                      s->attract << 3 | s->alarm_on << 4 | s->landscape << 5 |
                      s->buttons_bottom << 6 | s->sound << 7);
-  out[2] = s->alarm_hour;
+  out[2] = (uint8_t)(s->alarm_hour | s->theme << 5); /* v7: Theme above the hour (0-23) */
   out[3] = (uint8_t)(s->alarm_minute | s->online << 7); /* v6: Online in the spare top bit of the minute */
   write32(out + 4, checksum(out, 4));
 }
 
 bool settings_decode(Settings *s, const uint8_t *data, size_t size) {
-  uint8_t minute;
+  uint8_t minute, hour, theme;
   settings_defaults(s);
-  if (size != SETTINGS_RECORD_SIZE || data == NULL || data[0] < 1u || data[0] > 6u) return false;
+  if (size != SETTINGS_RECORD_SIZE || data == NULL || data[0] < 1u || data[0] > 7u) return false;
   minute = data[0] >= 6u ? (uint8_t)(data[3] & 0x7fu) : data[3];
-  if ((data[1] & (data[0] == 1u ? 0xe0u : data[0] == 2u ? 0xc0u : data[0] < 5u ? 0x80u : 0u)) != 0u || data[2] > 23u ||
-      minute > 59u || read32(data + 4) != checksum(data, 4)) return false;
+  hour = data[0] >= 7u ? (uint8_t)(data[2] & 0x1fu) : data[2];
+  theme = data[0] >= 7u ? (uint8_t)(data[2] >> 5) : (uint8_t)THEME_CLASSIC;
+  if ((data[1] & (data[0] == 1u ? 0xe0u : data[0] == 2u ? 0xc0u : data[0] < 5u ? 0x80u : 0u)) != 0u || hour > 23u ||
+      theme >= (uint8_t)THEME_COUNT || minute > 59u || read32(data + 4) != checksum(data, 4)) return false;
   s->swap_buttons = (data[1] & 1u) != 0;
   s->vibration = (data[1] & 2u) != 0;
   s->ghosts = (data[1] & 4u) != 0;
@@ -57,7 +60,8 @@ bool settings_decode(Settings *s, const uint8_t *data, size_t size) {
    * Existing horizontal Top/Bottom selections keep their exact orientation. */
   s->buttons_bottom = data[0] >= 4u ? (data[1] & 64u) != 0 :
                       !s->landscape || (data[0] == 3u && (data[1] & 64u) != 0);
-  s->alarm_hour = data[2];
+  s->alarm_hour = hour;
+  s->theme = theme; /* v7 adds Theme; earlier records keep Classic. */
   s->alarm_minute = minute;
   s->online = data[0] >= 6u && (data[3] & 0x80u) != 0u; /* v6 adds Online; earlier records keep it Off. */
   return true;
