@@ -5,6 +5,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "online.h"
+
 #define SETTINGS_RECORD_SIZE 8u
 #define SCORES_RECORD_SIZE 21u
 #define STATS_RECORD_SIZE 37u
@@ -42,8 +44,11 @@ typedef struct {
   HighScores scores;
   Stats stats;
   ModeScores modes;
+  OnlineState online;
 } SaveData;
 
+/* A real calendar date YYYYMMDD, years 1970 to 9999. */
+bool store_valid_date(uint32_t date);
 void settings_defaults(Settings *settings);
 void scores_defaults(HighScores *scores);
 /* Versioned byte formats with checksums, independent of C padding/endianness.

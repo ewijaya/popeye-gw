@@ -63,7 +63,7 @@ bool settings_decode(Settings *s, const uint8_t *data, size_t size) {
   return true;
 }
 
-static bool valid_date(uint32_t date) {
+bool store_valid_date(uint32_t date) {
   static const unsigned days[] = { 31,28,31,30,31,30,31,31,30,31,30,31 };
   unsigned year = date / 10000u, month = date / 100u % 100u, day = date % 100u;
   unsigned maximum;
@@ -92,14 +92,14 @@ bool scores_decode(HighScores *s, const uint8_t *data, size_t size) {
   for (i = 0; i < 2; ++i) {
     decoded.best[i] = read32(data + 1 + i * 8);
     decoded.date[i] = read32(data + 5 + i * 8);
-    if (decoded.best[i] == 0u ? decoded.date[i] != 0u : !valid_date(decoded.date[i])) return false;
+    if (decoded.best[i] == 0u ? decoded.date[i] != 0u : !store_valid_date(decoded.date[i])) return false;
   }
   *s = decoded;
   return true;
 }
 
 bool scores_record(HighScores *s, unsigned mode, uint32_t score, uint32_t date) {
-  if (mode > 1u || score <= s->best[mode] || !valid_date(date)) return false;
+  if (mode > 1u || score <= s->best[mode] || !store_valid_date(date)) return false;
   s->best[mode] = score;
   s->date[mode] = date;
   return true;
@@ -188,9 +188,9 @@ bool modes_decode(ModeScores *m, const uint8_t *data, size_t size) {
   if (size != MODES_RECORD_SIZE || data == NULL || data[0] != 1u ||
       read32(data + 33) != checksum(data, 33)) return false;
   for (i = 0; i < 8; ++i) *modes_fields(&d, i) = read32(data + 1 + i * 4);
-  if ((d.sprint_best == 0u ? d.sprint_date != 0u : !valid_date(d.sprint_date)) ||
-      (d.daily_best == 0u ? d.daily_best_date != 0u : !valid_date(d.daily_best_date)) ||
-      (d.daily_today_date == 0u ? d.daily_today != 0u : !valid_date(d.daily_today_date)) ||
+  if ((d.sprint_best == 0u ? d.sprint_date != 0u : !store_valid_date(d.sprint_date)) ||
+      (d.daily_best == 0u ? d.daily_best_date != 0u : !store_valid_date(d.daily_best_date)) ||
+      (d.daily_today_date == 0u ? d.daily_today != 0u : !store_valid_date(d.daily_today_date)) ||
       d.daily_today > d.daily_best) return false;
   *m = d;
   return true;
@@ -198,7 +198,7 @@ bool modes_decode(ModeScores *m, const uint8_t *data, size_t size) {
 
 bool modes_record(ModeScores *m, bool daily, uint32_t score, uint32_t date) {
   bool changed = false;
-  if (score == 0u || !valid_date(date)) return false;
+  if (score == 0u || !store_valid_date(date)) return false;
   if (!daily) {
     if (score <= m->sprint_best) return false;
     m->sprint_best = score;

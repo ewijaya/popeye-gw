@@ -651,8 +651,114 @@ static void test_replay_storage(void) {
   assert(storage_load_replay(loaded, sizeof(loaded)) == 0);
 }
 
+static void test_online_state(void) {
+  OnlineState state, loaded;
+  SaveData data;
+  uint8_t bytes[ONLINE_RECORD_SIZE], chunk[256], replay[600];
+  char text[32];
+  unsigned i, bit;
+  online_defaults(&state);
+  assert(state.phase == ONLINE_NONE && !online_should_send(&state));
+  online_failed(&state, false); online_succeeded(&state, 3, 9); /* Nothing queued: no effect. */
+  assert(state.phase == ONLINE_NONE && state.attempts == 0 && state.rank == 0);
+  online_queue(&state, 20261006u, 41u);
+  assert(state.phase == ONLINE_PENDING && online_should_send(&state) && state.score == 41u && state.attempts == 0);
+  /* A transient failure leaves one retry (the next launch); then it stops until a new best. */
+  online_failed(&state, false); assert(state.attempts == 1 && online_should_send(&state));
+  online_failed(&state, false); assert(state.attempts == 2 && !online_should_send(&state));
+  online_failed(&state, false); assert(state.attempts == 2);
+  online_queue(&state, 20261006u, 44u);
+  assert(online_should_send(&state) && state.attempts == 0 && state.score == 44u);
+  online_failed(&state, true); assert(!online_should_send(&state) && state.phase == ONLINE_PENDING);
+  online_queue(&state, 20261006u, 45u);
+  online_succeeded(&state, 0, 5); assert(state.phase == ONLINE_PENDING); /* Nonsense answers are ignored. */
+  online_succeeded(&state, 6, 5); assert(state.phase == ONLINE_PENDING);
+  online_succeeded(&state, 12, 140);
+  assert(state.phase == ONLINE_SENT && state.rank == 12 && state.total == 140 && !online_should_send(&state));
+  online_failed(&state, false); assert(state.phase == ONLINE_SENT && state.rank == 12);
+  online_encode(&state, bytes);
+  assert(bytes[0] == 1u && online_decode(&loaded, bytes, sizeof(bytes)));
+  assert(loaded.phase == ONLINE_SENT && loaded.date == 20261006u && loaded.score == 45u && loaded.rank == 12 && loaded.total == 140);
+  for (i = 0; i < sizeof(bytes); ++i) {
+    for (bit = 0; bit < 8; ++bit) {
+      bytes[i] ^= (uint8_t)(1u << bit);
+      assert(!online_decode(&loaded, bytes, sizeof(bytes)) && loaded.phase == ONLINE_NONE && loaded.score == 0);
+      bytes[i] ^= (uint8_t)(1u << bit);
+    }
+    assert(!online_decode(&loaded, bytes, i));
+  }
+  assert(!online_decode(&loaded, NULL, ONLINE_RECORD_SIZE));
+  /* Well-formed checksums are not enough: contradictory states are refused. */
+  {
+    static const OnlineState bad[] = {
+      { ONLINE_NONE, 0, 20261006u, 0, 0, 0 }, { ONLINE_NONE, 1, 0, 0, 0, 0 }, { ONLINE_PENDING, 0, 0, 5, 0, 0 },
+      { ONLINE_PENDING, 0, 20261006u, 0, 0, 0 }, { ONLINE_PENDING, 0, 20261340u, 5, 0, 0 },
+      { ONLINE_PENDING, 0, 20261006u, 5, 1, 2 }, { ONLINE_SENT, 0, 20261006u, 5, 0, 0 },
+      { ONLINE_SENT, 0, 20261006u, 5, 7, 6 }, { ONLINE_SENT, 0, 20261006u, 0, 1, 1 }, { 3, 0, 20261006u, 5, 1, 1 }
+    };
+    for (i = 0; i < sizeof(bad) / sizeof(bad[0]); ++i) {
+      online_encode(&bad[i], bytes);
+      assert(!online_decode(&loaded, bytes, sizeof(bytes)) && loaded.phase == ONLINE_NONE);
+    }
+    online_defaults(&state);
+    online_encode(&state, bytes);
+    assert(online_decode(&loaded, bytes, sizeof(bytes)) && loaded.phase == ONLINE_NONE);
+    bytes[3] = 1u; /* The reserved byte must stay zero. */
+    assert(!online_decode(&loaded, bytes, sizeof(bytes)));
+  }
+  /* The high-scores row. */
+  online_defaults(&state);
+  online_text(text, sizeof(text), false, false, &state, 20261006u); assert(strcmp(text, "Online: off") == 0);
+  online_text(text, sizeof(text), true, false, &state, 20261006u); assert(strcmp(text, "Online: on") == 0);
+  online_queue(&state, 20261006u, 45u);
+  online_text(text, sizeof(text), true, false, &state, 20261006u); assert(strcmp(text, "Online: not sent") == 0);
+  online_text(text, sizeof(text), true, true, &state, 20261006u); assert(strcmp(text, "Online: sending") == 0);
+  online_text(text, sizeof(text), false, false, &state, 20261006u); assert(strcmp(text, "Online: off") == 0);
+  online_text(text, sizeof(text), true, false, &state, 20261007u); assert(strcmp(text, "Online: on") == 0); /* Yesterday's. */
+  online_succeeded(&state, 12, 140);
+  online_text(text, sizeof(text), true, false, &state, 20261006u); assert(strcmp(text, "Online #12/140") == 0);
+  online_text(text, sizeof(text), true, true, &state, 20261006u); assert(strcmp(text, "Online #12/140") == 0);
+  online_text(text, sizeof(text), true, false, &state, 20261007u); assert(strcmp(text, "Online: on") == 0);
+  state.rank = state.total = 4294967295u;
+  online_text(text, sizeof(text), true, false, &state, 20261006u);
+  assert(strlen(text) < 32u && strncmp(text, "Online #", 8) == 0);
+  /* Its own persist key; the other records are untouched, and a bad record loads as defaults. */
+  fake_reset(); storage_load(&data);
+  assert(data.online.phase == ONLINE_NONE && data.settings.sound && !data.settings.online);
+  online_queue(&data.online, 20261006u, 33u);
+  assert(storage_save_online(&data.online) && persist_get_size(6) == ONLINE_RECORD_SIZE);
+  assert(persist_get_size(1) < 0 && persist_get_size(2) < 0 && persist_get_size(4) < 0 && persist_get_size(5) < 0);
+  memset(&data, 0, sizeof(data)); storage_load(&data);
+  assert(data.online.phase == ONLINE_PENDING && data.online.score == 33u && data.settings.sound);
+  fake_write_fail = true; assert(!storage_save_online(&data.online)); fake_write_fail = false;
+  persist_write_data(6, bytes, sizeof(bytes) - 1);
+  storage_load(&data);
+  assert(data.online.phase == ONLINE_NONE);
+  /* The stored replay can be read back chunk by chunk, so no 2 KB buffer is needed to send it. */
+  fake_reset();
+  assert(storage_replay_length() == 0 && storage_replay_chunk(0, chunk, sizeof(chunk)) == 0);
+  for (i = 0; i < sizeof(replay); ++i) replay[i] = (uint8_t)(i * 13u + 5u);
+  for (bit = 0; bit < 4; ++bit) {
+    static const size_t lengths[] = { 1, 255, 256, 600 };
+    size_t length = lengths[bit], offset = 0, got;
+    unsigned index = 0;
+    assert(storage_save_replay(replay, length));
+    assert(storage_replay_length() == length);
+    while ((got = storage_replay_chunk(index, chunk, sizeof(chunk))) != 0u) {
+      assert(got <= 256u && offset + got <= length && memcmp(chunk, replay + offset, got) == 0);
+      offset += got;
+      ++index;
+    }
+    assert(offset == length && index == (length + 255u) / 256u);
+    assert(storage_replay_chunk(8, chunk, sizeof(chunk)) == 0);
+    assert(length <= 10u || storage_replay_chunk(0, chunk, 10) == 0); /* Too small a buffer: refuse. */
+  }
+  storage_clear_replay();
+  assert(storage_replay_length() == 0);
+}
+
 int main(void) {
-  test_modes(); test_replay_storage(); test_stats_records(); test_stats_accumulation(); test_glance();
+  test_online_state(); test_modes(); test_replay_storage(); test_stats_records(); test_stats_accumulation(); test_glance();
   test_records(); test_storage(); test_clock(); test_alarm(); test_orientation();
   test_saved_orientation_preferences(); test_oriented_controls();
   puts("M4 tests passed: versioned storage, corrupt records, clock, calendar/DST recurrence and wakeup lifecycle");

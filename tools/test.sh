@@ -30,7 +30,7 @@ cflags="-std=c99 -Wall -Wextra -Werror -pedantic"
 # Compile the real persistence/wakeup adapters against a small in-memory SDK fake.
 # shellcheck disable=SC2086
 /usr/bin/cc $cflags "$@" -I"$repo_dir/tests/fake_pebble" -I"$repo_dir/src/c" \
-  "$repo_dir/src/c/store.c" "$repo_dir/src/c/storage.c" "$repo_dir/src/c/clock.c" \
+  "$repo_dir/src/c/store.c" "$repo_dir/src/c/online.c" "$repo_dir/src/c/storage.c" "$repo_dir/src/c/clock.c" \
   "$repo_dir/src/c/alarm.c" "$repo_dir/src/c/glance.c" "$repo_dir/src/c/replay.c" "$repo_dir/src/c/orientation.c" "$repo_dir/src/c/scene.c" "$repo_dir/src/c/game.c" \
   "$repo_dir/tests/fake_pebble/fake.c" "$repo_dir/tests/test_m4.c" -o "$test_dir/test_m4"
 # Compile the actual finite feedback timer/haptics adapter against the SDK fake.

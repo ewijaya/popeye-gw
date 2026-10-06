@@ -1,7 +1,7 @@
 #include <pebble.h>
 #include "storage.h"
 
-enum { KEY_SETTINGS = 1, KEY_SCORES = 2, KEY_STATS = 4, KEY_MODES = 5, /* 3 is the wakeup id. */
+enum { KEY_SETTINGS = 1, KEY_SCORES = 2, KEY_STATS = 4, KEY_MODES = 5, KEY_ONLINE = 6, /* 3 is the wakeup id. */
        KEY_REPLAY = 16, REPLAY_CHUNK = 256, REPLAY_CHUNKS = 8 };
 
 void storage_load(SaveData *data) {
@@ -10,6 +10,7 @@ void storage_load(SaveData *data) {
   scores_defaults(&data->scores);
   stats_defaults(&data->stats);
   modes_defaults(&data->modes);
+  online_defaults(&data->online);
   if (persist_get_size(KEY_SETTINGS) == SETTINGS_RECORD_SIZE &&
       persist_read_data(KEY_SETTINGS, buffer, SETTINGS_RECORD_SIZE) == SETTINGS_RECORD_SIZE)
     settings_decode(&data->settings, buffer, SETTINGS_RECORD_SIZE);
@@ -22,6 +23,9 @@ void storage_load(SaveData *data) {
   if (persist_get_size(KEY_MODES) == MODES_RECORD_SIZE &&
       persist_read_data(KEY_MODES, buffer, MODES_RECORD_SIZE) == MODES_RECORD_SIZE)
     modes_decode(&data->modes, buffer, MODES_RECORD_SIZE);
+  if (persist_get_size(KEY_ONLINE) == ONLINE_RECORD_SIZE &&
+      persist_read_data(KEY_ONLINE, buffer, ONLINE_RECORD_SIZE) == ONLINE_RECORD_SIZE)
+    online_decode(&data->online, buffer, ONLINE_RECORD_SIZE);
 }
 
 bool storage_save_settings(const Settings *settings) {
@@ -46,6 +50,12 @@ bool storage_save_modes(const ModeScores *modes) {
   uint8_t buffer[MODES_RECORD_SIZE];
   modes_encode(modes, buffer);
   return persist_write_data(KEY_MODES, buffer, sizeof(buffer)) == sizeof(buffer);
+}
+
+bool storage_save_online(const OnlineState *online) {
+  uint8_t buffer[ONLINE_RECORD_SIZE];
+  online_encode(online, buffer);
+  return persist_write_data(KEY_ONLINE, buffer, sizeof(buffer)) == sizeof(buffer);
 }
 
 void storage_clear_replay(void) {
@@ -78,4 +88,24 @@ size_t storage_load_replay(uint8_t *out, size_t capacity) {
     if (size < REPLAY_CHUNK) break;
   }
   return total;
+}
+
+size_t storage_replay_length(void) {
+  size_t total = 0u;
+  unsigned i;
+  for (i = 0; i < REPLAY_CHUNKS; ++i) {
+    int size = persist_get_size(KEY_REPLAY + i);
+    if (size <= 0) break;
+    total += (size_t)size;
+    if (size < REPLAY_CHUNK) break;
+  }
+  return total;
+}
+
+size_t storage_replay_chunk(unsigned index, uint8_t *out, size_t capacity) {
+  int size;
+  if (index >= REPLAY_CHUNKS) return 0u;
+  size = persist_get_size(KEY_REPLAY + index);
+  if (size <= 0 || (size_t)size > capacity || persist_read_data(KEY_REPLAY + index, out, (size_t)size) != size) return 0u;
+  return (size_t)size;
 }
