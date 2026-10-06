@@ -208,6 +208,22 @@ budget and fails if it exceeds that limit. The playable app links the game
 engine and loads the complete art set. The bundle is named `popeye-gw.pbw`
 regardless of the checkout directory name, so pass its path when installing.
 
+## Companion watchface
+
+`watchface/` is a separate Pebble project, **Popeye G&W Clock** (`popeye-gw-clock`,
+Emery only): the game's LCD clock scene as a watchface, portrait, ghosts on, with
+AM/PM following the watch's 12/24h setting. Olive's food demonstration plays for
+about ten seconds after each minute change, and not at all in Quiet Time or on a
+low battery. It shares the game's `scene.c`, `clock.c`, `game.c` and artwork by
+path. Details: [v1.1 notes](docs/v1.1-notes.md).
+
+```sh
+cd watchface
+TERM=xterm pebble build
+pebble install --emulator emery build/popeye-gw-clock.pbw
+./test.sh
+```
+
 ## Licence
 
 See [LICENSE](LICENSE) for the repository licence.
