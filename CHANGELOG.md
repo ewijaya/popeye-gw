@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Make the beeps quieter and add volume levels: Settings → Sound now cycles Off, Low, Medium and High. Medium, the new default, is a third of the previous level, and High is still quieter than before. The alarm uses the same level. Existing On/Off choices are kept.
+
 ## 1.2.0 — 2026-10-06
 
 - Add Settings → Theme with **Ivory**: the companion watchface's LCD colors (#FFFFAA background, #550000 ink, scenery tinted toward #AA5500). Classic stays the default, and the choice is kept across restarts.

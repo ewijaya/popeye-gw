@@ -40,7 +40,7 @@ describe their historical builds.
 ### In development for 1.1 (not yet released)
 
 - **Sound**: short square-wave LCD beeps for catches, drops, bonuses, game over, new bests and the alarm
-  (Settings → Sound, default On). They follow the watch's speaker mute and Quiet Time.
+  (Settings → Sound: Off, Low, Medium or High; default Medium). They follow the watch's speaker mute and Quiet Time.
 - **Sprint** and **Daily**: 60 seconds of Game B rules, counted in active play time (pausing and MISS
   recovery do not use it), with a beep and pulse at 10 seconds left. Sprint is random; Daily gives
   everyone the same food and Brutus pattern on a given date, and every attempt counts toward the day's best.
@@ -85,7 +85,7 @@ the middle button on the right. In landscape it is the middle of the three butto
 | Settings: Buttons (1.0.1, Horizontal only) | Select Buttons | Toggle Bottom / Top. The choice is remembered in Vertical mode. |
 | Settings: Swap | Select Swap | Reverse game movement. |
 | Settings: Theme (1.2) | Select Theme | Switch the LCD colors between Classic and Ivory, the companion watchface's palette. |
-| Settings: Sound (1.1) | Select Sound | Turn the LCD-style beeps On or Off (default On). |
+| Settings: Sound (1.1; levels 1.3) | Select Sound | Cycle the LCD-style beeps Off → Low → Medium → High (default Medium). |
 | Settings: Online (1.1) | Select Online | Off by default. When On, your best Daily round of the day is sent through the phone to a leaderboard server (needs the phone and internet). High scores page 3 shows `Online #12/140`, `Online: not sent` or `Online: off`. The server is not live yet. |
 | Help pages | Select; movement buttons; Back | Select advances, movement buttons browse both ways, Back returns to the menu. |
 
