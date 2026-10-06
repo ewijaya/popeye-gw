@@ -7,6 +7,7 @@ repo_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 test_dir=$(mktemp -d "${TMPDIR:-/tmp}/popeye-gw-tests.XXXXXX")
 trap 'rm -rf "$test_dir"' EXIT HUP INT TERM
 
+watch_args=${1:+"$1"}
 case "${1:-}" in
   '') set -- -O2 ;;
   --sanitize) set -- -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer ;;
@@ -40,3 +41,6 @@ TZ=UTC UBSAN_OPTIONS=halt_on_error=1 "$test_dir/test_m4"
 TZ=America/New_York UBSAN_OPTIONS=halt_on_error=1 "$test_dir/test_m4"
 UBSAN_OPTIONS=halt_on_error=1 "$test_dir/test_scene"
 UBSAN_OPTIONS=halt_on_error=1 "$test_dir/test_game"
+# Companion watchface scene logic and its no-copy guard.
+# shellcheck disable=SC2086
+sh "$repo_dir/watchface/test.sh" $watch_args
