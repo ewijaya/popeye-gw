@@ -19,7 +19,7 @@ typedef enum { PAGE_CLOCK, PAGE_GAME, PAGE_MENU, PAGE_SCORES,
 typedef enum { SETTING_ORIENTATION, SETTING_BUTTONS, SETTING_SWAP,
                SETTING_VIBRATION, SETTING_SOUND, SETTING_GHOSTS, SETTING_DEMO, SETTING_ONLINE } SettingItem;
 
-#define HELP_PAGES 6u
+#define HELP_PAGES 7u
 #define STATS_PAGES 3u
 #define SCORES_PAGES 3u
 #define MENU_ROWS 8u
@@ -547,7 +547,7 @@ static void render_panel(void) {
       panel.selected = -1;
       snprintf(panel.footer, sizeof(panel.footer), "Select: next  Back: menu");
       if (s_row == 0u) {
-        panel.title = "Help 1/6";
+        panel.title = "Help 1/7";
         snprintf(panel.rows[0], sizeof(panel.rows[0]), "Tap Select: A");
         snprintf(panel.rows[1], sizeof(panel.rows[1]), "Hold Select: B");
         snprintf(panel.rows[2], sizeof(panel.rows[2]), "%s: move",
@@ -555,14 +555,14 @@ static void render_panel(void) {
         snprintf(panel.rows[3], sizeof(panel.rows[3]), "Select: pause/play");
         snprintf(panel.footer, sizeof(panel.footer), "Holding shows best score\nSelect: next  Back: menu");
       } else if (s_row == 1u) {
-        panel.title = "Help 2/6";
+        panel.title = "Help 2/7";
         snprintf(panel.rows[0], sizeof(panel.rows[0]), "Catch food: +1");
         snprintf(panel.rows[1], sizeof(panel.rows[1]), "Center can't catch");
         snprintf(panel.rows[2], sizeof(panel.rows[2]), "2 drops = 1 MISS");
         snprintf(panel.rows[3], sizeof(panel.rows[3]), "Hit = 1 MISS");
         snprintf(panel.footer, sizeof(panel.footer), "3 MISS ends game\nSelect: next  Back: menu");
       } else if (s_row == 2u) {
-        panel.title = "Help 3/6";
+        panel.title = "Help 3/7";
         snprintf(panel.rows[0], sizeof(panel.rows[0]), "Quit play: 2x Back");
         snprintf(panel.rows[1], sizeof(panel.rows[1]), "Clock %s: scores",
                  settings->landscape ? "Left" : "Up");
@@ -570,26 +570,33 @@ static void render_panel(void) {
                  settings->landscape ? "Right" : "Down");
         snprintf(panel.rows[3], sizeof(panel.rows[3]), "Settings: screen");
       } else if (s_row == 3u) {
-        panel.title = "Help 4/6";
+        panel.title = "Help 4/7";
         snprintf(panel.rows[0], sizeof(panel.rows[0]), "Settings: Orientation");
         snprintf(panel.rows[1], sizeof(panel.rows[1]), "Vertical / Horizontal");
         snprintf(panel.rows[2], sizeof(panel.rows[2]), "Horizontal: Buttons");
         snprintf(panel.rows[3], sizeof(panel.rows[3]), "Bottom / Top");
         snprintf(panel.footer, sizeof(panel.footer), "Swap: reverse movement\nSelect: next  Back: menu");
       } else if (s_row == 4u) {
-        panel.title = "Help 5/6";
+        panel.title = "Help 5/7";
         snprintf(panel.rows[0], sizeof(panel.rows[0]), "Menu: Daily, Sprint");
         snprintf(panel.rows[1], sizeof(panel.rows[1]), "60 s of Game B play");
         snprintf(panel.rows[2], sizeof(panel.rows[2]), "Pause stops the clock");
         snprintf(panel.rows[3], sizeof(panel.rows[3]), "Daily: same food today");
         snprintf(panel.footer, sizeof(panel.footer), "Beep at 10 s left\nSelect: next  Back: menu");
-      } else {
-        panel.title = "Help 6/6";
+      } else if (s_row == 5u) {
+        panel.title = "Help 6/7";
         snprintf(panel.rows[0], sizeof(panel.rows[0]), "Online: Settings");
         snprintf(panel.rows[1], sizeof(panel.rows[1]), "Off by default");
         snprintf(panel.rows[2], sizeof(panel.rows[2]), "Sends best Daily");
         snprintf(panel.rows[3], sizeof(panel.rows[3]), "Needs phone + net");
         snprintf(panel.footer, sizeof(panel.footer), "Server not live yet\nSelect: next  Back: menu");
+      } else {
+        panel.title = "Help 7/7";
+        snprintf(panel.rows[0], sizeof(panel.rows[0]), "Open Popeye fast:");
+        snprintf(panel.rows[1], sizeof(panel.rows[1]), "Watch Settings >");
+        snprintf(panel.rows[2], sizeof(panel.rows[2]), "Quick Launch");
+        snprintf(panel.rows[3], sizeof(panel.rows[3]), "Pick button + app");
+        snprintf(panel.footer, sizeof(panel.footer), "Hold it 2 s on watchface\nSelect: next  Back: menu");
       }
       break;
     case PAGE_ABOUT:
