@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.2.0 — 2026-10-06
 
 - Add Settings → Theme with **Ivory**: the companion watchface's LCD colors (#FFFFAA background, #550000 ink, scenery tinted toward #AA5500). Classic stays the default, and the choice is kept across restarts.
 

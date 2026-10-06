@@ -10,10 +10,9 @@ black segments, a white field, and vivid red, orange, blue and turquoise.
 
 *Real gameplay from the Emery emulator (a sped-up highlight, shown at half of its 2x size).*
 
-**Status:** Version 1.1.0 is published on GitHub and the Pebble App Store.
-It adds Sprint and Daily rounds, LCD-style beeps, Stats and an App Glance; see the
-[changelog](CHANGELOG.md), [v1.1 notes](docs/v1.1-notes.md) and the
-[release record](docs/releases/1.1.0.md).
+**Status:** Version 1.2.0 is being prepared for PT2 testing and publication.
+It adds an Ivory LCD theme (Settings → Theme) matching the companion watchface.
+Version 1.1.0 remains the published release; see its [release record](docs/releases/1.1.0.md).
 
 **Download:** [Pebble App Store](https://apps.repebble.com/e9cb2950ca21440798fb1db8) ·
 [GitHub release v1.1.0](https://github.com/ewijaya/popeye-gw/releases/tag/v1.1.0)
@@ -85,8 +84,8 @@ the middle button on the right. In landscape it is the middle of the three butto
 | Menu: Stats (1.1) | Select; movement buttons | Three pages of lifetime totals. Select on the last page offers Reset stats; high scores are untouched. |
 | Settings: Orientation (1.0.1) | Select Orientation, choose Vertical or Horizontal, then Select | Change screen orientation. Back cancels. |
 | Settings: Buttons (1.0.1, Horizontal only) | Select Buttons | Toggle Bottom / Top. The choice is remembered in Vertical mode. |
-| Settings: Theme (1.2) | Select Theme | Switch the LCD colors between Classic and Ivory, the companion watchface's palette. |
 | Settings: Swap | Select Swap | Reverse game movement. |
+| Settings: Theme (1.2) | Select Theme | Switch the LCD colors between Classic and Ivory, the companion watchface's palette. |
 | Settings: Sound (1.1) | Select Sound | Turn the LCD-style beeps On or Off (default On). |
 | Settings: Online (1.1) | Select Online | Off by default. When On, your best Daily round of the day is sent through the phone to a leaderboard server (needs the phone and internet). High scores page 3 shows `Online #12/140`, `Online: not sent` or `Online: off`. The server is not live yet. |
 | Help pages | Select; movement buttons; Back | Select advances, movement buttons browse both ways, Back returns to the menu. |
