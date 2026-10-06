@@ -99,7 +99,7 @@ static void test_service(void) {
   fake_reset(); fake_feedback_reset(); redraws = 0;
   feedback_service_init(redraw);
   feedback_service_set_running(true);
-  feedback_service_events(GAME_EVENT_MISS, false, true, false);
+  feedback_service_events(GAME_EVENT_MISS, false, true, 0u);
   assert(fake_short_pulses == 1 && fake_timer_pending);
   fake_elapse(100);
   feedback_service_set_running(false); /* Pause or focus loss, mid-phase. */
@@ -115,33 +115,33 @@ static void test_service(void) {
   scene = full_scene(); feedback_service_apply(&scene);
   assert(scene_lit(&scene, SEG_SPLASH));
 
-  feedback_service_events(GAME_EVENT_OVER | GAME_EVENT_MISS, true, true, false);
+  feedback_service_events(GAME_EVENT_OVER | GAME_EVENT_MISS, true, true, 0u);
   assert(fake_patterns == 1 && fake_long_pulses == 0 && fake_short_pulses == 1);
   assert(fake_pattern[0] == 400 && fake_pattern[2] == 90 && fake_pattern[4] == 90);
   feedback_service_reset(); /* Restart/exit cancels stale end-of-round flashes. */
   assert(!fake_timer_pending);
-  feedback_service_events(GAME_EVENT_OVER, false, true, false);
+  feedback_service_events(GAME_EVENT_OVER, false, true, 0u);
   assert(fake_long_pulses == 1);
   feedback_service_reset();
   fake_quiet = true;
-  feedback_service_events(GAME_EVENT_MISS, false, true, false);
+  feedback_service_events(GAME_EVENT_MISS, false, true, 0u);
   assert(fake_short_pulses == 1 && fake_timer_pending); /* Visuals still work. */
   fake_quiet = false;
-  feedback_service_events(GAME_EVENT_BONUS, false, false, false);
+  feedback_service_events(GAME_EVENT_BONUS, false, false, 0u);
   assert(fake_short_pulses == 1);
   feedback_service_set_running(false);
-  feedback_service_events(GAME_EVENT_MISS, false, true, false);
+  feedback_service_events(GAME_EVENT_MISS, false, true, 0u);
   assert(!fake_timer_pending && fake_short_pulses == 1);
   feedback_service_reset();
   feedback_service_set_running(true);
-  feedback_service_events(GAME_EVENT_CATCH | GAME_EVENT_HIGH_SCORE | GAME_EVENT_DROP, true, true, false);
+  feedback_service_events(GAME_EVENT_CATCH | GAME_EVENT_HIGH_SCORE | GAME_EVENT_DROP, true, true, 0u);
   assert(!fake_timer_pending && fake_vibe_cancels == 3);
   fake_timer_fail = true;
-  feedback_service_events(GAME_EVENT_BONUS, false, false, false);
+  feedback_service_events(GAME_EVENT_BONUS, false, false, 0u);
   scene = full_scene(); feedback_service_apply(&scene);
   assert(scene_lit(&scene, SEG_MISS_LABEL) && !fake_timer_pending);
   fake_timer_fail = false;
-  feedback_service_events(GAME_EVENT_MISS, false, false, false);
+  feedback_service_events(GAME_EVENT_MISS, false, false, 0u);
   fake_elapse(10000); /* Delayed SDK callback must not play a burst of old frames. */
   fake_timer_fire();
   assert(!fake_timer_pending);
@@ -194,71 +194,90 @@ static void test_sound_cues(void) {
   assert(feedback_sound_cue(GAME_EVENT_TIME_UP | GAME_EVENT_OVER | GAME_EVENT_CATCH, true) == CUE_RECORD);
 }
 
+/* Sound levels: Off is silent, every level is quieter than the old fixed 60, and
+ * the chosen level reaches the speaker unchanged. */
+static void test_sound_levels(void) {
+  fake_reset(); fake_feedback_reset();
+  feedback_service_init(redraw);
+  feedback_service_set_running(true);
+  assert(feedback_sound_volume(false, 2u) == 0u);
+  assert(feedback_sound_volume(true, 0u) == FEEDBACK_SOUND_LOW && feedback_sound_volume(true, 1u) == FEEDBACK_SOUND_MEDIUM &&
+         feedback_sound_volume(true, 2u) == FEEDBACK_SOUND_HIGH && feedback_sound_volume(true, 9u) == FEEDBACK_SOUND_MEDIUM);
+  assert(FEEDBACK_SOUND_LOW < FEEDBACK_SOUND_MEDIUM && FEEDBACK_SOUND_MEDIUM < FEEDBACK_SOUND_HIGH && FEEDBACK_SOUND_HIGH < 60u);
+  feedback_service_play(CUE_CATCH, FEEDBACK_SOUND_HIGH);
+  assert(fake_speaker_plays == 1 && fake_speaker_volume == FEEDBACK_SOUND_HIGH);
+  feedback_service_events(GAME_EVENT_MISS, false, false, FEEDBACK_SOUND_LOW);
+  assert(fake_speaker_plays == 2 && fake_speaker_volume == FEEDBACK_SOUND_LOW);
+  feedback_service_warn(false, 0u);
+  feedback_service_play(CUE_ALARM, feedback_sound_volume(false, 2u));
+  assert(fake_speaker_plays == 2); /* Off plays nothing. */
+}
+
 static void test_sound_service(void) {
   unsigned plays;
   fake_reset(); fake_feedback_reset();
   feedback_service_init(redraw);
   feedback_service_set_running(true);
-  feedback_service_events(GAME_EVENT_CATCH | GAME_EVENT_LAUNCH, false, false, true);
+  feedback_service_events(GAME_EVENT_CATCH | GAME_EVENT_LAUNCH, false, false, FEEDBACK_SOUND_MEDIUM);
   assert(fake_speaker_plays == 1 && fake_speaker_count == 1 && fake_speaker_midi[0] == 91);
   assert(fake_speaker_waveform[0] == SpeakerWaveformSquare && fake_speaker_ms[0] == 45);
-  assert(fake_speaker_volume == FEEDBACK_SOUND_VOLUME && fake_speaker_stops >= 1);
+  assert(fake_speaker_volume == FEEDBACK_SOUND_MEDIUM && fake_speaker_stops >= 1);
   assert(fake_short_pulses == 0); /* Catches stay silent to the wrist. */
-  feedback_service_events(GAME_EVENT_LAUNCH | GAME_EVENT_HIGH_SCORE, true, true, true);
+  feedback_service_events(GAME_EVENT_LAUNCH | GAME_EVENT_HIGH_SCORE, true, true, FEEDBACK_SOUND_MEDIUM);
   assert(fake_speaker_plays == 1); /* No cue for launches or new-best catches. */
   /* Sound is independent of vibration: a miss both beeps and pulses; either can be off. */
-  feedback_service_events(GAME_EVENT_MISS, false, true, true);
+  feedback_service_events(GAME_EVENT_MISS, false, true, FEEDBACK_SOUND_MEDIUM);
   assert(fake_speaker_plays == 2 && fake_short_pulses == 1 && fake_speaker_midi[0] == 72);
-  feedback_service_events(GAME_EVENT_DROP, false, false, true);
+  feedback_service_events(GAME_EVENT_DROP, false, false, FEEDBACK_SOUND_MEDIUM);
   assert(fake_speaker_plays == 3 && fake_short_pulses == 1);
-  feedback_service_events(GAME_EVENT_BONUS | GAME_EVENT_CATCH, false, true, false);
+  feedback_service_events(GAME_EVENT_BONUS | GAME_EVENT_CATCH, false, true, 0u);
   assert(fake_speaker_plays == 3 && fake_short_pulses == 2); /* Sound setting Off. */
-  feedback_service_events(GAME_EVENT_BONUS | GAME_EVENT_CATCH, false, false, true);
+  feedback_service_events(GAME_EVENT_BONUS | GAME_EVENT_CATCH, false, false, FEEDBACK_SOUND_MEDIUM);
   assert(fake_speaker_plays == 4 && fake_speaker_count == 2);
   /* One cue per tick: third miss + game over is one descending cue, never miss then over. */
   plays = fake_speaker_plays;
-  feedback_service_events(GAME_EVENT_OVER | GAME_EVENT_MISS | GAME_EVENT_DROP, false, true, true);
+  feedback_service_events(GAME_EVENT_OVER | GAME_EVENT_MISS | GAME_EVENT_DROP, false, true, FEEDBACK_SOUND_MEDIUM);
   assert(fake_speaker_plays == plays + 1 && fake_speaker_count == 3);
   assert(fake_speaker_midi[0] > fake_speaker_midi[1] && fake_speaker_midi[1] > fake_speaker_midi[2]);
-  feedback_service_events(GAME_EVENT_OVER | GAME_EVENT_MISS, true, true, true);
+  feedback_service_events(GAME_EVENT_OVER | GAME_EVENT_MISS, true, true, FEEDBACK_SOUND_MEDIUM);
   assert(fake_speaker_plays == plays + 2 && fake_speaker_count == 4);
   assert(fake_speaker_midi[0] < fake_speaker_midi[3]); /* Ascending for a new record. */
   /* System mute and Quiet Time silence sound only; visuals continue. */
   fake_muted = true;
-  feedback_service_events(GAME_EVENT_CATCH, false, false, true);
-  feedback_service_play(CUE_ALARM, true);
+  feedback_service_events(GAME_EVENT_CATCH, false, false, FEEDBACK_SOUND_MEDIUM);
+  feedback_service_play(CUE_ALARM, FEEDBACK_SOUND_MEDIUM);
   assert(fake_speaker_plays == plays + 2);
   fake_muted = false; fake_quiet = true;
-  feedback_service_events(GAME_EVENT_MISS, false, true, true);
+  feedback_service_events(GAME_EVENT_MISS, false, true, FEEDBACK_SOUND_MEDIUM);
   assert(fake_speaker_plays == plays + 2 && fake_timer_pending);
   fake_quiet = false;
   /* The alarm ring uses the same gates, without needing a running game. */
   feedback_service_set_running(false);
   assert(fake_timer_pending == false);
-  feedback_service_events(GAME_EVENT_CATCH, false, true, true);
+  feedback_service_events(GAME_EVENT_CATCH, false, true, FEEDBACK_SOUND_MEDIUM);
   assert(fake_speaker_plays == plays + 2); /* Paused/unfocused: nothing plays. */
   plays = fake_speaker_plays;
-  feedback_service_play(CUE_ALARM, true);
+  feedback_service_play(CUE_ALARM, FEEDBACK_SOUND_MEDIUM);
   assert(fake_speaker_plays == plays + 1 && fake_speaker_count == 7);
   assert(fake_speaker_midi[0] != 0 && fake_speaker_midi[1] == 0 && fake_speaker_waveform[6] == SpeakerWaveformSquare);
-  feedback_service_play(CUE_ALARM, false);
-  feedback_service_play(CUE_NONE, true);
+  feedback_service_play(CUE_ALARM, 0u);
+  feedback_service_play(CUE_NONE, FEEDBACK_SOUND_MEDIUM);
   assert(fake_speaker_plays == plays + 1);
   /* Ten seconds left in a timed round: the double blip and a pulse, gated like the other cues. */
   feedback_service_set_running(true);
   plays = fake_speaker_plays;
-  feedback_service_warn(true, true);
+  feedback_service_warn(true, FEEDBACK_SOUND_MEDIUM);
   assert(fake_speaker_plays == plays + 1 && fake_speaker_count == 3 && fake_short_pulses > 0);
   plays = fake_speaker_plays; fake_short_pulses = 0;
-  feedback_service_warn(false, false);
+  feedback_service_warn(false, 0u);
   assert(fake_speaker_plays == plays && fake_short_pulses == 0);
-  fake_quiet = true; feedback_service_warn(true, true);
+  fake_quiet = true; feedback_service_warn(true, FEEDBACK_SOUND_MEDIUM);
   assert(fake_speaker_plays == plays && fake_short_pulses == 0);
-  fake_quiet = false; fake_muted = true; feedback_service_warn(false, true);
+  fake_quiet = false; fake_muted = true; feedback_service_warn(false, FEEDBACK_SOUND_MEDIUM);
   assert(fake_speaker_plays == plays);
   fake_muted = false;
   feedback_service_set_running(false);
-  feedback_service_warn(true, true);
+  feedback_service_warn(true, FEEDBACK_SOUND_MEDIUM);
   assert(fake_speaker_plays == plays && fake_short_pulses == 0); /* Paused: silent. */
   /* Pause, focus loss, restart and exit stop whatever is sounding. */
   plays = fake_speaker_stops;
@@ -273,7 +292,7 @@ static void test_sound_service(void) {
 }
 
 int main(void) {
-  test_demo(); test_feedback(); test_service(); test_sound_cues(); test_sound_service();
+  test_demo(); test_feedback(); test_service(); test_sound_cues(); test_sound_service(); test_sound_levels();
   puts("M5: complete attract arcs, finite feedback, pause/resume, timer failure, haptic priority/settings/Quiet Time, LCD beep cues/priority/mute passed");
   return 0;
 }

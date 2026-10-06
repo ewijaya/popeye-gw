@@ -36,7 +36,7 @@ static void test_records(void) {
   assert(restored.swap_buttons && !restored.ghosts && !restored.attract && restored.alarm_on);
   assert(restored.vibration && restored.sound && restored.alarm_hour == 23 && restored.alarm_minute == 59);
   settings.sound = false; settings_encode(&settings, settings_bytes);
-  assert(settings_bytes[0] == 7u && (settings_bytes[1] & 0x80u) == 0u && (settings_bytes[3] & 0x80u) == 0u);
+  assert(settings_bytes[0] == 8u && (settings_bytes[1] & 0x80u) == 0u && (settings_bytes[3] & 0x80u) == 0u);
   assert(settings_decode(&restored, settings_bytes, sizeof(settings_bytes)));
   assert(!restored.sound && restored.vibration && restored.landscape && restored.alarm_on);
   settings.sound = true; settings_encode(&settings, settings_bytes);
@@ -258,7 +258,7 @@ static void test_saved_orientation_preferences(void) {
     { 3, 63, 23, 59, 1, 67, 49, 21 },
     { 3, 127, 23, 59, 193, 21, 222, 206 }
   };
-  uint8_t future[SETTINGS_RECORD_SIZE] = { 8, 0, 23, 59 };
+  uint8_t future[SETTINGS_RECORD_SIZE] = { 9, 0, 23, 59 };
   Settings settings, restored;
   uint8_t bytes[SETTINGS_RECORD_SIZE];
   unsigned i, bottom;
@@ -277,7 +277,7 @@ static void test_saved_orientation_preferences(void) {
    * bit 7 is invalid before v5, and v5 may clear it. */
   {
     unsigned version, flags;
-    for (version = 1; version <= 7; ++version) {
+    for (version = 1; version <= 8; ++version) {
       for (flags = 0; flags < 256; ++flags) {
         uint8_t record[SETTINGS_RECORD_SIZE] = { (uint8_t)version, (uint8_t)flags, 6, 30 };
         bool valid = version >= 5u || (flags & (version == 1u ? 0xe0u : version == 2u ? 0xc0u : 0x80u)) == 0u;
@@ -297,14 +297,15 @@ static void test_saved_orientation_preferences(void) {
    * earlier record with that bit set (a minute above 59) is still invalid. */
   {
     unsigned version, minute_byte;
-    for (version = 1; version <= 7; ++version) {
+    for (version = 1; version <= 8; ++version) {
       for (minute_byte = 0; minute_byte < 256; ++minute_byte) {
         uint8_t record[SETTINGS_RECORD_SIZE] = { (uint8_t)version, 0x1e, 6, (uint8_t)minute_byte };
-        bool valid = (version >= 6u ? (minute_byte & 0x7fu) : minute_byte) <= 59u;
+        unsigned minute = version >= 8u ? minute_byte & 0x3fu : version >= 6u ? minute_byte & 0x7fu : minute_byte;
+        bool valid = minute <= 59u;
         write_checksum(record);
         assert(settings_decode(&settings, record, sizeof(record)) == valid);
         if (!valid) continue;
-        assert(settings.alarm_minute == (minute_byte & 0x7fu));
+        assert(settings.alarm_minute == minute);
         assert(settings.online == (version >= 6u && (minute_byte & 0x80u) != 0u));
         assert(settings.sound == (version < 5u) && settings.vibration && settings.alarm_hour == 6u);
       }
@@ -313,7 +314,7 @@ static void test_saved_orientation_preferences(void) {
     assert(!settings.online);
     settings.online = true; settings.alarm_minute = 59;
     settings_encode(&settings, bytes);
-    assert(bytes[0] == 7u && bytes[3] == (59u | 0x80u));
+    assert(bytes[0] == 8u && bytes[3] == (59u | 0x80u)); /* Medium: level bit 1 clear */
     assert(settings_decode(&restored, bytes, sizeof(bytes)) && restored.online && restored.alarm_minute == 59u);
     assert(restored.sound && restored.vibration && restored.buttons_bottom && !restored.landscape);
     settings.online = false;
@@ -332,16 +333,18 @@ static void test_saved_orientation_preferences(void) {
    * an older record with those bits set (an hour above 23) stays invalid. */
   {
     unsigned version, hour_byte;
-    for (version = 1; version <= 7; ++version) {
+    for (version = 1; version <= 8; ++version) {
       for (hour_byte = 0; hour_byte < 256; ++hour_byte) {
         uint8_t record[SETTINGS_RECORD_SIZE] = { (uint8_t)version, 0x1e, (uint8_t)hour_byte, 30 };
-        bool valid = version >= 7u ? (hour_byte & 0x1fu) <= 23u && (hour_byte >> 5) < THEME_COUNT
+        unsigned theme = version >= 8u ? hour_byte >> 5 & 3u : hour_byte >> 5;
+        bool valid = version >= 7u ? (hour_byte & 0x1fu) <= 23u && theme < THEME_COUNT
                                    : hour_byte <= 23u;
         write_checksum(record);
         assert(settings_decode(&settings, record, sizeof(record)) == valid);
         if (!valid) { assert(settings.theme == THEME_CLASSIC); continue; }
         assert(settings.alarm_hour == (hour_byte & 0x1fu) && settings.alarm_minute == 30u);
-        assert(settings.theme == (version >= 7u ? hour_byte >> 5 : (unsigned)THEME_CLASSIC));
+        assert(settings.theme == (version >= 7u ? theme : (unsigned)THEME_CLASSIC));
+        assert(settings.sound_level == (version >= 8u ? hour_byte >> 7 : 1u));
         assert(settings.vibration && settings.ghosts && settings.attract && settings.alarm_on);
       }
     }
@@ -349,7 +352,7 @@ static void test_saved_orientation_preferences(void) {
     assert(settings.theme == THEME_CLASSIC); /* The default look is unchanged. */
     settings.theme = THEME_IVORY; settings.alarm_hour = 23; settings.alarm_on = true;
     settings_encode(&settings, bytes);
-    assert(bytes[0] == 7u && bytes[2] == (23u | 0x20u));
+    assert(bytes[0] == 8u && bytes[2] == (23u | 0x20u | 0x80u)); /* Medium sets level bit 0 */
     assert(settings_decode(&restored, bytes, sizeof(bytes)) && restored.theme == THEME_IVORY &&
            restored.alarm_hour == 23u && restored.alarm_on);
     /* Selection survives a save and an app restart, then switches back. */
@@ -363,6 +366,44 @@ static void test_saved_orientation_preferences(void) {
       assert(storage_save_settings(&loaded.settings));
       storage_load(&loaded);
       assert(loaded.settings.theme == THEME_CLASSIC && loaded.settings.alarm_hour == 23u);
+    }
+  }
+  /* v8 adds the Sound level: bit 0 above the theme, bit 1 above the minute. Every
+   * level round-trips with every theme, hour, minute and Online; level 3 is invalid;
+   * older records play at Medium. */
+  {
+    unsigned level, theme, hour, minute, online;
+    settings_defaults(&settings);
+    assert(settings.sound && settings.sound_level == 1u);
+    for (level = 0; level < 4u; ++level)
+      for (theme = 0; theme < THEME_COUNT; ++theme)
+        for (hour = 0; hour < 24u; hour += 23u)
+          for (minute = 0; minute < 60u; minute += 59u)
+            for (online = 0; online < 2u; ++online) {
+              settings_defaults(&settings);
+              settings.sound_level = (uint8_t)level; settings.theme = (uint8_t)theme;
+              settings.alarm_hour = (uint8_t)hour; settings.alarm_minute = (uint8_t)minute;
+              settings.online = online != 0u;
+              settings_encode(&settings, bytes);
+              assert(settings_decode(&restored, bytes, sizeof(bytes)) == (level < 3u));
+              if (level >= 3u) { assert(restored.sound_level == 1u); continue; }
+              assert(restored.sound_level == level && restored.theme == theme && restored.alarm_hour == hour &&
+                     restored.alarm_minute == minute && restored.online == (online != 0u) && restored.sound);
+            }
+    {
+      uint8_t v7[SETTINGS_RECORD_SIZE] = { 7, 0x9e, 23u | 0x20u, 59 };
+      write_checksum(v7);
+      assert(settings_decode(&settings, v7, sizeof(v7)) && settings.sound && settings.sound_level == 1u &&
+             settings.theme == THEME_IVORY && settings.alarm_hour == 23u);
+    }
+    fake_reset();
+    settings_defaults(&settings);
+    settings.sound_level = 2u;
+    assert(storage_save_settings(&settings));
+    {
+      SaveData loaded;
+      storage_load(&loaded);
+      assert(loaded.settings.sound && loaded.settings.sound_level == 2u);
     }
   }
   /* A horizontal side survives Vertical, app exit/reload, and unrelated edits. */
