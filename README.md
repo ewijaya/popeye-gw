@@ -262,9 +262,9 @@ the chosen battery cutoff off power. The colon stays steady unless blinking is
 enabled. Disconnect vibration is optional and off by default; there is no sound.
 
 It shares the game's `scene.c`, `clock.c`, `game.c` and artwork by path, and has
-its own settings and UUID. The rich update is implemented and awaiting physical
-device checks. Earlier positive device feedback covered the original minute-demo
-build. See the [implementation notes](docs/watchface-implementation.md),
+its own settings and UUID. Version 1.0.0 is prepared for its first store release.
+The owner has checked settings, motion, both clock layouts and information fonts;
+final frozen-build approval and untested physical edge cases remain pending. See the [implementation notes](docs/watchface-implementation.md),
 [feature scope](docs/watchface-features.md) and
 [device checklist](docs/watchface-playtest.md).
 
