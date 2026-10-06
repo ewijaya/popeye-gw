@@ -75,7 +75,9 @@ What it does **not** prevent, and cannot:
   perfectly, or software that reads the screen and presses the buttons, produces a genuine
   replay. So does replaying a known-best input sequence for the day's fixed seed (everyone gets
   the same food order, which is the point of Daily, and the first player's inputs could be reused).
-  Treat the board as friendly competition, not a tournament. If needed, remove entries by hand
+  This is easy, not hypothetical: the engine is public and deterministic, and the repository's
+  own fairness bot (`tests/test_game.c`) plays timed rounds without an unavoidable miss. Adapting it
+  to emit a near-perfect Daily replay is a small exercise. Treat the board as friendly competition, not a tournament. If needed, remove entries by hand
   in SQLite (`DELETE FROM scores WHERE ...`).
 - **Identity.** `player` is an opaque account token from the phone. Anyone who can reach the server
   can invent tokens, so one person can hold many entries. The date window and rate limit only
