@@ -7,6 +7,7 @@
 
 #define SETTINGS_RECORD_SIZE 8u
 #define SCORES_RECORD_SIZE 21u
+#define STATS_RECORD_SIZE 37u
 
 typedef struct {
   /* buttons_bottom is remembered even when landscape is false. */
@@ -19,9 +20,18 @@ typedef struct {
   uint32_t date[2]; /* Local calendar date YYYYMMDD; zero means no score. */
 } HighScores;
 
+/* Lifetime totals. Never reset by high-score resets; saturate rather than wrap. */
+typedef struct {
+  uint32_t games[2];    /* Rounds played per mode: once scored, or ended. */
+  uint32_t catches, drops, hits, bonuses; /* hits: Brutus; bonuses: 200/500 clears. */
+  uint32_t best_streak; /* Longest run of catches without a MISS. */
+  uint32_t play_seconds; /* Active play only: not paused, hidden or on a menu. */
+} Stats;
+
 typedef struct {
   Settings settings;
   HighScores scores;
+  Stats stats;
 } SaveData;
 
 void settings_defaults(Settings *settings);
@@ -33,5 +43,15 @@ bool settings_decode(Settings *settings, const uint8_t *data, size_t size);
 void scores_encode(const HighScores *scores, uint8_t out[SCORES_RECORD_SIZE]);
 bool scores_decode(HighScores *scores, const uint8_t *data, size_t size);
 bool scores_record(HighScores *scores, unsigned mode, uint32_t score, uint32_t date);
+
+void stats_defaults(Stats *stats);
+void stats_encode(const Stats *stats, uint8_t out[STATS_RECORD_SIZE]);
+bool stats_decode(Stats *stats, const uint8_t *data, size_t size);
+/* Folds in one game tick's events. streak is the live run and restarts each game;
+ * a MISS without a DROP is a Brutus hit. */
+void stats_note_events(Stats *stats, uint32_t events, uint32_t *streak);
+void stats_count_game(Stats *stats, unsigned mode);
+/* Adds active milliseconds, carrying the sub-second remainder in *carry_ms. */
+void stats_add_play_ms(Stats *stats, uint32_t *carry_ms, uint32_t ms);
 
 #endif

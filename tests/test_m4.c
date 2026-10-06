@@ -338,6 +338,141 @@ static void test_oriented_controls(void) {
   }
 }
 
+static void test_stats_records(void) {
+  Stats stats, loaded;
+  uint8_t bytes[STATS_RECORD_SIZE];
+  SaveData data;
+  unsigned i, bit;
+  stats_defaults(&stats);
+  assert(stats.games[0] == 0 && stats.catches == 0 && stats.play_seconds == 0);
+  stats.games[0] = 3; stats.games[1] = 4; stats.catches = 5000; stats.drops = 61; stats.hits = 7;
+  stats.bonuses = 9; stats.best_streak = 321; stats.play_seconds = 98765;
+  stats_encode(&stats, bytes);
+  assert(bytes[0] == 1u);
+  assert(stats_decode(&loaded, bytes, sizeof(bytes)));
+  assert(loaded.games[0] == 3 && loaded.games[1] == 4 && loaded.catches == 5000 && loaded.drops == 61);
+  assert(loaded.hits == 7 && loaded.bonuses == 9 && loaded.best_streak == 321 && loaded.play_seconds == 98765);
+  for (i = 0; i < sizeof(bytes); ++i) {
+    for (bit = 0; bit < 8; ++bit) {
+      bytes[i] ^= (uint8_t)(1u << bit);
+      assert(!stats_decode(&loaded, bytes, sizeof(bytes)));
+      assert(loaded.catches == 0 && loaded.games[1] == 0 && loaded.play_seconds == 0); /* Defaults. */
+      bytes[i] ^= (uint8_t)(1u << bit);
+    }
+    assert(!stats_decode(&loaded, bytes, i));
+  }
+  assert(!stats_decode(&loaded, NULL, STATS_RECORD_SIZE) && !stats_decode(&loaded, bytes, sizeof(bytes) + 1));
+  stats.best_streak = stats.catches + 1; /* Impossible: a run cannot exceed the catches. */
+  stats_encode(&stats, bytes);
+  assert(!stats_decode(&loaded, bytes, sizeof(bytes)));
+  stats.best_streak = 321; stats.games[0] = UINT32_MAX; stats_encode(&stats, bytes);
+  assert(stats_decode(&loaded, bytes, sizeof(bytes)) && loaded.games[0] == UINT32_MAX);
+
+  /* Stored under its own key, independent of settings, scores and the wakeup id. */
+  fake_reset(); storage_load(&data);
+  assert(data.stats.catches == 0 && data.stats.best_streak == 0);
+  data.stats = stats; data.stats.games[0] = 11;
+  assert(storage_save_stats(&data.stats));
+  assert(persist_get_size(4) == STATS_RECORD_SIZE && persist_get_size(1) < 0 && persist_get_size(2) < 0);
+  memset(&data, 0, sizeof(data)); storage_load(&data);
+  assert(data.stats.games[0] == 11 && data.stats.play_seconds == 98765 && data.settings.sound);
+  fake_write_fail = true;
+  data.stats.catches = 1; assert(!storage_save_stats(&data.stats));
+  fake_write_fail = false; storage_load(&data);
+  assert(data.stats.catches == 5000); /* The failed save changed nothing. */
+  persist_write_data(4, bytes, sizeof(bytes) - 1); /* Truncated/corrupt record: defaults, others intact. */
+  assert(storage_save_scores(&data.scores) && storage_save_settings(&data.settings));
+  storage_load(&data);
+  assert(data.stats.catches == 0 && data.settings.sound);
+}
+
+static unsigned xorshift(unsigned *state) {
+  *state ^= *state << 13; *state ^= *state >> 17; *state ^= *state << 5;
+  return *state;
+}
+
+static void test_stats_accumulation(void) {
+  Stats stats;
+  uint32_t streak = 0, carry = 0;
+  stats_defaults(&stats);
+  stats_note_events(&stats, GAME_EVENT_LAUNCH, &streak);
+  assert(stats.catches == 0 && streak == 0);
+  stats_note_events(&stats, GAME_EVENT_CATCH | GAME_EVENT_HIGH_SCORE, &streak);
+  stats_note_events(&stats, GAME_EVENT_CATCH, &streak);
+  stats_note_events(&stats, GAME_EVENT_DROP, &streak); /* A first drop is half a miss: the run goes on. */
+  stats_note_events(&stats, GAME_EVENT_CATCH, &streak);
+  assert(stats.catches == 3 && stats.drops == 1 && stats.hits == 0 && streak == 3 && stats.best_streak == 3);
+  stats_note_events(&stats, GAME_EVENT_DROP | GAME_EVENT_MISS, &streak); /* Second drop: a MISS. */
+  assert(stats.drops == 2 && stats.hits == 0 && streak == 0 && stats.best_streak == 3);
+  stats_note_events(&stats, GAME_EVENT_CATCH, &streak);
+  stats_note_events(&stats, GAME_EVENT_MISS, &streak); /* Brutus. */
+  assert(stats.hits == 1 && stats.drops == 2 && streak == 0 && stats.best_streak == 3);
+  stats_note_events(&stats, GAME_EVENT_CATCH | GAME_EVENT_BONUS, &streak);
+  assert(stats.bonuses == 1 && stats.catches == 5);
+  stats_note_events(&stats, GAME_EVENT_MISS | GAME_EVENT_OVER, &streak);
+  assert(stats.hits == 2 && streak == 0);
+  stats_count_game(&stats, 0); stats_count_game(&stats, 1); stats_count_game(&stats, 1); stats_count_game(&stats, 2);
+  assert(stats.games[0] == 1 && stats.games[1] == 2);
+  /* Active milliseconds keep their sub-second remainder across calls. */
+  stats_add_play_ms(&stats, &carry, 560); stats_add_play_ms(&stats, &carry, 440);
+  assert(stats.play_seconds == 1 && carry == 0);
+  stats_add_play_ms(&stats, &carry, 1500); stats_add_play_ms(&stats, &carry, 700);
+  assert(stats.play_seconds == 3 && carry == 200);
+  stats_add_play_ms(&stats, &carry, 999); stats_add_play_ms(&stats, &carry, 1);
+  assert(stats.play_seconds == 4 && carry == 200);
+  stats.catches = UINT32_MAX; stats.play_seconds = UINT32_MAX - 1; streak = UINT32_MAX;
+  stats_note_events(&stats, GAME_EVENT_CATCH, &streak);
+  stats_add_play_ms(&stats, &carry, 5000);
+  assert(stats.catches == UINT32_MAX && streak == UINT32_MAX && stats.play_seconds == UINT32_MAX);
+
+  /* The totals agree with the real engine's own counters over many imperfect games. */
+  {
+    unsigned state = 12345u, seed, mode;
+    Stats totals;
+    uint32_t catches = 0, drops = 0, hits = 0, misses = 0, games = 0, run = 0, best_run = 0, bonuses = 0;
+    uint32_t live = 0, play_ms = 0;
+    stats_defaults(&totals); carry = 0;
+    for (mode = 0; mode < 2; ++mode) {
+      for (seed = 1; seed <= 60; ++seed) {
+        Game game;
+        unsigned steps = 0;
+        uint32_t before_catches, before_misses;
+        game_init(&game, mode == 0 ? GAME_A : GAME_B, seed);
+        live = 0; run = 0;
+        while (game.status != GAME_OVER && steps++ < 4000) {
+          unsigned target = 2, i;
+          uint64_t soonest = UINT64_MAX;
+          for (i = 0; i < GAME_MAX_CARGO; ++i)
+            if (game.cargo[i].active && game.cargo[i].landing_step < soonest) {
+              soonest = game.cargo[i].landing_step;
+              target = game_lane_pose(game.cargo[i].lane);
+            }
+          if (xorshift(&state) % 8u == 0u) target = xorshift(&state) % GAME_POSES; /* Sloppy play. */
+          while (game.status == GAME_PLAYING && game.popeye_pose != target) {
+            GameButton button = game.popeye_pose > target ? GAME_UP : GAME_DOWN;
+            game_input(&game, button, true); game_input(&game, button, false);
+          }
+          before_catches = game.catches; before_misses = game.total_misses;
+          play_ms += game.status == GAME_RECOVERING ? game.recovery_ms_left : game.step_ms_left;
+          stats_add_play_ms(&totals, &carry, game.status == GAME_RECOVERING ? game.recovery_ms_left : game.step_ms_left);
+          game_step(&game);
+          stats_note_events(&totals, game_take_events(&game), &live);
+          if (game.total_misses != before_misses) run = 0;
+          else if (game.catches != before_catches) { ++run; if (run > best_run) best_run = run; }
+          assert(live == run);
+        }
+        catches += game.catches; drops += game.drops; hits += game.hits; misses += game.total_misses;
+        bonuses += 2u * (game.score / 1000u) + (game.score % 1000u >= 200u) + (game.score % 1000u >= 500u);
+        ++games;
+      }
+    }
+    assert(games == 120 && catches > 1000 && drops > 100 && hits > 0 && misses > 0 && best_run > 5);
+    assert(totals.catches == catches && totals.drops == drops && totals.hits == hits);
+    assert(totals.best_streak == best_run && totals.bonuses == bonuses);
+    assert(totals.play_seconds == play_ms / 1000u && carry == play_ms % 1000u);
+  }
+}
+
 static void test_glance(void) {
   HighScores scores;
   Settings settings;
@@ -368,7 +503,7 @@ static void test_glance(void) {
 }
 
 int main(void) {
-  test_glance();
+  test_stats_records(); test_stats_accumulation(); test_glance();
   test_records(); test_storage(); test_clock(); test_alarm(); test_orientation();
   test_saved_orientation_preferences(); test_oriented_controls();
   puts("M4 tests passed: versioned storage, corrupt records, clock, calendar/DST recurrence and wakeup lifecycle");

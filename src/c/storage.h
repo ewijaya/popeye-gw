@@ -5,4 +5,5 @@
 void storage_load(SaveData *data);
 bool storage_save_settings(const Settings *settings);
 bool storage_save_scores(const HighScores *scores);
+bool storage_save_stats(const Stats *stats);
 #endif

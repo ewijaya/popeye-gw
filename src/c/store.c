@@ -1,4 +1,5 @@
 #include "store.h"
+#include "game.h"
 #include <string.h>
 
 static uint32_t read32(const uint8_t *p) {
@@ -99,4 +100,63 @@ bool scores_record(HighScores *s, unsigned mode, uint32_t score, uint32_t date) 
   s->best[mode] = score;
   s->date[mode] = date;
   return true;
+}
+
+void stats_defaults(Stats *stats) { memset(stats, 0, sizeof(*stats)); }
+
+static uint32_t *stats_fields(Stats *s, unsigned i) {
+  uint32_t *fields[] = { &s->games[0], &s->games[1], &s->catches, &s->drops, &s->hits,
+                         &s->bonuses, &s->best_streak, &s->play_seconds };
+  return fields[i];
+}
+
+void stats_encode(const Stats *stats, uint8_t out[STATS_RECORD_SIZE]) {
+  Stats copy = *stats;
+  unsigned i;
+  out[0] = 1u;
+  for (i = 0; i < 8; ++i) write32(out + 1 + i * 4, *stats_fields(&copy, i));
+  write32(out + 33, checksum(out, 33));
+}
+
+bool stats_decode(Stats *s, const uint8_t *data, size_t size) {
+  Stats decoded;
+  unsigned i;
+  stats_defaults(s);
+  stats_defaults(&decoded);
+  if (size != STATS_RECORD_SIZE || data == NULL || data[0] != 1u ||
+      read32(data + 33) != checksum(data, 33)) return false;
+  for (i = 0; i < 8; ++i) *stats_fields(&decoded, i) = read32(data + 1 + i * 4);
+  if (decoded.best_streak > decoded.catches) return false;
+  *s = decoded;
+  return true;
+}
+
+static void add_saturating(uint32_t *total, uint32_t amount) {
+  *total = amount > UINT32_MAX - *total ? UINT32_MAX : *total + amount;
+}
+
+void stats_note_events(Stats *s, uint32_t events, uint32_t *streak) {
+  if (events & GAME_EVENT_CATCH) {
+    add_saturating(&s->catches, 1u);
+    add_saturating(streak, 1u);
+    if (*streak > s->best_streak) s->best_streak = *streak;
+  }
+  if (events & GAME_EVENT_DROP) add_saturating(&s->drops, 1u);
+  if (events & GAME_EVENT_MISS) {
+    if (!(events & GAME_EVENT_DROP)) add_saturating(&s->hits, 1u);
+    *streak = 0u;
+  }
+  if (events & GAME_EVENT_BONUS) add_saturating(&s->bonuses, 1u);
+}
+
+void stats_count_game(Stats *s, unsigned mode) {
+  if (mode < 2u) add_saturating(&s->games[mode], 1u);
+}
+
+void stats_add_play_ms(Stats *s, uint32_t *carry_ms, uint32_t ms) {
+  uint32_t total = *carry_ms % 1000u;
+  add_saturating(&s->play_seconds, ms / 1000u);
+  total += ms % 1000u;
+  add_saturating(&s->play_seconds, total / 1000u);
+  *carry_ms = total % 1000u;
 }
