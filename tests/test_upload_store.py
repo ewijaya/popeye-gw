@@ -172,6 +172,38 @@ class UploadTests(unittest.TestCase):
         with self.assertRaises(store.Stop):
             store.guarded_store_publisher(Changed, self.config, self.manifest, self.notes, self.post)
 
+    def test_public_pbw_redirects_without_credentials(self):
+        try:
+            import requests
+        except ImportError:
+            self.skipTest('Use the Pebble Python interpreter for HTTP transport tests')
+        from unittest.mock import MagicMock
+        storage = 'https://pebble-appstore-backend.497e529f13ec4afbfce4dfe3cfd3634d.r2.cloudflarestorage.com/file.pbw'
+        def response(status, location=None, chunks=()):
+            value = MagicMock(status_code=status, headers={'Location': location} if location else {})
+            value.__enter__.return_value = value
+            value.iter_content.return_value = chunks
+            return value
+        for location in (storage, 'https://example.com/file.pbw', 'http://assets.repebble.com/file.pbw'):
+            with self.subTest(location=location), patch.object(requests, 'get') as get:
+                get.side_effect = [response(307, location), response(200, chunks=[self.pbw])]
+                if location == storage:
+                    self.assertEqual(store.public_pbw('/api/assets/pbw/test'), self.pbw)
+                    self.assertEqual(get.call_count, 2)
+                else:
+                    with self.assertRaises(store.Stop):
+                        store.public_pbw('/api/assets/pbw/test')
+                    self.assertEqual(get.call_count, 1)
+                for call in get.call_args_list:
+                    self.assertEqual(call.kwargs, {'timeout': 30, 'allow_redirects': False, 'stream': True})
+        with patch.object(requests, 'get', return_value=response(307, storage)) as get:
+            with self.assertRaises(store.Stop):
+                store.public_pbw('/api/assets/pbw/test')
+            self.assertEqual(get.call_count, 4)
+        with patch.object(requests, 'get', return_value=response(200, chunks=[b'x' * 2_000_001])):
+            with self.assertRaises(store.Stop):
+                store.public_pbw('/api/assets/pbw/test')
+
     def test_transport_rejects_other_url_fields_files_and_bytes(self):
         for field in ('url', 'data', 'files', 'bytes'):
             with self.subTest(field=field):

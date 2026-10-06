@@ -281,6 +281,9 @@ The helper performs these steps:
    method signatures and the actual multipart fields/bytes, posts once only
    to `{appstore_api}/api/dashboard/apps/{id}/releases`, refuses redirects,
    keeps the token in memory and compares against the original baseline.
+   Public PBW downloads use fresh unauthenticated requests and may follow a
+   bounded redirect to the observed official R2 storage host. Authenticated
+   upload and Dashboard requests still reject redirects.
    `store-attempt.json` is written before POST. If the response is lost, rerun
    only after read-back: a published version with identical bytes and notes
    completes without another POST. If still absent or a draft, keep pending

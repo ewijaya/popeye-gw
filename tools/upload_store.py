@@ -161,19 +161,31 @@ def check_existing(app, manifest, notes, fetch):
 def public_pbw(url):
     import requests
     url = urljoin(API + "/", url)
-    parsed = urlsplit(url)
-    require(parsed.scheme == "https" and parsed.netloc in {
+    official = {
         "appstore-api.repebble.com", "assets.repebble.com"
-    }, "Unexpected PBW download host")
-    # A fresh unauthenticated request; never send session cookies or tokens.
-    with requests.get(url, timeout=30, allow_redirects=False, stream=True) as response:
-        response_ok(response)
-        chunks, size = [], 0
-        for chunk in response.iter_content(65536):
-            size += len(chunk)
-            require(size <= 2_000_000, "PBW exceeds download budget")
-            chunks.append(chunk)
-        return b"".join(chunks)
+    }
+    # The official PBW endpoint redirects to a short-lived public R2 download.
+    # This is separate from authenticated POSTs, which still reject redirects.
+    storage = "pebble-appstore-backend.497e529f13ec4afbfce4dfe3cfd3634d.r2.cloudflarestorage.com"
+    for hop in range(4):
+        parsed = urlsplit(url)
+        allowed = official if hop == 0 else official | {storage}
+        require(parsed.scheme == "https" and parsed.netloc in allowed,
+                "Unexpected PBW download host")
+        # A fresh unauthenticated request per hop; no token or session cookies.
+        with requests.get(url, timeout=30, allow_redirects=False, stream=True) as response:
+            if response.status_code in (301, 302, 303, 307, 308):
+                require(bool(response.headers.get("Location")), "PBW redirect missing destination")
+                url = urljoin(url, response.headers["Location"])
+                continue
+            response_ok(response)
+            chunks, size = [], 0
+            for chunk in response.iter_content(65536):
+                size += len(chunk)
+                require(size <= 2_000_000, "PBW exceeds download budget")
+                chunks.append(chunk)
+            return b"".join(chunks)
+    raise Stop("PBW download redirect limit exceeded")
 
 
 def guarded_store_publisher(publisher, config, manifest, notes, post):
