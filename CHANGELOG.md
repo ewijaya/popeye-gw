@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Add Settings → Theme with **Ivory**: the companion watchface's LCD colors (#FFFFAA background, #550000 ink, scenery tinted toward #AA5500). Classic stays the default, and the choice is kept across restarts.
+
 ## 1.1.0 — 2026-10-06
 
 - Add **Sprint** and **Daily**: 60 seconds of Game B rules. Sprint is random; Daily gives everyone the same round on a date. Pausing and MISS recovery do not use the clock, and the watch beeps and pulses at 10 seconds left.
