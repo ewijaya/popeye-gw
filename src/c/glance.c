@@ -2,8 +2,9 @@
 
 #include <stdio.h>
 
-void glance_text(char *out, size_t size, const HighScores *scores, const Settings *settings,
-                 bool style_24h) {
+void glance_text(char *out, size_t size, const HighScores *scores, const ModeScores *modes,
+                 uint32_t today, const Settings *settings, bool style_24h) {
+  uint32_t daily = modes_daily_today(modes, today);
   int used;
   if (size == 0u) return;
   if (scores->best[0] == 0u && scores->best[1] == 0u)
@@ -11,6 +12,8 @@ void glance_text(char *out, size_t size, const HighScores *scores, const Setting
   else
     used = snprintf(out, size, "Best A %lu / B %lu", (unsigned long)scores->best[0],
                     (unsigned long)scores->best[1]);
+  if (daily != 0u && used >= 0 && (size_t)used < size)
+    used += snprintf(out + used, size - (size_t)used, " / Daily %lu", (unsigned long)daily);
   if (!settings->alarm_on || used < 0 || (size_t)used >= size) return;
   if (style_24h)
     snprintf(out + used, size - (size_t)used, " - %02u:%02u", settings->alarm_hour, settings->alarm_minute);

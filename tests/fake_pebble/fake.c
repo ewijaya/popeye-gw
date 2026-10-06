@@ -2,8 +2,8 @@
 #include <assert.h>
 #include <string.h>
 
-static uint8_t s_records[8][256];
-static int s_sizes[8];
+static uint8_t s_records[32][256];
+static int s_sizes[32];
 static WakeupHandler s_handler;
 time_t fake_now, fake_scheduled;
 int fake_schedule_calls, fake_fail_schedules, fake_schedule_error;
@@ -26,16 +26,16 @@ void fake_reset(void) {
 
 void test_log(int level, const char *format, ...) { (void)level; (void)format; }
 time_t time(time_t *out) { if (out != NULL) *out = fake_now; return fake_now; }
-int persist_get_size(uint32_t key) { assert(key < 8); return s_sizes[key] ? s_sizes[key] : E_DOES_NOT_EXIST; }
+int persist_get_size(uint32_t key) { assert(key < 32); return s_sizes[key] ? s_sizes[key] : E_DOES_NOT_EXIST; }
 int persist_read_data(uint32_t key, void *data, size_t size) {
-  assert(key < 8);
+  assert(key < 32);
   if (s_sizes[key] == 0) return E_DOES_NOT_EXIST;
   if (size > (size_t)s_sizes[key]) size = (size_t)s_sizes[key];
   memcpy(data, s_records[key], size);
   return (int)size;
 }
 int persist_write_data(uint32_t key, const void *data, size_t size) {
-  assert(key < 8 && size <= 256);
+  assert(key < 32 && size <= 256);
   if (fake_write_fail) return E_OUT_OF_STORAGE;
   memcpy(s_records[key], data, size);
   s_sizes[key] = (int)size;
@@ -43,7 +43,7 @@ int persist_write_data(uint32_t key, const void *data, size_t size) {
 }
 int32_t persist_read_int(uint32_t key) { int32_t v = 0; persist_read_data(key, &v, sizeof(v)); return v; }
 int32_t persist_write_int(uint32_t key, int32_t v) { return persist_write_data(key, &v, sizeof(v)); }
-int32_t persist_delete(uint32_t key) { assert(key < 8); s_sizes[key] = 0; return 1; }
+int32_t persist_delete(uint32_t key) { assert(key < 32); s_sizes[key] = 0; return 1; }
 void wakeup_service_subscribe(WakeupHandler handler) { s_handler = handler; }
 WakeupId wakeup_schedule(time_t timestamp, int32_t cookie, bool notify) {
   assert(notify);

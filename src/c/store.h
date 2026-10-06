@@ -8,6 +8,7 @@
 #define SETTINGS_RECORD_SIZE 8u
 #define SCORES_RECORD_SIZE 21u
 #define STATS_RECORD_SIZE 37u
+#define MODES_RECORD_SIZE 37u
 
 typedef struct {
   /* buttons_bottom is remembered even when landscape is false. */
@@ -28,10 +29,19 @@ typedef struct {
   uint32_t play_seconds; /* Active play only: not paused, hidden or on a menu. */
 } Stats;
 
+/* Sprint and Daily (both 60 s of Game B rules) keep their own bests and round counts. */
+typedef struct {
+  uint32_t sprint_best, sprint_date;      /* Dates are local YYYYMMDD; zero means none. */
+  uint32_t daily_best, daily_best_date;   /* All-time Daily best and the day it was set. */
+  uint32_t daily_today, daily_today_date; /* Best Daily score on daily_today_date. */
+  uint32_t sprint_games, daily_games;     /* Rounds played, counted like Stats games. */
+} ModeScores;
+
 typedef struct {
   Settings settings;
   HighScores scores;
   Stats stats;
+  ModeScores modes;
 } SaveData;
 
 void settings_defaults(Settings *settings);
@@ -43,6 +53,18 @@ bool settings_decode(Settings *settings, const uint8_t *data, size_t size);
 void scores_encode(const HighScores *scores, uint8_t out[SCORES_RECORD_SIZE]);
 bool scores_decode(HighScores *scores, const uint8_t *data, size_t size);
 bool scores_record(HighScores *scores, unsigned mode, uint32_t score, uint32_t date);
+
+void modes_defaults(ModeScores *modes);
+void modes_encode(const ModeScores *modes, uint8_t out[MODES_RECORD_SIZE]);
+bool modes_decode(ModeScores *modes, const uint8_t *data, size_t size);
+/* Records a Sprint or Daily score (every Daily attempt counts toward today's best).
+ * Returns whether anything changed and needs saving. */
+bool modes_record(ModeScores *modes, bool daily, uint32_t score, uint32_t date);
+/* Today's Daily best, or zero if Daily has not been scored on that date. */
+uint32_t modes_daily_today(const ModeScores *modes, uint32_t date);
+void modes_count_game(ModeScores *modes, bool daily);
+/* Clears the bests but keeps the round counts. */
+void modes_reset_scores(ModeScores *modes);
 
 void stats_defaults(Stats *stats);
 void stats_encode(const Stats *stats, uint8_t out[STATS_RECORD_SIZE]);

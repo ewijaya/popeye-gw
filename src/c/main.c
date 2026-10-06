@@ -707,7 +707,11 @@ static void window_unload(Window *window) {
   flush_scores();
   /* One update as the app closes; the launcher shows it until the next launch. */
   feedback_service_stop_sound();
-  glance_text(s_glance_text, sizeof(s_glance_text), &s_data.scores, &s_data.settings, clock_is_24h_style());
+  {
+    time_t now = time(NULL);
+    glance_text(s_glance_text, sizeof(s_glance_text), &s_data.scores, &s_data.modes,
+                clock_date(localtime(&now)), &s_data.settings, clock_is_24h_style());
+  }
   app_glance_reload(glance_reload, NULL);
   vibes_cancel();
   view_deinit();

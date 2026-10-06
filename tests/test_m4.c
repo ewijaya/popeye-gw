@@ -4,6 +4,7 @@
 #include "alarm.h"
 #include "clock.h"
 #include "glance.h"
+#include "replay.h"
 #include "storage.h"
 #include "fake.h"
 #include "orientation.h"
@@ -475,35 +476,146 @@ static void test_stats_accumulation(void) {
 
 static void test_glance(void) {
   HighScores scores;
+  ModeScores modes;
   Settings settings;
-  char text[64], small[10];
-  scores_defaults(&scores); settings_defaults(&settings);
-  glance_text(text, sizeof(text), &scores, &settings, true);
+  char text[80], small[10];
+  scores_defaults(&scores); modes_defaults(&modes); settings_defaults(&settings);
+  glance_text(text, sizeof(text), &scores, &modes, 20261006u, &settings, true);
   assert(strcmp(text, "No scores yet") == 0);
   scores.best[0] = 214; scores.best[1] = 187;
-  glance_text(text, sizeof(text), &scores, &settings, true);
+  glance_text(text, sizeof(text), &scores, &modes, 20261006u, &settings, true);
   assert(strcmp(text, "Best A 214 / B 187") == 0); /* Alarm off adds nothing. */
+  assert(modes_record(&modes, true, 43, 20261006u));
+  glance_text(text, sizeof(text), &scores, &modes, 20261006u, &settings, true);
+  assert(strcmp(text, "Best A 214 / B 187 / Daily 43") == 0);
+  glance_text(text, sizeof(text), &scores, &modes, 20261007u, &settings, true);
+  assert(strcmp(text, "Best A 214 / B 187") == 0); /* Only a Daily played today is shown. */
   settings.alarm_on = true; settings.alarm_hour = 7; settings.alarm_minute = 5;
-  glance_text(text, sizeof(text), &scores, &settings, true);
+  glance_text(text, sizeof(text), &scores, &modes, 20261007u, &settings, true);
   assert(strcmp(text, "Best A 214 / B 187 - 07:05") == 0);
-  glance_text(text, sizeof(text), &scores, &settings, false);
+  glance_text(text, sizeof(text), &scores, &modes, 20261006u, &settings, true);
+  assert(strcmp(text, "Best A 214 / B 187 / Daily 43 - 07:05") == 0);
+  glance_text(text, sizeof(text), &scores, &modes, 20261007u, &settings, false);
   assert(strcmp(text, "Best A 214 / B 187 - 7:05 AM") == 0);
   settings.alarm_hour = 0;
-  glance_text(text, sizeof(text), &scores, &settings, false);
+  glance_text(text, sizeof(text), &scores, &modes, 20261007u, &settings, false);
   assert(strstr(text, "12:05 AM") != NULL);
   settings.alarm_hour = 23; settings.alarm_minute = 59;
-  glance_text(text, sizeof(text), &scores, &settings, false);
+  glance_text(text, sizeof(text), &scores, &modes, 20261007u, &settings, false);
   assert(strstr(text, "11:59 PM") != NULL);
-  scores.best[0] = scores.best[1] = UINT32_MAX;
-  glance_text(text, sizeof(text), &scores, &settings, false);
-  assert(strlen(text) < 150 && strchr(text, '{') == NULL);
-  glance_text(small, sizeof(small), &scores, &settings, true); /* Truncates, stays terminated. */
+  scores.best[0] = scores.best[1] = UINT32_MAX; modes.daily_today = modes.daily_best = UINT32_MAX;
+  glance_text(text, sizeof(text), &scores, &modes, 20261006u, &settings, false);
+  assert(strlen(text) < 80 && strlen(text) < 150 && strchr(text, '{') == NULL);
+  glance_text(small, sizeof(small), &scores, &modes, 20261006u, &settings, true); /* Truncates, stays terminated. */
   assert(strlen(small) == 9);
-  glance_text(small, 0, &scores, &settings, true);
+  glance_text(small, 0, &scores, &modes, 20261006u, &settings, true);
+}
+
+static void test_modes(void) {
+  ModeScores modes, loaded;
+  uint8_t bytes[MODES_RECORD_SIZE];
+  SaveData data;
+  unsigned i, bit;
+  modes_defaults(&modes);
+  assert(!modes_record(&modes, false, 0, 20261006u) && !modes_record(&modes, true, 5, 20260230u));
+  assert(modes_record(&modes, false, 41, 20261006u) && modes.sprint_best == 41 && modes.sprint_date == 20261006u);
+  assert(!modes_record(&modes, false, 41, 20261007u) && !modes_record(&modes, false, 40, 20261007u));
+  assert(modes_record(&modes, false, 42, 20261007u) && modes.sprint_date == 20261007u && modes.daily_best == 0);
+  /* Daily: every attempt counts toward today; the all-time best keeps its own date. */
+  assert(modes_daily_today(&modes, 20261006u) == 0);
+  assert(modes_record(&modes, true, 30, 20261006u));
+  assert(modes.daily_today == 30 && modes.daily_best == 30 && modes.daily_best_date == 20261006u);
+  assert(!modes_record(&modes, true, 30, 20261006u) && !modes_record(&modes, true, 12, 20261006u));
+  assert(modes_record(&modes, true, 35, 20261006u) && modes_daily_today(&modes, 20261006u) == 35);
+  assert(modes_record(&modes, true, 10, 20261007u)); /* A new day starts over... */
+  assert(modes_daily_today(&modes, 20261007u) == 10 && modes_daily_today(&modes, 20261006u) == 0);
+  assert(modes.daily_best == 35 && modes.daily_best_date == 20261006u); /* ...but the best remains. */
+  assert(modes_record(&modes, true, 36, 20261007u) && modes.daily_best == 36 && modes.daily_best_date == 20261007u);
+  modes_count_game(&modes, false); modes_count_game(&modes, true); modes_count_game(&modes, true);
+  assert(modes.sprint_games == 1 && modes.daily_games == 2);
+  modes.daily_games = UINT32_MAX; modes_count_game(&modes, true); assert(modes.daily_games == UINT32_MAX);
+  modes.daily_games = 2;
+  modes_encode(&modes, bytes);
+  assert(bytes[0] == 1u && modes_decode(&loaded, bytes, sizeof(bytes)));
+  assert(loaded.sprint_best == 42 && loaded.sprint_date == 20261007u && loaded.daily_best == 36);
+  assert(loaded.daily_best_date == 20261007u && loaded.daily_today == 36 && loaded.daily_today_date == 20261007u);
+  assert(loaded.sprint_games == 1 && loaded.daily_games == 2);
+  for (i = 0; i < sizeof(bytes); ++i) {
+    for (bit = 0; bit < 8; ++bit) {
+      bytes[i] ^= (uint8_t)(1u << bit);
+      assert(!modes_decode(&loaded, bytes, sizeof(bytes)) && loaded.sprint_best == 0 && loaded.daily_best == 0);
+      bytes[i] ^= (uint8_t)(1u << bit);
+    }
+    assert(!modes_decode(&loaded, bytes, i));
+  }
+  assert(!modes_decode(&loaded, NULL, MODES_RECORD_SIZE));
+  modes.daily_today = modes.daily_best + 1; modes_encode(&modes, bytes);
+  assert(!modes_decode(&loaded, bytes, sizeof(bytes))); /* Today cannot beat the all-time best. */
+  modes.daily_today = 1; modes.sprint_date = 20261301u; modes_encode(&modes, bytes);
+  assert(!modes_decode(&loaded, bytes, sizeof(bytes)));
+  modes.sprint_date = 20261007u; modes_reset_scores(&modes);
+  assert(modes.sprint_best == 0 && modes.daily_best == 0 && modes.daily_today == 0 && modes.sprint_games == 1);
+  modes_encode(&modes, bytes);
+  assert(modes_decode(&loaded, bytes, sizeof(bytes)));
+  /* Its own persist key; other records are unaffected. */
+  fake_reset(); storage_load(&data);
+  assert(data.modes.sprint_best == 0 && data.settings.sound);
+  assert(modes_record(&data.modes, true, 77, 20261006u) && storage_save_modes(&data.modes));
+  assert(persist_get_size(5) == MODES_RECORD_SIZE && persist_get_size(1) < 0 && persist_get_size(4) < 0);
+  memset(&data, 0, sizeof(data)); storage_load(&data);
+  assert(data.modes.daily_best == 77 && data.modes.daily_today_date == 20261006u && data.settings.sound);
+  fake_write_fail = true; assert(!storage_save_modes(&data.modes)); fake_write_fail = false;
+  persist_write_data(5, bytes, sizeof(bytes) - 1);
+  storage_load(&data);
+  assert(data.modes.daily_best == 0);
+}
+
+static void test_replay_storage(void) {
+  uint8_t bytes[REPLAY_MAX_BYTES], loaded[REPLAY_MAX_BYTES], shorter[300];
+  static const size_t lengths[] = { 1, 30, 255, 256, 257, 512, 513, 1500, 2047, 2048 };
+  size_t i, j;
+  Replay replay;
+  Game game;
+  ReplayResult result;
+  fake_reset();
+  assert(storage_load_replay(loaded, sizeof(loaded)) == 0);
+  for (i = 0; i < sizeof(lengths) / sizeof(lengths[0]); ++i) {
+    for (j = 0; j < lengths[i]; ++j) bytes[j] = (uint8_t)(j * 7u + i);
+    assert(storage_save_replay(bytes, lengths[i]));
+    memset(loaded, 0, sizeof(loaded));
+    assert(storage_load_replay(loaded, sizeof(loaded)) == lengths[i] && memcmp(loaded, bytes, lengths[i]) == 0);
+    assert(storage_load_replay(loaded, lengths[i] - 1u) == 0 || lengths[i] == 1); /* Too small a buffer: refuse. */
+  }
+  /* A shorter replay removes the tail of the previous one. */
+  for (j = 0; j < sizeof(shorter); ++j) shorter[j] = (uint8_t)j;
+  assert(storage_save_replay(shorter, sizeof(shorter)));
+  assert(storage_load_replay(loaded, sizeof(loaded)) == sizeof(shorter) && persist_get_size(18) < 0 && persist_get_size(23) < 0);
+  assert(!storage_save_replay(bytes, REPLAY_MAX_BYTES + 1u) && !storage_save_replay(bytes, 0));
+  fake_write_fail = true;
+  assert(!storage_save_replay(bytes, 600));
+  fake_write_fail = false;
+  assert(storage_load_replay(loaded, sizeof(loaded)) == 0); /* A failed write leaves nothing half-stored. */
+  /* The real recorder's output survives the round trip and still verifies. */
+  game_init(&game, GAME_B, 5u);
+  game_start_timed(&game, GAME_B, game_daily_seed(20261006u), 60000u);
+  replay_begin(&replay, &game, game_daily_seed(20261006u), 20261006u);
+  for (i = 0; i < 80 && game.status != GAME_OVER; ++i) {
+    (void)replay_input(&replay, &game, i % 2u ? GAME_UP : GAME_DOWN, true);
+    (void)replay_input(&replay, &game, i % 2u ? GAME_UP : GAME_DOWN, false);
+    (void)replay_advance(&replay, &game, 450);
+  }
+  i = replay_finish(&replay, &game);
+  assert(i > 100 && !replay.overflow && storage_save_replay(replay.bytes, i));
+  assert(storage_load_replay(loaded, sizeof(loaded)) == i);
+  assert(replay_simulate(loaded, i, &result) == REPLAY_OK && result.score == game.score && result.seed == game_daily_seed(20261006u));
+  loaded[40] ^= 1u; /* A damaged or partly overwritten replay is detected, not trusted. */
+  assert(replay_simulate(loaded, i, &result) == REPLAY_BAD_CHECKSUM);
+  storage_clear_replay();
+  assert(storage_load_replay(loaded, sizeof(loaded)) == 0);
 }
 
 int main(void) {
-  test_stats_records(); test_stats_accumulation(); test_glance();
+  test_modes(); test_replay_storage(); test_stats_records(); test_stats_accumulation(); test_glance();
   test_records(); test_storage(); test_clock(); test_alarm(); test_orientation();
   test_saved_orientation_preferences(); test_oriented_controls();
   puts("M4 tests passed: versioned storage, corrupt records, clock, calendar/DST recurrence and wakeup lifecycle");

@@ -160,3 +160,68 @@ void stats_add_play_ms(Stats *s, uint32_t *carry_ms, uint32_t ms) {
   add_saturating(&s->play_seconds, total / 1000u);
   *carry_ms = total % 1000u;
 }
+
+void modes_defaults(ModeScores *modes) { memset(modes, 0, sizeof(*modes)); }
+
+static uint32_t *modes_fields(ModeScores *m, unsigned i) {
+  uint32_t *fields[] = { &m->sprint_best, &m->sprint_date, &m->daily_best, &m->daily_best_date,
+                         &m->daily_today, &m->daily_today_date, &m->sprint_games, &m->daily_games };
+  return fields[i];
+}
+
+void modes_encode(const ModeScores *modes, uint8_t out[MODES_RECORD_SIZE]) {
+  ModeScores copy = *modes;
+  unsigned i;
+  out[0] = 1u;
+  for (i = 0; i < 8; ++i) write32(out + 1 + i * 4, *modes_fields(&copy, i));
+  write32(out + 33, checksum(out, 33));
+}
+
+bool modes_decode(ModeScores *m, const uint8_t *data, size_t size) {
+  ModeScores d;
+  unsigned i;
+  modes_defaults(m);
+  modes_defaults(&d);
+  if (size != MODES_RECORD_SIZE || data == NULL || data[0] != 1u ||
+      read32(data + 33) != checksum(data, 33)) return false;
+  for (i = 0; i < 8; ++i) *modes_fields(&d, i) = read32(data + 1 + i * 4);
+  if ((d.sprint_best == 0u ? d.sprint_date != 0u : !valid_date(d.sprint_date)) ||
+      (d.daily_best == 0u ? d.daily_best_date != 0u : !valid_date(d.daily_best_date)) ||
+      (d.daily_today_date == 0u ? d.daily_today != 0u : !valid_date(d.daily_today_date)) ||
+      d.daily_today > d.daily_best) return false;
+  *m = d;
+  return true;
+}
+
+bool modes_record(ModeScores *m, bool daily, uint32_t score, uint32_t date) {
+  bool changed = false;
+  if (score == 0u || !valid_date(date)) return false;
+  if (!daily) {
+    if (score <= m->sprint_best) return false;
+    m->sprint_best = score;
+    m->sprint_date = date;
+    return true;
+  }
+  if (m->daily_today_date != date) {
+    m->daily_today_date = date;
+    m->daily_today = 0u;
+    changed = true;
+  }
+  if (score > m->daily_today) { m->daily_today = score; changed = true; }
+  if (score > m->daily_best) { m->daily_best = score; m->daily_best_date = date; changed = true; }
+  return changed;
+}
+
+uint32_t modes_daily_today(const ModeScores *m, uint32_t date) {
+  return m->daily_today_date == date ? m->daily_today : 0u;
+}
+
+void modes_count_game(ModeScores *m, bool daily) {
+  uint32_t *games = daily ? &m->daily_games : &m->sprint_games;
+  if (*games != UINT32_MAX) ++*games;
+}
+
+void modes_reset_scores(ModeScores *m) {
+  m->sprint_best = m->sprint_date = m->daily_best = m->daily_best_date = 0u;
+  m->daily_today = m->daily_today_date = 0u;
+}
