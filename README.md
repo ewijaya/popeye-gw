@@ -265,7 +265,8 @@ locations. Connection indicators and decorative weather effects are omitted;
 there is no sound or disconnect vibration.
 
 It shares the game's `scene.c`, `clock.c`, `game.c` and artwork by path, and has
-its own settings and UUID. **Version 1.1.0 is published**, with a crowded Arcade and the Lively and
+its own settings and UUID. Version 1.2.0, with two-item rows and a leaner settings page, is being
+prepared for PT2 testing. **Version 1.1.0 is published**, with a crowded Arcade and the Lively and
 Once per minute options removed ([release record](docs/releases/clock/1.1.0.md)):
 [download the watchface PBW from GitHub](https://github.com/ewijaya/popeye-gw/releases/tag/clock-v1.1.0)
 or install it from the [store listing](https://apps.repebble.com/8e8e130581e7467d9d7b0138).

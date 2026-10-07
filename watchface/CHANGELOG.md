@@ -1,6 +1,6 @@
 # Popeye G&W Clock changelog
 
-## Unreleased
+## 1.2.0 — 2026-10-07
 
 - Information rows can now show two items on one line, with no icons: choose Battery, Weather or Steps for a row, then pick what to show after it. The order is yours: Battery then Weather, Weather then Battery, Steps then Battery and so on. In a pair, battery is always a plain percentage (with + while charging).
 - The settings page is leaner: sections for the date, battery, steps, weather, world clock and event appear only while a row uses them, and options for switched-off features (custom colours, quiet hours, weather) are hidden instead of greyed out. About half of the controls show at the default layout. Nothing you saved is lost.
