@@ -10,15 +10,14 @@ black segments, a white field, and vivid red, orange, blue and turquoise.
 
 *Real gameplay from the Emery emulator (a sped-up highlight, shown at half of its 2x size).*
 
-**Status:** Version 1.4.0 is being prepared for PT2 testing and publication.
+**Status:** Version 1.4.0 is published on GitHub and the Pebble App Store.
 It adds Olive's kiss for a new best, on the clock hour and on Valentine's Day, and
-a barrel for the lane 2 food. Version 1.3.0 remains the published release; see its
-[release record](docs/releases/1.3.0.md).
+a barrel for the lane 2 food; see the [release record](docs/releases/1.4.0.md).
 
 **Download:** [Pebble App Store](https://apps.repebble.com/e9cb2950ca21440798fb1db8) ·
-[GitHub release v1.3.0](https://github.com/ewijaya/popeye-gw/releases/tag/v1.3.0)
-([PBW](https://github.com/ewijaya/popeye-gw/releases/download/v1.3.0/popeye-gw.pbw)).
-Both downloads match the approved SHA-256 recorded in the [release record](docs/releases/1.3.0.md).
+[GitHub release v1.4.0](https://github.com/ewijaya/popeye-gw/releases/tag/v1.4.0)
+([PBW](https://github.com/ewijaya/popeye-gw/releases/download/v1.4.0/popeye-gw.pbw)).
+Both downloads match the approved SHA-256 recorded in the [release record](docs/releases/1.4.0.md).
 
 This is a watch adaptation, not an exact ROM recreation. The
 [fidelity ledger](docs/pp23-fidelity.md) separates confirmed rules from provisional
@@ -265,9 +264,9 @@ locations. Connection indicators and decorative weather effects are omitted;
 there is no sound or disconnect vibration.
 
 It shares the game's `scene.c`, `clock.c`, `game.c` and artwork by path, and has
-its own settings and UUID. Version 1.0.2, adding Olive's hourly kiss, is being
-prepared for PT2 testing. **Version 1.0.1 is published:**
-[download the watchface PBW from GitHub](https://github.com/ewijaya/popeye-gw/releases/tag/clock-v1.0.1).
+its own settings and UUID. **Version 1.0.2 is published**, adding Olive's hourly kiss
+([release record](docs/releases/clock/1.0.2.md)):
+[download the watchface PBW from GitHub](https://github.com/ewijaya/popeye-gw/releases/tag/clock-v1.0.2).
 GitHub and the general/Emery store catalog downloads match the owner-approved
 frozen build. The [store changelog](https://apps.repebble.com/popeye-g-w-clock_8e8e130581e7467d9d7b0138/changelog)
 shows 1.0.1; the [main store page](https://apps.repebble.com/8e8e130581e7467d9d7b0138)
