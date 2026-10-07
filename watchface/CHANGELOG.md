@@ -1,5 +1,9 @@
 # Popeye G&W Clock changelog
 
+## Unreleased
+
+- Food now shows at all five positions as it flies to Popeye. The date and battery rows were hiding its second position; they now clear only the space behind their own text and icons.
+
 ## 1.0.3 — 2026-10-07
 
 - Still now shows a paused game moment instead of an idle cast: food in flight, Popeye mid-catch and Brutus on the move. It changes only with the minute, and Olive's kiss appears on the hour and on 14 February.

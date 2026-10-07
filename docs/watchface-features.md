@@ -58,6 +58,10 @@ identical for every second of a minute. Decided 2026-10-07; details in
 - Only one animation timer; no animation while covered, in Quiet Time, in
   configured quiet hours, below the cutoff off power, or with reduced motion.
 - Resume promptly when visible and eligible. No replay of elapsed animations.
+- Information rows clear the background only behind their own text and icons, so
+  food crossing the row area stays visible at all five positions; it passes behind
+  text only where they overlap (2026-10-07: the full-width strips hid every lane's
+  second position).
 - Minute time updates remain independent of character animation. Per-second
   updates are allowed only for an explicitly enabled blinking colon.
 - No sound. Disconnect vibration is off by default and respects Quiet Time.
