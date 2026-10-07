@@ -34,7 +34,7 @@ static void test_inventory_and_bits(void) {
   Scene scene;
   unsigned seg;
   /* PRD 9.2: 4 + 20 + 8 + 4 + 6 + 5 + 31 + 4 segments. */
-  assert(SEG_COUNT == 82);
+  assert(SEG_COUNT == 89);
   assert(SEGMENT_ART_COUNT == SEG_COUNT);
   {
     unsigned orientation;
@@ -241,6 +241,6 @@ int main(void) {
   test_static_scenes();
   test_cargo_and_feedback();
   test_rounds_to_game_over();
-  puts("Scene tests passed: 82 segments, digits, feedback and 200 rounds to game over");
+  puts("Scene tests passed: 89 segments, digits, feedback and 200 rounds to game over");
   return 0;
 }

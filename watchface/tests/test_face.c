@@ -125,10 +125,11 @@ static void test_demo_beats(void) {
 }
 
 static void test_demo_matches_app_clock(void) {
-  /* The face must show exactly what the app's attract clock shows at those seconds. */
+  /* The face must show exactly what the app's attract clock shows at those seconds.
+   * Minute 0 is Olive's kiss, compressed differently; see test_kiss. */
   unsigned minute;
   int frame;
-  for (minute = 0u; minute < 60u; ++minute) {
+  for (minute = 1u; minute < 60u; ++minute) {
     for (frame = FACE_DEMO_FIRST; frame <= FACE_DEMO_LAST; ++frame) {
       Scene face, app;
       struct tm local = at(7, (int)minute, 17);
@@ -142,7 +143,7 @@ static void test_demo_matches_app_clock(void) {
 
 static void test_all_lanes_appear(void) {
   unsigned seen = 0u, minute;
-  for (minute = 0u; minute < 4u; ++minute) {
+  for (minute = 1u; minute <= 4u; ++minute) { /* minute 0 is Olive's kiss */
     Scene scene;
     struct tm local = at(10, (int)minute, 0);
     unsigned lane;
@@ -187,7 +188,7 @@ static void test_continuous_cycle(void) {
 }
 
 static void test_activity_controls(void) {
-  struct tm local = at(8, 0, 0);
+  struct tm local = at(8, 1, 0); /* not the hour: Olive's kiss is test_kiss */
   unsigned activity, pause;
   for (activity = 0u; activity < 8u; ++activity) {
     for (pause = 0u; pause <= 10u; ++pause) {
@@ -229,16 +230,55 @@ static void test_celebration_and_frame_wrap(void) {
 }
 
 static void test_minute_does_not_move_cast(void) {
-  struct tm before = at(23, 59, 59), after = at(0, 0, 0);
+  /* An ordinary minute rollover never moves the cast mid-cycle. The start of an
+   * hour is the one deliberate change: Olive's kiss replaces the food (test_kiss). */
+  struct tm before = at(10, 41, 59), after = at(10, 42, 0);
+  struct tm hour_before = at(23, 59, 59), hour_after = at(0, 0, 0);
   uint32_t frame;
   for (frame = 0u; frame < 112u; ++frame) {
     Scene a, b;
     unsigned segment;
     face_scene_active(&a, &before, true, frame, 7u, false, 1u);
     face_scene_active(&b, &after, true, frame, 7u, false, 1u);
-    for (segment = 0u; segment < SEG_DIGIT; ++segment)
-      assert(scene_lit(&a, segment) == scene_lit(&b, segment));
+    for (segment = 0u; segment < SEG_COUNT; ++segment)
+      if (segment < SEG_DIGIT || segment > SEG_HI)
+        assert(scene_lit(&a, segment) == scene_lit(&b, segment));
+    face_scene_active(&a, &hour_before, true, frame, 7u, false, 1u);
+    face_scene_active(&b, &hour_after, true, frame, 7u, false, 1u);
+    assert(!scene_lit(&a, SEG_OLIVE_KISS) && scene_lit(&b, SEG_OLIVE_KISS));
+    for (segment = SEG_BRUTUS; segment < SEG_BRUTUS + 6u; ++segment)
+      assert(scene_lit(&a, segment) == scene_lit(&b, segment)); /* Brutus keeps his cycle */
   }
+}
+
+/* On the hour and on 14 February the demo is Olive's kiss: it starts with her kiss
+ * pose and ends with the heart over Popeye, in both animation modes. */
+static void test_kiss(void) {
+  Scene scene;
+  struct tm local = at(9, 0, 3), valentine = at(15, 27, 3);
+  int frame;
+  uint32_t step;
+  valentine.tm_mon = 1; valentine.tm_mday = 14;
+  for (frame = FACE_DEMO_FIRST; frame <= FACE_DEMO_LAST; ++frame) {
+    face_scene(&scene, &local, false, frame);
+    assert(scene_lit(&scene, SEG_OLIVE_KISS) && count_lit(&scene, SEG_CARGO, 20u) == 0u);
+    assert(count_lit(&scene, SEG_HEART, 6u) == (frame == FACE_DEMO_FIRST ? 0u : 1u));
+    assert(scene_lit(&scene, SEG_POPEYE_HEART) == (frame == FACE_DEMO_LAST));
+    face_scene(&scene, &valentine, false, frame);
+    assert(scene_lit(&scene, SEG_OLIVE_KISS));
+  }
+  face_scene(&scene, &local, false, -1); /* the static clock never kisses */
+  assert(!scene_lit(&scene, SEG_OLIVE_KISS) && scene_lit(&scene, SEG_OLIVE_READY));
+  for (step = 0u; step < 2u * SCENE_KISS_STEPS; ++step) {
+    face_scene_active(&scene, &local, false, step, 7u, false, 0u);
+    assert(scene_lit(&scene, SEG_OLIVE_KISS));
+    assert(scene_lit(&scene, SEG_POPEYE_HEART) == (step % SCENE_KISS_STEPS >= 6u));
+    face_scene_active(&scene, &local, false, step, 6u, false, 0u); /* Olive still */
+    assert(!scene_lit(&scene, SEG_OLIVE_KISS));
+  }
+  local = at(9, 1, 3);
+  face_scene_active(&scene, &local, false, 3u, 7u, false, 0u);
+  assert(!scene_lit(&scene, SEG_OLIVE_KISS));
 }
 
 int main(void) {
@@ -252,6 +292,7 @@ int main(void) {
   test_activity_controls();
   test_celebration_and_frame_wrap();
   test_minute_does_not_move_cast();
+  test_kiss();
   puts("face tests passed");
   return 0;
 }

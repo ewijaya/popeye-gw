@@ -15,10 +15,12 @@ static void test_demo(void) {
   Scene scene, previous;
   struct tm local = {0};
   unsigned sec, seen = 0;
-  /* Two full 48-second cycles, including a minute boundary. */
+  /* Two full 48-second cycles, including a minute boundary; minute 0 is Olive's kiss. */
+  local.tm_mday = 1;
   for (sec = 0; sec < 96; ++sec) {
-    unsigned phase = sec / 2u % 6u, lane = sec / 12u % GAME_LANES;
-    local.tm_min = (int)(sec / 60u); local.tm_sec = (int)(sec % 60u);
+    /* Minute 1 adds 30 beats: the same phase, one lane later. */
+    unsigned phase = sec / 2u % 6u, lane = (sec / 12u + 1u) % GAME_LANES;
+    local.tm_min = (int)(sec / 60u) + 1; local.tm_sec = (int)(sec % 60u);
     clock_scene(&scene, &local, true, true, false, false);
     assert(lit_count(&scene, SEG_CARGO, 20) == (phase != 0u));
     assert(lit_count(&scene, SEG_POPEYE, GAME_POSES) == 1);
@@ -48,6 +50,53 @@ static void test_demo(void) {
     assert(memcmp(&scene, &previous, sizeof(scene)) == 0);
     assert(lit_count(&scene, SEG_CARGO, 20) == 0);
   }
+}
+
+/* Olive's kiss: the first 16 s of each hour, all day on 14 February, never with the
+ * demo off or while the alarm rings. Hearts move one stage at a time to Popeye. */
+static void test_kiss(void) {
+  Scene scene;
+  struct tm local = {0};
+  unsigned sec, step;
+  local.tm_mday = 1; local.tm_hour = 9;
+  for (sec = 0; sec < 60; ++sec) {
+    local.tm_min = 0; local.tm_sec = (int)sec;
+    clock_scene(&scene, &local, true, true, false, false);
+    assert(scene_lit(&scene, SEG_OLIVE_KISS) == (sec < 16u));
+    if (sec >= 16u) { assert(lit_count(&scene, SEG_HEART, 6) == 0); continue; }
+    step = sec / 2u;
+    assert(lit_count(&scene, SEG_CARGO, 20) == 0 && !scene_lit(&scene, SEG_POPEYE_CATCH));
+    assert(lit_count(&scene, SEG_OLIVE_READY, 4) == 0 && lit_count(&scene, SEG_POPEYE, GAME_POSES) == 1);
+    assert(lit_count(&scene, SEG_HEART, 5) == (step >= 1u && step <= 5u));
+    if (step >= 1u && step <= 5u) assert(scene_lit(&scene, SEG_HEART + step - 1u));
+    assert(scene_lit(&scene, SEG_POPEYE_HEART) == (step >= 6u));
+    if (step >= 6u) assert(scene_lit(&scene, SEG_POPEYE + 2u));
+  }
+  local.tm_min = 30; local.tm_sec = 4;
+  clock_scene(&scene, &local, true, true, false, false);
+  assert(!scene_lit(&scene, SEG_OLIVE_KISS) && !clock_kiss_time(&local));
+  local.tm_mon = 1; local.tm_mday = 14; /* Valentine's Day: kisses all day */
+  for (sec = 0; sec < 60; ++sec) {
+    local.tm_sec = (int)sec;
+    clock_scene(&scene, &local, true, true, false, false);
+    assert(scene_lit(&scene, SEG_OLIVE_KISS) && lit_count(&scene, SEG_CARGO, 20) == 0);
+  }
+  assert(clock_kiss_time(&local) && clock_valentine(&local));
+  clock_scene(&scene, &local, true, false, false, false); /* demo off */
+  assert(!scene_lit(&scene, SEG_OLIVE_KISS) && scene_lit(&scene, SEG_OLIVE_READY));
+  clock_scene(&scene, &local, true, true, true, true); /* alarm ringing */
+  assert(!scene_lit(&scene, SEG_OLIVE_KISS) && lit_count(&scene, SEG_OLIVE_BELL, 2) == 1);
+  /* Later frames replace earlier hearts; the bonus nod never hides a throw. */
+  scene_clear(&scene);
+  scene_kiss(&scene, 1u); scene_kiss(&scene, 4u);
+  assert(lit_count(&scene, SEG_HEART, 6) == 1 && scene_lit(&scene, SEG_HEART + 3u));
+  scene_kiss(&scene, SCENE_KISS_STEPS);
+  assert(scene_lit(&scene, SEG_HEART + 3u));
+  scene_clear(&scene); scene_light(&scene, SEG_OLIVE_READY); scene_kiss_pose(&scene);
+  assert(scene_lit(&scene, SEG_OLIVE_KISS) && !scene_lit(&scene, SEG_OLIVE_READY));
+  scene_clear(&scene); scene_light(&scene, SEG_OLIVE_THROW); scene_kiss_pose(&scene);
+  assert(!scene_lit(&scene, SEG_OLIVE_KISS) && scene_lit(&scene, SEG_OLIVE_THROW));
+  assert(feedback_sound_notes(CUE_KISS, &sec) != NULL && sec == 3u);
 }
 
 static Scene full_scene(void) {
@@ -171,7 +220,7 @@ static void test_sound_cues(void) {
   assert(feedback_sound_cue(GAME_EVENT_OVER | GAME_EVENT_MISS | GAME_EVENT_DROP, true) == CUE_RECORD);
   assert(feedback_sound_cue(GAME_EVENT_OVER | GAME_EVENT_BONUS | GAME_EVENT_CATCH, false) == CUE_OVER);
   assert(feedback_sound_notes(CUE_NONE, &count) == NULL && count == 0);
-  for (cue = CUE_CATCH; cue <= CUE_WARNING; ++cue) {
+  for (cue = CUE_CATCH; cue <= CUE_KISS; ++cue) {
     notes = feedback_sound_notes((SoundCue)cue, &count);
     assert(notes != NULL && count >= 1 && count <= FEEDBACK_SOUND_MAX_NOTES);
     for (i = 0; i < count; ++i) assert(notes[i].midi <= 127 && notes[i].ms >= 30 && notes[i].ms <= 300);
@@ -292,7 +341,7 @@ static void test_sound_service(void) {
 }
 
 int main(void) {
-  test_demo(); test_feedback(); test_service(); test_sound_cues(); test_sound_service(); test_sound_levels();
+  test_demo(); test_feedback(); test_service(); test_sound_cues(); test_sound_service(); test_sound_levels(); test_kiss();
   puts("M5: complete attract arcs, finite feedback, pause/resume, timer failure, haptic priority/settings/Quiet Time, LCD beep cues/priority/mute passed");
   return 0;
 }
