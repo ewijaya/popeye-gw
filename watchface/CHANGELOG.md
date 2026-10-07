@@ -1,6 +1,6 @@
 # Popeye G&W Clock changelog
 
-## Unreleased
+## 1.1.0 — 2026-10-07
 
 - Arcade is now much busier: two or three foods are in the air at once with no empty beat between throws, Popeye hops from catch to catch, Brutus winds up and strikes from alternating sides, and Olive blows a quick kiss now and then. Every catch is one Popeye could really make, and Brutus never hits him.
 - Removed the Lively and Once per minute options. Arcade is now the default. If you had Lively your face switches to Arcade (a little faster); if you had Once per minute it switches to Still. Relaxed and Still, and all your other choices, stay as they were. Arcade has no pauses between loops, so the Pause setting now applies to Relaxed only.

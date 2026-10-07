@@ -265,7 +265,8 @@ locations. Connection indicators and decorative weather effects are omitted;
 there is no sound or disconnect vibration.
 
 It shares the game's `scene.c`, `clock.c`, `game.c` and artwork by path, and has
-its own settings and UUID. **Version 1.0.4 is published**, keeping every food position visible
+its own settings and UUID. Version 1.1.0, with a crowded Arcade, is being
+prepared for PT2 testing. **Version 1.0.4 is published**, keeping every food position visible
 ([release record](docs/releases/clock/1.0.4.md)):
 [download the watchface PBW from GitHub](https://github.com/ewijaya/popeye-gw/releases/tag/clock-v1.0.4)
 or install it from the [store listing](https://apps.repebble.com/8e8e130581e7467d9d7b0138).
