@@ -21,7 +21,17 @@ static void test_defaults_and_partial_settings(void) {
   FaceSettings s;
   settings_defaults(&s);
   assert(s.preset == FACE_PRESET_EVERYDAY && s.row1 == FACE_ROW_DATE && s.row2 == FACE_ROW_BATTERY);
-  assert(s.animation_mode == FACE_ANIMATION_LIVELY && s.animation_speed == 0 && s.animation_pause == 1);
+  assert(s.animation_mode == FACE_ANIMATION_ARCADE && s.animation_speed == 0 && s.animation_pause == 1);
+  /* Lively (wire value 0) is retired: a saved or sent 0 becomes Arcade; the others keep their numbers. */
+  settings_apply_integer(&s, 34, 0); settings_validate(&s);
+  assert(s.animation_mode == FACE_ANIMATION_ARCADE);
+  settings_apply_integer(&s, 34, 2); settings_validate(&s);
+  assert(s.animation_mode == FACE_ANIMATION_RELAXED);
+  settings_apply_integer(&s, 34, 4); settings_validate(&s);
+  assert(s.animation_mode == FACE_ANIMATION_STILL);
+  settings_apply_integer(&s, 34, 9); settings_validate(&s); /* out of range keeps the previous value */
+  assert(s.animation_mode == FACE_ANIMATION_STILL);
+  settings_defaults(&s);
   assert(s.character_activity == 7 && !s.weather_enabled && !s.disconnect_alert && !s.blink_colon);
   assert(s.color_artwork && s.celebrate && !s.weather_effects && s.low_battery_cutoff == 20);
   assert(s.theme == 1);
@@ -95,9 +105,9 @@ static void test_preset_preserves_personal_settings(void) {
   assert(s.preset == 0 && s.large_time); /* Custom is a label, never a reset. */
   settings_apply_preset(&s, 3);
   assert(s.preset == 0 && s.large_time && s.animation_mode == FACE_ANIMATION_ARCADE);
-  s.animation_mode = FACE_ANIMATION_LIVELY; s.reduced_motion = false;
+  s.animation_mode = FACE_ANIMATION_RELAXED; s.reduced_motion = false;
   settings_apply_preset(&s, FACE_PRESET_CLASSIC);
-  assert(s.animation_mode == FACE_ANIMATION_LIVELY && !s.reduced_motion);
+  assert(s.animation_mode == FACE_ANIMATION_RELAXED && !s.reduced_motion);
 }
 
 static void test_storage(void) {
@@ -291,7 +301,7 @@ static void test_quiet_rotation_and_runtime(void) {
   }
   assert(!r.animate && !r.timer_pending);
   assert(!(data_runtime_update(&r, &s, &d, &local, true, false, FACE_RUNTIME_CHECK) & FACE_EFFECT_START));
-  s.animation_mode = FACE_ANIMATION_LIVELY;
+  s.animation_mode = FACE_ANIMATION_ARCADE;
   assert(data_animation_allowed(&s, &d, &local, true, false));
   /* Still's paused game frame needs no timer: it is redrawn by the minute tick. */
   s.animation_mode = FACE_ANIMATION_STILL;

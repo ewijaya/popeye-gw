@@ -149,6 +149,17 @@ test('sanitization clamps values, preserves missing/invalid keys, and validates 
   assert.strictEqual(schema.sanitize({Preset: 3, AnimationMode: 1, Language: 4}).Preset, 0);
   assert.strictEqual(schema.sanitize({Language: 4}).Language, 4);
 });
+test('retired Lively becomes Arcade, and the form offers only the remaining modes', function() {
+  assert.strictEqual(schema.defaults.AnimationMode, 1);
+  assert.strictEqual(schema.sanitize({AnimationMode: 0}).AnimationMode, 1);
+  [1, 2, 3, 4].forEach(function(mode) { assert.strictEqual(schema.sanitize({AnimationMode: mode}).AnimationMode, mode); });
+  var found = [];
+  (function visit(items) { items.forEach(function(item) { if (item.items) { visit(item.items); }
+    else if (item.messageKey === 'AnimationMode') { found = item.options.map(function(o) { return o.value + ':' + o.label; }); } }); })(config);
+  assert.deepStrictEqual(found, ['1:Arcade', '2:Relaxed', '3:Once per minute', '4:Still']);
+  assert.strictEqual(formHarness({AnimationMode: 0}).items.AnimationMode.get(), 0); // an unsanitized 0 never reaches the form
+});
+
 test('preset form changes are visible before save and preserve opt-in/personal choices', function() {
   var form = formHarness({WeatherEnabled: true, WorldZone: 'Europe/London', StepGoal: 12345, WorldLabel: 'MUM', Row1: 6, AnimationMode: 1, AnimationSpeed: 750, AnimationPause: 4, CharacterActivity: 5});
   assert.strictEqual(form.items.Row1.get(), 6); // opening never reapplies saved Everyday
@@ -166,7 +177,7 @@ test('preset form changes are visible before save and preserve opt-in/personal c
   assert.strictEqual(form.items.AnimationSpeed.get(), 750);
   assert.strictEqual(form.items.AnimationPause.get(), 4);
   assert.strictEqual(form.items.CharacterActivity.get(), 5);
-  form.items.AnimationMode.set(0);
+  form.items.AnimationMode.set(2);
   assert.strictEqual(form.items.Preset.get(), 1); // Activity is independent of Classic.
   form.items.ReducedMotion.set(true); form.items.Preset.set(2);
   assert.strictEqual(form.items.ReducedMotion.get(), true);
