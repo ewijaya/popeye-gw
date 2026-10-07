@@ -264,15 +264,13 @@ locations. Connection indicators and decorative weather effects are omitted;
 there is no sound or disconnect vibration.
 
 It shares the game's `scene.c`, `clock.c`, `game.c` and artwork by path, and has
-its own settings and UUID. Version 1.0.3, a fuller Still scene, is being
-prepared for PT2 testing. **Version 1.0.2 is published**, adding Olive's hourly kiss
-([release record](docs/releases/clock/1.0.2.md)):
-[download the watchface PBW from GitHub](https://github.com/ewijaya/popeye-gw/releases/tag/clock-v1.0.2).
+its own settings and UUID. **Version 1.0.3 is published**, with a fuller Still scene
+([release record](docs/releases/clock/1.0.3.md)):
+[download the watchface PBW from GitHub](https://github.com/ewijaya/popeye-gw/releases/tag/clock-v1.0.3)
+or install it from the [store listing](https://apps.repebble.com/8e8e130581e7467d9d7b0138).
 GitHub and the general/Emery store catalog downloads match the owner-approved
-frozen build. The [store changelog](https://apps.repebble.com/popeye-g-w-clock_8e8e130581e7467d9d7b0138/changelog)
-shows 1.0.1; the [main store page](https://apps.repebble.com/8e8e130581e7467d9d7b0138)
-still showed 1.0.0 and its older download after two checks. Its refresh remains
-pending; use GitHub for the verified 1.0.1 download. See the [release record](docs/releases/clock/1.0.1.md). Detailed
+frozen build, and the store page and [changelog](https://apps.repebble.com/popeye-g-w-clock_8e8e130581e7467d9d7b0138/changelog)
+list 1.0.3. Detailed
 physical edge cases remain documented in the device checklist. See the [implementation notes](docs/watchface-implementation.md),
 [feature scope](docs/watchface-features.md) and
 [device checklist](docs/watchface-playtest.md).
