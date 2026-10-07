@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- New Settings → Light: choose In play to keep the backlight on while a round is running. It returns to normal when you pause, the game ends or you leave the game. The default, Auto, leaves the backlight to the watch as before.
+- New Settings → Light: In play keeps the backlight on while a round is running. It returns to normal when you pause, the game ends or you leave the game. New installs start on In play; if you already have saved settings, Light starts on Auto (the backlight works as before) until you change it.
 
 ## 1.4.0 — 2026-10-07
 
