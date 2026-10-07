@@ -83,3 +83,31 @@ void scene_best(Scene *scene, GameMode mode, uint32_t best) {
   scene_light(scene, SEG_POPEYE + 2u);
   scene_light(scene, SEG_BRUTUS + (mode == GAME_A ? GAME_LEFT : GAME_RIGHT) * 3u);
 }
+
+static void unlight(Scene *scene, unsigned first, unsigned count) {
+  unsigned i;
+  for (i = first; i < first + count && i < SEG_COUNT; ++i)
+    scene->bits[i / 32u] &= ~(UINT32_C(1) << (i % 32u));
+}
+
+void scene_kiss(Scene *scene, unsigned step) {
+  if (step >= SCENE_KISS_STEPS) return;
+  unlight(scene, SEG_OLIVE_READY, 4u); /* ready, throw and both bell frames */
+  unlight(scene, SEG_CARGO, GAME_LANES * GAME_CARGO_STEPS);
+  unlight(scene, SEG_POPEYE_CATCH, 1u);
+  unlight(scene, SEG_HEART, 6u); /* a later frame replaces an earlier one */
+  scene_light(scene, SEG_OLIVE_KISS);
+  if (step >= 1u && step <= 5u) scene_light(scene, SEG_HEART + step - 1u);
+  if (step >= 6u) {
+    unlight(scene, SEG_POPEYE, GAME_POSES);
+    unlight(scene, SEG_POPEYE_DIZZY_LEFT, 2u);
+    scene_light(scene, SEG_POPEYE + 2u);
+    scene_light(scene, SEG_POPEYE_HEART);
+  }
+}
+
+void scene_kiss_pose(Scene *scene) {
+  if (!scene_lit(scene, SEG_OLIVE_READY)) return;
+  unlight(scene, SEG_OLIVE_READY, 1u);
+  scene_light(scene, SEG_OLIVE_KISS);
+}

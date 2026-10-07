@@ -6,7 +6,7 @@
 
 #include "game.h"
 
-/* The PRD 9.2 segment inventory. IDs only: positions belong to the view. */
+/* The PRD 9.2 segment inventory plus Olive's kiss (1.4). IDs only: positions belong to the view. */
 enum {
   SEG_OLIVE_READY = 0,                       /* fixed left ledge */
   SEG_OLIVE_THROW = SEG_OLIVE_READY + 1,       /* fixed left ledge */
@@ -29,6 +29,9 @@ enum {
   SEG_GAME_B,
   SEG_BELL,
   SEG_HI,
+  SEG_OLIVE_KISS,                           /* Olive throws Popeye a kiss */
+  SEG_HEART,                               /* + stage, 5: heart flying to Popeye */
+  SEG_POPEYE_HEART = SEG_HEART + 5,        /* above Popeye's centre pose */
   SEG_COUNT
 };
 
@@ -48,6 +51,12 @@ void scene_digit(Scene *scene, unsigned digit, unsigned value);
 /* Static player pose, also useful for scene tests. */
 void scene_idle(Scene *scene);
 void scene_game(Scene *scene, const Game *game);
+/* Olive's kiss, decoration only. Step 0 is her kiss pose, 1-5 fly the heart and
+ * 6-7 centre Popeye under a heart. Food and the catch flash are hidden. */
+#define SCENE_KISS_STEPS 8u
+void scene_kiss(Scene *scene, unsigned step);
+/* Brief bonus nod: the kiss pose replaces Olive's ready pose, never her throw. */
+void scene_kiss_pose(Scene *scene);
 /* Clock-page preview of a saved best: mode lamp, HI and the score modulo 1000. */
 void scene_best(Scene *scene, GameMode mode, uint32_t best);
 

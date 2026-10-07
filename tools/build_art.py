@@ -29,7 +29,7 @@ CLEAR = (0, 0, 0, 0)
 GHOST = (0xAA, 0xAA, 0xAA, 0xFF)
 
 # Complete inventory: missing animation frames must fail instead of silently
-# rendering prototype rectangles. Keep in sync with scene.h's 82 segment IDs.
+# rendering prototype rectangles. Keep in sync with scene.h's 89 segment IDs.
 EXPECTED_SEGMENTS = {
     "olive-ready", "olive-throw",
     *[f"olive-bell-{pose}" for pose in range(2)],
@@ -41,6 +41,7 @@ EXPECTED_SEGMENTS = {
     *[f"miss-{mark}" for mark in range(3)], "miss-half", "miss-label",
     *[f"digit-{digit}-{bar}" for digit in range(4) for bar in "abcdefg"],
     "colon", "am", "pm", "game-a", "game-b", "bell", "hi",
+    "olive-kiss", *[f"heart-{stage}" for stage in range(5)], "popeye-heart",
 }
 
 SEGMENT_NAMES = [
@@ -60,6 +61,9 @@ SEGMENT_NAMES = [
     (r"digit-([0-3])-([a-g])", lambda m: "SEG_DIGIT + {} * 7 + {}".format(m[0], "abcdefg".index(m[1]))),
     (r"(colon|am|pm|bell|hi)", lambda m: "SEG_" + m[0].upper()),
     (r"game-(a|b)", lambda m: "SEG_GAME_" + m[0].upper()),
+    (r"olive-kiss", lambda m: "SEG_OLIVE_KISS"),
+    (r"heart-([0-4])", lambda m: "SEG_HEART + {}".format(m[0])),
+    (r"popeye-heart", lambda m: "SEG_POPEYE_HEART"),
 ]
 
 

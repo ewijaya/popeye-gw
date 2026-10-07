@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Prepare all 82 LCD segments from approved imagegen art and geometric UI.
+"""Prepare all 89 LCD segments from approved imagegen art and geometric UI.
 
 Maintainer-only tool: requires ImageMagick. Normal builds and CI consume the
 committed PNGs and use build_art.py, which needs only Python's standard library.
@@ -102,6 +102,8 @@ def characters():
         sprite("popeye-dizzy", "popeye-dizzy-" + side, (x, 131, 40, 56), mirror)
     sprite("olive", "olive-ready", (24, 52, 30, 57))
     sprite("olive-throw", "olive-throw", (24, 54, 33, 55))
+    # Same scale as olive-ready (57 px from a 1521 px trim); feet on the ledge.
+    sprite("olive-kiss", "olive-kiss", (20, 54, 38, 55))
     for frame in range(2):
         sprite(f"olive-bell-{frame}", f"olive-bell-{frame}", (24, 54, 31, 55))
     for phase, w, h in (("idle", 35, 39), ("windup", 46, 52), ("strike", 59, 43)):
@@ -118,7 +120,24 @@ def cargo():
             sprite(source, f"cargo-{lane}-{stage}", (x - 7, y - 7, 14, 14), angle=-35 if lane == 0 else 0)
 
 
+# Pixel hearts for Olive's kiss: rows of a small and a large heart.
+HEART_SMALL = (".##.##.", "#######", "#######", ".#####.", "..###..", "...#...")
+HEART_LARGE = (".###.###.", "#########", "#########", "#########", ".#######.",
+               "..#####..", "...###...", "....#....")
+# Heart centres from Olive's flung hand down to above Popeye's centre pose.
+KISS_PATH = ((60, 58), (72, 55), (84, 61), (93, 75), (99, 92))
+
+
+def heart(rows, cx, cy):
+    x0, y0 = cx - len(rows[0]) // 2, cy - len(rows) // 2
+    return "".join(rect(x0 + col, y0 + row, 1, 1)
+                   for row, bits in enumerate(rows) for col, bit in enumerate(bits) if bit == "#")
+
+
 def ui(temp):
+    for stage, (x, y) in enumerate(KISS_PATH):
+        vector(f"heart-{stage}", heart(HEART_SMALL, x, y), temp)
+    vector("popeye-heart", heart(HEART_LARGE, 100, 114), temp)
     for lane, x in enumerate(LANES):
         drawing = (f'<path d="M {x-9} 208 l 5 -1 -2 -5 5 4 1 -6 2 6 5 -4 '
                    ' -2 5 5 1 -4 2 h -12 Z"/>')
@@ -168,7 +187,7 @@ def main():
     run(SOURCE / "backdrop-vibrant.png", "-alpha", "off", "-filter", "Box",
         "-resize", "200x228!", "+dither", "-channel", "RGB", "-posterize", "4",
         "+channel", "PNG32:" + str(ROOT / "art" / "backdrop.png"))
-    print("Prepared 82 segments, backdrop, and 25 x 25 launcher icon")
+    print("Prepared 89 segments, backdrop, and 25 x 25 launcher icon")
 
 
 if __name__ == "__main__":
