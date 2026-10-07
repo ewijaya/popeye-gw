@@ -212,7 +212,7 @@ static bool pair_item(char *out, size_t length, const FaceSettings *s, const Fac
 
 void data_format_pair(char *out, size_t length, const FaceSettings *s, const FaceData *d,
                       time_t now, int first, int second) {
-  char a[24], b[24];
+  char a[32], b[32]; /* the longest item, a high/low pair of 32-bit values, is 28 bytes */
   bool has_a, has_b;
   if (length == 0) return;
   has_a = pair_item(a, sizeof(a), s, d, now, first);
