@@ -46,7 +46,7 @@ tree is clean. Audit a clean tree; otherwise label the results as unreleasable.
    artifact names and approved Popeye, Olive Oyl and Brutus character art.
    Check the LCD presentation and remove stale product or cast identifiers.
 7. **Clock behaviour:** follow `docs/watchface-playtest.md`: renders, keeps
-   time, selected animation mode (continuous Lively by default; once per
+   time, selected animation mode (continuous Arcade by default; once per
    minute in Classic), covered/Quiet Time/low-battery stops, Clay settings
    round trip and persistence, data freshness and accessibility layouts.
    No sound; optional disconnect vibration respects Quiet Time.

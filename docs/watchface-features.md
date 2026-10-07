@@ -23,7 +23,7 @@ scene animates. No continuous smooth animation or sound.
 | Weather | Opt-in; automatic or manual city; Celsius/Fahrenheit; current or high/low; refresh interval; cached/stale indication; weather symbols confined to the information row |
 | World time | Chosen city/time zone, custom label and time format; phone computes DST-aware offset; cached offset expires visibly |
 | Event | Label/date; countdown or elapsed days; optional annual repeat; leap-date handling; brief date celebration |
-| Animation | Lively/Arcade/Relaxed/Classic/Still; speed and pauses; individual character activity; quiet hours and battery cutoff. Still shows a paused game frame that changes only with the minute (see below) |
+| Animation | Arcade (default)/Relaxed/Classic/Still (Lively retired, saved Lively loads as Arcade); speed and pauses; individual character activity; quiet hours and battery cutoff. Still shows a paused game frame that changes only with the minute (see below) |
 | Themes | Ivory default, Original/Green/Amber alternatives; optional custom background/segment/accent; subtle Faint or Strong ghosts; colour or monochrome scenery |
 | Accessibility | Larger time, high contrast, reduced motion, steady or blinking colon; no colour-only meaning |
 | Clay configuration | My Apps settings entry; grouped readable controls; Classic/Everyday/Traveller/Large Time layout presets independent of animation activity; persistent settings; save updates the watch |

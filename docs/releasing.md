@@ -183,7 +183,7 @@ EOF
   `heap_bytes_used()`; record the lowest free share. If the app logs nothing,
   report heap as unmeasured. Never substitute linker figures for it.
 - **Clock:** use [watchface-playtest.md](watchface-playtest.md). Verify time,
-  continuous Lively and optional Classic/Still modes, focus/Quiet Time/low-battery
+  continuous Arcade and optional Relaxed/Classic/Still modes, focus/Quiet Time/low-battery
   stops, phone settings persistence, data freshness and readable layouts.
   No sound; optional disconnect vibration must respect Quiet Time.
   Gameplay fairness, gameplay heap and a game launcher icon are not clock gates.

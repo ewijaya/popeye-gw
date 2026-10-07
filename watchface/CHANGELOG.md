@@ -1,5 +1,9 @@
 # Popeye G&W Clock changelog
 
+## Unreleased
+
+- Removed the Lively animation option, which was too close to Arcade. Arcade is now the default; if you had Lively, your face switches to Arcade (a little faster). All other choices stay as they were.
+
 ## 1.0.4 — 2026-10-07
 
 - Food now shows at all five positions as it flies to Popeye. The date and battery rows were hiding its second position; they now clear only the space behind their own text and icons.

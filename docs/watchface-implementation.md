@@ -52,8 +52,9 @@ data updates are sent separately, and failed delivery is retried with limits.
 | Traveller | World time / date | Ivory LCD, saved world zone |
 | Large Time | Date / battery | Larger clock and high contrast |
 
-Animation activity is independent of every preset: Lively, Arcade, Relaxed,
-Once per minute or Still. Presets preserve motion mode, speed, loop pauses,
+Animation activity is independent of every preset: Arcade (the default), Relaxed,
+Once per minute or Still. Lively (wire value 0) was retired on 2026-10-07: saved or
+sent 0 loads as Arcade on both phone and watch, and the other values keep their numbers. Presets preserve motion mode, speed, loop pauses,
 active characters, reduced motion and weather effects. Retired Active preset
 preferences keep their choices under Custom. Japanese date labels use compact
 weekday kanji and month/day order, with a numeric form when the year is shown.
@@ -118,7 +119,7 @@ unavailable offset displays `--:--` rather than inventing a new one.
 
 ## Animation and power
 
-Lively uses 1,000 ms beats, Arcade 600 ms, Relaxed 2,000 ms. Custom beats range
+Arcade uses 600 ms beats, Relaxed 2,000 ms (the retired Lively was 1,000 ms). Custom beats range
 from 500–4,000 ms; pause beats and individual character activity are selectable.
 The default motion continues through linked throws, flights, catches and rival
 poses. Classic runs the original five 2,000 ms demonstration beats and then
