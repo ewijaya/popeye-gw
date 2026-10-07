@@ -24,7 +24,8 @@ tree is clean. Audit a clean tree; otherwise label the results as unreleasable.
    clock: `./watchface/test.sh` and `./watchface/test.sh --sanitize`. For the game, the
    fairness bot must report zero unavoidable misses over 10,000 seeds per
    mode. Read failure output; never hide an exit status in a pipeline.
-2. **Clean build:** from the configured `project_dir`, `pebble clean`, then `TERM=xterm pebble build` into a log.
+2. **Clean build:** delete the configured `project_dir`'s ignored `build/` directory
+   (`pebble clean` can leave a stale PBW), then `TERM=xterm pebble build` into a log.
    It passes only with exit status 0 **and** the literal `'build' finished`.
    Every build enforces the 61,440-byte app image; record the printed
    `App image` line. Report whether the linker dropped unused engine code, so a

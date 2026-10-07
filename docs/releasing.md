@@ -126,7 +126,9 @@ else
 fi
 # For tooling or shared-code changes, run the full tools/test.sh suites too.
 mkdir -p "$RELEASE_DIR"
-(cd "$PROJECT" && pebble clean) || exit 1
+# `pebble clean` can leave a stale bundle (clock 1.0.3 rebuilt the old PBW).
+# Delete the ignored build directory instead.
+git check-ignore -q "$PROJECT/build" && rm -rf "$PROJECT/build" || exit 1
 if (cd "$PROJECT" && TERM=xterm pebble build) >"$RELEASE_DIR/build.log" 2>&1; then
   rg -q "'build' finished" "$RELEASE_DIR/build.log" || exit 1
 else
@@ -137,8 +139,9 @@ rg "App image|warning|error" "$RELEASE_DIR/build.log"
 # Remove only the selected project's .lock-waf* files without reading them.
 ```
 
-Both the exit status must be 0 and `'build' finished` must appear. The
-`.lock-waf*` files contain the host environment: never print or commit them.
+Both the exit status must be 0 and `'build' finished` must appear, and the
+PBW identity check below must report the new version. The `.lock-waf*` files
+contain the host environment: never print or commit them.
 
 PBW identity and sizes:
 
