@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.4.0 — 2026-10-07
 
 - Olive throws Popeye a kiss when you set a new best: after the last miss, a heart flies from her to Popeye before the Game over box appears. Any button skips it. At the 200 and 500 bonuses she blows a quick kiss from her ledge.
 - On the clock, Olive kisses Popeye at the top of every hour, and all day on 14 February she throws hearts instead of food.
