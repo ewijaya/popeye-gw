@@ -231,7 +231,6 @@ bool data_animation_allowed(const FaceSettings *s, const FaceData *d,
 }
 
 uint32_t data_animation_interval(const FaceSettings *s) {
-  if (s->animation_speed != 0) return (uint32_t)s->animation_speed;
   switch (s->animation_mode) {
     case FACE_ANIMATION_ARCADE: return 600;
     case FACE_ANIMATION_RELAXED: return 2000;

@@ -120,6 +120,8 @@ function sanitize(patch, previous) {
   if (result.AnimationMode === 3) { result.AnimationMode = 4; } // Retired Once per minute becomes Still.
   // Retired controls retain their wire IDs for old saved settings and phones.
   result.DisconnectAlert = false; result.WeatherEffects = false;
+  // Retired 2026-10-07 the same way: pinned to the defaults so older saved values cannot linger.
+  result.AnimationSpeed = 0; result.AnimationPause = 1; result.CharacterActivity = 7; result.ColorArtwork = true;
   return result;
 }
 function preset(id) {

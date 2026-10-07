@@ -121,7 +121,7 @@ test('wire map matches package exactly and every active setting has one offline 
   assert.deepStrictEqual(pkg.pebble.messageKeys, K);
   function visit(items) { items.forEach(function(item) { if (item.items) { visit(item.items); }
     else if (item.messageKey) { assert(!seen[item.messageKey]); seen[item.messageKey] = true; } }); }
-  visit(config); assert.deepStrictEqual(Object.keys(seen).sort(), schema.names.filter(function(name) { return name !== 'DisconnectAlert' && name !== 'WeatherEffects'; }).sort());
+  visit(config); assert.deepStrictEqual(Object.keys(seen).sort(), schema.names.filter(function(name) { return ['DisconnectAlert', 'WeatherEffects', 'AnimationSpeed', 'AnimationPause', 'CharacterActivity', 'ColorArtwork'].indexOf(name) === -1; }).sort());
   assert(pkg.pebble.capabilities.indexOf('configurable') >= 0);
   var max = schema.copy(schema.defaults); max.WorldLabel = '12345678'; max.EventLabel = '1234567890'; max.EventDate = '2199-12-31';
   var payload = schema.wire(max, null, true);
@@ -134,7 +134,7 @@ test('sanitization clamps values, preserves missing/invalid keys, and validates 
     ReducedMotion: 'false', WeatherEnabled: {value: 'true'}, WorldLabel: 'J\u0000a東京pan123456',
     EventDate: '2025-02-29', WorldZone: 'Bad/Zone', WeatherDetail: NaN}, old);
   assert.strictEqual(s.Row1, 6); assert.strictEqual(s.StepGoal, 100); assert.strictEqual(s.WeatherRefresh, 180);
-  assert.strictEqual(s.AnimationSpeed, 500); assert.strictEqual(s.RotateSeconds, 15);
+  assert.strictEqual(s.AnimationSpeed, 0); assert.strictEqual(s.RotateSeconds, 15);
   assert.strictEqual(s.CharacterActivity, 7); assert.strictEqual(s.BackgroundColor, 0x00ff55);
   assert.strictEqual(s.ReducedMotion, false); assert.strictEqual(s.WeatherEnabled, true);
   assert.strictEqual(s.WorldLabel, 'Japan123'); assert.strictEqual(s.EventDate, '2024-02-29');
@@ -225,9 +225,12 @@ test('preset form changes are visible before save and preserve opt-in/personal c
   assert.strictEqual(form.items.ReducedMotion.get(), false); assert.strictEqual(form.items.AnimationMode.get(), 1);
   form.items.Preset.set(1); assert.strictEqual(form.items.Row1.get(), 0); assert.strictEqual(form.items.Row2.get(), 0);
   assert.strictEqual(form.items.AnimationMode.get(), 1);
-  assert.strictEqual(form.items.AnimationSpeed.get(), 750);
-  assert.strictEqual(form.items.AnimationPause.get(), 4);
-  assert.strictEqual(form.items.CharacterActivity.get(), 5);
+  ['AnimationSpeed', 'AnimationPause', 'CharacterActivity', 'ColorArtwork'].forEach(function(name) {
+    assert.strictEqual(form.items[name], undefined, name + ' is retired from the form');
+  });
+  var pinned = schema.sanitize({AnimationSpeed: 750, AnimationPause: 4, CharacterActivity: 5, ColorArtwork: false}, schema.defaults);
+  assert.strictEqual(pinned.AnimationSpeed, 0); assert.strictEqual(pinned.AnimationPause, 1);
+  assert.strictEqual(pinned.CharacterActivity, 7); assert.strictEqual(pinned.ColorArtwork, true);
   form.items.AnimationMode.set(2);
   assert.strictEqual(form.items.Preset.get(), 1); // Activity is independent of Classic.
   form.items.ReducedMotion.set(true); form.items.Preset.set(2);

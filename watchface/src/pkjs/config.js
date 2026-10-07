@@ -98,12 +98,6 @@ module.exports = [
     select('AnimationMode', 'Animation activity', [['Arcade', 1], ['Relaxed', 2], ['Still', 4]],
       'Works with every preset, including Classic. Changing presets keeps this choice.'),
     toggle('ReducedMotion', 'Reduce motion', 'Pauses character motion in every preset. Turn off to use your selected activity.'),
-    number('AnimationSpeed', 'Animation beat (milliseconds)', 0, 4000,
-      '0 uses the mode’s pace: Arcade 600, Relaxed 2000. Custom range 500–4000.'),
-    number('AnimationPause', 'Pause between loops (beats)', 0, 10,
-      'Used by Relaxed. Arcade keeps going without pauses.'),
-    select('CharacterActivity', 'Active characters', [['None', 0], ['Olive', 1], ['Popeye', 2],
-      ['Olive + Popeye', 3], ['Brutus', 4], ['Olive + Brutus', 5], ['Popeye + Brutus', 6], ['All three', 7]]),
     toggle('Celebrate', 'Celebrate goals and event days',
       'A brief spinach celebration, once per day, when motion is enabled. Uses your step goal and the event date.'),
     number('StepGoal', 'Daily step goal', 100, 100000, 'For the celebration and for step percentages and meters.'),
@@ -117,8 +111,7 @@ module.exports = [
     select('Theme', 'Theme', ['Original', 'Ivory', 'Green LCD', 'Amber']),
     toggle('CustomColors', 'Use custom colors'), color('BackgroundColor', 'Background'),
     color('SegmentColor', 'Active segments'), color('AccentColor', 'Accent'),
-    select('GhostStrength', 'Inactive segment ghosts', ['Off', 'Faint', 'Strong']),
-    toggle('ColorArtwork', 'Keep artwork in color', 'Off uses monochrome scenery.')
+    select('GhostStrength', 'Inactive segment ghosts', ['Off', 'Faint', 'Strong'])
   ]),
   {type: 'submit', defaultValue: 'Save settings'}
 ];

@@ -64,8 +64,10 @@ static void test_validation(void) {
   settings_validate(&s);
   assert(!s.disconnect_alert && !s.weather_effects);
   assert(s.row1 == 0 && s.row2 == 6 && s.rotate_seconds == 15 && s.time_format == 2);
-  assert(s.step_goal == 100 && s.weather_refresh == 15 && s.animation_speed == 500);
-  assert(s.animation_pause == 10 && s.character_activity == 0 && s.quiet_start == 23 && s.quiet_end == 0);
+  assert(s.step_goal == 100 && s.weather_refresh == 15);
+  /* Retired controls: pinned to their defaults whatever is stored or sent. */
+  assert(s.animation_speed == 0 && s.animation_pause == 1 && s.character_activity == 7 && s.color_artwork);
+  assert(s.quiet_start == 23 && s.quiet_end == 0);
   assert(s.low_battery_cutoff == 50 && s.background_color == 0 && s.segment_color == 0xffffff);
   assert(s.ghost_strength == 2 && strlen(s.world_label) == 8 && s.event_date[0] == '\0');
   s.rotate_seconds = 0; s.animation_speed = 0; s.low_battery_cutoff = 0;
@@ -95,8 +97,8 @@ static void test_preset_preserves_personal_settings(void) {
     assert(s.preset == preset && s.step_goal == 22222 && s.weather_enabled && s.weather_units == 1);
     assert(s.weather_refresh == 90 && !s.disconnect_alert && s.quiet_hours && s.quiet_start == 17);
     assert(s.low_battery_cutoff == 8 && strcmp(s.world_label, "TOKYO") == 0);
-    assert(strcmp(s.event_date, "2028-02-29") == 0 && s.theme == 1 && !s.custom_colors && s.animation_speed == 4000);
-    assert(s.animation_mode == FACE_ANIMATION_ARCADE && s.animation_pause == 4 && s.character_activity == 5 && s.reduced_motion);
+    assert(strcmp(s.event_date, "2028-02-29") == 0 && s.theme == 1 && !s.custom_colors && s.animation_speed == 0);
+    assert(s.animation_mode == FACE_ANIMATION_ARCADE && s.animation_pause == 1 && s.character_activity == 7 && s.reduced_motion);
     if (preset == 1) assert(s.row1 == 0 && s.row2 == 0);
     if (preset == 2) assert(s.row1 == 1 && s.row2 == 2);
     if (preset == 4) assert(s.row1 == 5 && s.row2 == 1);
