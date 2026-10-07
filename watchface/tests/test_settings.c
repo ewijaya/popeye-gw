@@ -27,6 +27,8 @@ static void test_defaults_and_partial_settings(void) {
   assert(s.animation_mode == FACE_ANIMATION_ARCADE);
   settings_apply_integer(&s, 34, 2); settings_validate(&s);
   assert(s.animation_mode == FACE_ANIMATION_RELAXED);
+  settings_apply_integer(&s, 34, 3); settings_validate(&s); /* Once per minute is retired too */
+  assert(s.animation_mode == FACE_ANIMATION_STILL);
   settings_apply_integer(&s, 34, 4); settings_validate(&s);
   assert(s.animation_mode == FACE_ANIMATION_STILL);
   settings_apply_integer(&s, 34, 9); settings_validate(&s); /* out of range keeps the previous value */
@@ -292,15 +294,6 @@ static void test_quiet_rotation_and_runtime(void) {
   for (i = 0; i < 10; ++i)
     assert(!(data_runtime_update(&r, &s, &d, &local, true, false, FACE_RUNTIME_CHECK) & FACE_EFFECT_START));
   assert(data_runtime_update(&r, &s, &d, &local, true, false, FACE_RUNTIME_MINUTE) & FACE_EFFECT_START);
-  s.animation_mode = FACE_ANIMATION_CLASSIC;
-  effects = data_runtime_update(&r, &s, &d, &local, true, false, FACE_RUNTIME_RESTART);
-  assert((effects & FACE_EFFECT_CANCEL) && (effects & FACE_EFFECT_START) && r.frame == 1);
-  for (i = 1; i <= 5; ++i) {
-    assert(r.frame == i && r.animate && r.timer_pending);
-    data_runtime_update(&r, &s, &d, &local, true, false, FACE_RUNTIME_BEAT);
-  }
-  assert(!r.animate && !r.timer_pending);
-  assert(!(data_runtime_update(&r, &s, &d, &local, true, false, FACE_RUNTIME_CHECK) & FACE_EFFECT_START));
   s.animation_mode = FACE_ANIMATION_ARCADE;
   assert(data_animation_allowed(&s, &d, &local, true, false));
   /* Still's paused game frame needs no timer: it is redrawn by the minute tick. */

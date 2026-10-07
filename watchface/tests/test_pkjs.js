@@ -152,11 +152,12 @@ test('sanitization clamps values, preserves missing/invalid keys, and validates 
 test('retired Lively becomes Arcade, and the form offers only the remaining modes', function() {
   assert.strictEqual(schema.defaults.AnimationMode, 1);
   assert.strictEqual(schema.sanitize({AnimationMode: 0}).AnimationMode, 1);
-  [1, 2, 3, 4].forEach(function(mode) { assert.strictEqual(schema.sanitize({AnimationMode: mode}).AnimationMode, mode); });
+  assert.strictEqual(schema.sanitize({AnimationMode: 3}).AnimationMode, 4); // Once per minute becomes Still
+  [1, 2, 4].forEach(function(mode) { assert.strictEqual(schema.sanitize({AnimationMode: mode}).AnimationMode, mode); });
   var found = [];
   (function visit(items) { items.forEach(function(item) { if (item.items) { visit(item.items); }
     else if (item.messageKey === 'AnimationMode') { found = item.options.map(function(o) { return o.value + ':' + o.label; }); } }); })(config);
-  assert.deepStrictEqual(found, ['1:Arcade', '2:Relaxed', '3:Once per minute', '4:Still']);
+  assert.deepStrictEqual(found, ['1:Arcade', '2:Relaxed', '4:Still']);
   assert.strictEqual(formHarness({AnimationMode: 0}).items.AnimationMode.get(), 0); // an unsanitized 0 never reaches the form
 });
 

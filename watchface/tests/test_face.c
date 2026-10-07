@@ -418,6 +418,148 @@ static void test_static_paths_unchanged(void) {
   assert(hash == UINT32_C(0xE3414225));
 }
 
+/* The Arcade pattern is checked from what is lit, against the game's own rules. */
+typedef struct { int pose, side, attack, stage[GAME_LANES], foods, throwing, kiss, catching; } CrowdFrame;
+
+static CrowdFrame read_crowd(const Scene *scene) {
+  CrowdFrame f;
+  unsigned i, lane, stage;
+  memset(&f, 0, sizeof(f));
+  f.pose = f.side = f.attack = -1;
+  assert(count_lit(scene, SEG_POPEYE, 7u) == 1u && count_lit(scene, SEG_BRUTUS, 6u) == 1u);
+  assert(count_lit(scene, SEG_OLIVE_READY, 4u) + scene_lit(scene, SEG_OLIVE_KISS) == 1u);
+  for (i = 0u; i < 5u; ++i) if (scene_lit(scene, SEG_POPEYE + i)) f.pose = (int)i;
+  assert(f.pose >= 0); /* never the dizzy poses */
+  for (i = 0u; i < 6u; ++i)
+    if (scene_lit(scene, SEG_BRUTUS + i)) { f.side = (int)i / 3; f.attack = (int)i % 3; }
+  for (lane = 0u; lane < GAME_LANES; ++lane) {
+    f.stage[lane] = -1;
+    assert(count_lit(scene, SEG_CARGO + lane * 5u, 5u) <= 1u);
+    for (stage = 0u; stage < 5u; ++stage)
+      if (scene_lit(scene, SEG_CARGO + lane * 5u + stage)) { f.stage[lane] = (int)stage; ++f.foods; }
+  }
+  f.throwing = scene_lit(scene, SEG_OLIVE_THROW);
+  f.kiss = scene_lit(scene, SEG_OLIVE_KISS);
+  f.catching = scene_lit(scene, SEG_POPEYE_CATCH);
+  assert(count_lit(scene, SEG_SPLASH, 4u) == 0u && count_lit(scene, SEG_MISS, 5u) == 0u);
+  assert(!scene_lit(scene, SEG_BELL) && !scene_lit(scene, SEG_HEART + 0u));
+  return f;
+}
+
+static void test_crowded_arcade(void) {
+  struct tm local = at(10, 41, 7); /* not the hour or 14 February */
+  Scene idle, scene;
+  CrowdFrame frames[96];
+  unsigned beat, lane, two_or_more = 0u, kiss_beats = 0u, throws = 0u, sides_struck = 0u, lanes_caught = 0u;
+  face_scene(&idle, &local, false, -1);
+  for (beat = 0u; beat < 96u; ++beat) { /* three full periods */
+    unsigned segment;
+    face_scene_crowd(&scene, &local, false, beat, 7u);
+    frames[beat] = read_crowd(&scene);
+    for (segment = SEG_DIGIT; segment <= SEG_PM; ++segment) /* the time never changes */
+      assert(scene_lit(&scene, segment) == scene_lit(&idle, segment));
+  }
+  for (beat = 0u; beat < 96u; ++beat) {
+    const CrowdFrame *f = &frames[beat], *before = &frames[(beat + 95u) % 96u];
+    const CrowdFrame *after = &frames[(beat + 1u) % 96u];
+    int moved = f->pose - after->pose;
+    /* Always food in flight, never more than the game's three, two or more most beats. */
+    assert(f->foods >= 1 && f->foods <= 3);
+    if (f->foods >= 2) ++two_or_more;
+    assert(moved >= -1 && moved <= 1); /* one pose per beat, across the period wrap too */
+    /* Olive throws exactly while a food leaves her hands, and only blows a kiss while still. */
+    for (lane = 0u; lane < GAME_LANES; ++lane) if (f->stage[lane] == 0) ++throws;
+    assert(f->throwing == (f->stage[0] == 0 || f->stage[1] == 0 || f->stage[2] == 0 || f->stage[3] == 0));
+    assert(!(f->throwing && f->kiss));
+    kiss_beats += (unsigned)f->kiss;
+    /* The catch flash is Popeye under food at its last position, and only then. */
+    {
+      int under = -1;
+      for (lane = 0u; lane < GAME_LANES; ++lane)
+        if (f->stage[lane] == 4 && game_lane_pose((uint8_t)lane) == (unsigned)f->pose) under = (int)lane;
+      assert(f->catching == (under >= 0));
+      if (f->catching) lanes_caught |= 1u << under;
+    }
+    /* Every food Popeye is due to catch finds him there: no food reaches position 5 unmet. */
+    for (lane = 0u; lane < GAME_LANES; ++lane)
+      if (f->stage[lane] == 4) assert(game_lane_pose((uint8_t)lane) == (unsigned)f->pose);
+    /* Brutus: five idle beats, two wind-up, one strike, then the other side. */
+    if (f->attack == GAME_ATTACK_STRIKE) {
+      unsigned threatened = f->side == GAME_LEFT ? 0u : 3u;
+      assert(before->attack == GAME_ATTACK_WINDUP && before->side == f->side);
+      assert(after->attack == GAME_ATTACK_IDLE && after->side != f->side);
+      assert(f->pose != (f->side == GAME_LEFT ? 0 : 4)); /* Popeye is never hit */
+      /* can_launch / strike_conflicts_cargo: no landing in that lane on the strike or the beat before. */
+      assert(f->stage[threatened] != 4 && before->stage[threatened] != 4);
+      sides_struck |= 1u << f->side;
+    }
+    if (f->attack == GAME_ATTACK_WINDUP && before->attack == GAME_ATTACK_IDLE)
+      assert(after->attack == GAME_ATTACK_WINDUP && frames[(beat + 2u) % 96u].attack == GAME_ATTACK_STRIKE);
+    /* Landings keep the game's spacing: two foods are never nearer in time than Popeye's travel. */
+    for (lane = 0u; lane < GAME_LANES; ++lane) {
+      unsigned other;
+      for (other = lane + 1u; other < GAME_LANES; ++other) {
+        int a = (int)game_lane_pose((uint8_t)lane), b = (int)game_lane_pose((uint8_t)other);
+        int gap = f->stage[lane] - f->stage[other];
+        if (f->stage[lane] < 0 || f->stage[other] < 0) continue;
+        assert(gap != 0 && (gap < 0 ? -gap : gap) >= (a < b ? b - a : a - b));
+      }
+    }
+  }
+  assert(two_or_more >= 96u * 3u / 4u);  /* crowded: two foods or more on at least three beats in four */
+  assert(throws == 36u);                 /* twelve throws per 32 beats, one per beat at most */
+  assert(kiss_beats == 12u);             /* two kisses of two beats each period */
+  assert(sides_struck == 3u && lanes_caught == 0xFu); /* both sides strike and all four lanes are caught */
+  /* Same frame, same picture: the pattern repeats every 32 beats and across the counter's wrap. */
+  face_scene_crowd(&idle, &local, false, 5u, 7u);
+  face_scene_crowd(&scene, &local, false, 5u + 32u * 1000u, 7u);
+  assert(same(&idle, &scene));
+  face_scene_crowd(&idle, &local, false, UINT32_MAX, 7u);
+  face_scene_crowd(&scene, &local, false, 31u, 7u);
+  assert(same(&idle, &scene));
+  face_scene_crowd(&idle, &local, false, 0u, 7u);
+  face_scene_crowd(&scene, &local, false, 0u, 7u);
+  assert(same(&idle, &scene));
+}
+
+static void test_crowded_arcade_activity_and_kiss(void) {
+  struct tm local = at(14, 23, 0), hour = at(9, 0, 0), valentine = at(15, 27, 3);
+  unsigned activity, beat, hour_kisses = 0u;
+  Scene scene, plain;
+  valentine.tm_mon = 1; valentine.tm_mday = 14;
+  for (activity = 0u; activity < 8u; ++activity) {
+    for (beat = 0u; beat < 64u; ++beat) {
+      CrowdFrame f;
+      face_scene_crowd(&scene, &local, true, beat, activity);
+      f = read_crowd(&scene);
+      if (!(activity & 1u)) assert(f.foods == 0 && !f.throwing && !f.kiss && !f.catching);
+      if (!(activity & 2u)) assert(f.pose == 2 && !f.catching);
+      if (!(activity & 4u)) assert(f.side == GAME_LEFT && f.attack == GAME_ATTACK_IDLE);
+    }
+  }
+  /* On the hour and on 14 February Olive's kiss replaces the food, as in the other modes. */
+  for (beat = 0u; beat < 64u; ++beat) {
+    face_scene_crowd(&scene, &hour, false, beat, 7u);
+    assert(scene_lit(&scene, SEG_OLIVE_KISS) && count_lit(&scene, SEG_CARGO, 20u) == 0u);
+    assert(count_lit(&scene, SEG_BRUTUS, 6u) == 1u && count_lit(&scene, SEG_POPEYE, 7u) == 1u);
+    hour_kisses += scene_lit(&scene, SEG_POPEYE_HEART) ? 1u : 0u;
+    face_scene_crowd(&scene, &valentine, false, beat, 7u);
+    assert(scene_lit(&scene, SEG_OLIVE_KISS) && count_lit(&scene, SEG_CARGO, 20u) == 0u);
+    face_scene_crowd(&scene, &hour, false, beat, 6u); /* Olive still: no kiss */
+    assert(!scene_lit(&scene, SEG_OLIVE_KISS));
+  }
+  assert(hour_kisses > 0u);
+  /* Every minute of the day keeps its digits and the same time layout. */
+  for (beat = 0u; beat < 1440u; ++beat) {
+    FaceClockLayout a, b;
+    struct tm t = at((int)beat / 60, (int)beat % 60, 0);
+    face_scene(&plain, &t, beat % 2u != 0u, -1);
+    face_scene_crowd(&scene, &t, beat % 2u != 0u, beat, 7u);
+    face_clock_layout(&plain, &a); face_clock_layout(&scene, &b);
+    assert(a.starts[0] == b.starts[0] && a.right == b.right && a.colon_x == b.colon_x);
+  }
+}
+
 int main(void) {
   test_static_clock();
   test_clock_style();
@@ -433,6 +575,8 @@ int main(void) {
   test_still_scene();
   test_still_kiss();
   test_static_paths_unchanged();
+  test_crowded_arcade();
+  test_crowded_arcade_activity_and_kiss();
   puts("face tests passed");
   return 0;
 }
