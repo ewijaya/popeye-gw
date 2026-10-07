@@ -281,6 +281,143 @@ static void test_kiss(void) {
   assert(!scene_lit(&scene, SEG_OLIVE_KISS));
 }
 
+/* Every Still scene is a frame the game could show: one pose per character, food
+ * within the launch rules, and a catch flash only under food on its last stage. */
+static void assert_still_valid(const Scene *scene, const struct tm *local, bool style_24h) {
+  Scene idle;
+  unsigned segment, lane, pose = 5u, side = 2u, attack = 0u, food = 0u;
+  int stages[GAME_LANES];
+  face_scene(&idle, local, style_24h, -1);
+  for (segment = SEG_DIGIT; segment <= SEG_PM; ++segment) /* time and colon intact */
+    assert(scene_lit(scene, segment) == scene_lit(&idle, segment));
+  assert(count_lit(scene, SEG_OLIVE_READY, 4u) + scene_lit(scene, SEG_OLIVE_KISS) == 1u);
+  assert(count_lit(scene, SEG_POPEYE, 7u) == 1u);
+  assert(count_lit(scene, SEG_BRUTUS, 6u) == 1u);
+  assert(count_lit(scene, SEG_SPLASH, 4u) == 0u && count_lit(scene, SEG_MISS, 5u) == 0u);
+  assert(!scene_lit(scene, SEG_BELL) && !scene_lit(scene, SEG_GAME_A) &&
+         !scene_lit(scene, SEG_GAME_B) && !scene_lit(scene, SEG_HI));
+  assert(count_lit(scene, SEG_HEART, 5u) == 0u); /* no heart left in mid-flight */
+  for (segment = 0u; segment < 5u; ++segment)
+    if (scene_lit(scene, SEG_POPEYE + segment)) pose = segment;
+  for (segment = 0u; segment < 6u; ++segment)
+    if (scene_lit(scene, SEG_BRUTUS + segment)) { side = segment / 3u; attack = segment % 3u; }
+  assert(pose < 5u && side < 2u);
+  for (lane = 0u; lane < GAME_LANES; ++lane) {
+    unsigned stage;
+    assert(count_lit(scene, SEG_CARGO + lane * 5u, 5u) <= 1u);
+    stages[lane] = -1;
+    for (stage = 0u; stage < 5u; ++stage)
+      if (scene_lit(scene, SEG_CARGO + lane * 5u + stage)) { stages[lane] = (int)stage; ++food; }
+  }
+  if (clock_kiss_time(local)) {
+    assert(scene_lit(scene, SEG_OLIVE_KISS) && scene_lit(scene, SEG_POPEYE_HEART));
+    assert(pose == 2u && food == 0u && !scene_lit(scene, SEG_POPEYE_CATCH));
+    assert(attack == GAME_ATTACK_IDLE);
+    return;
+  }
+  assert(!scene_lit(scene, SEG_OLIVE_KISS) && !scene_lit(scene, SEG_POPEYE_HEART));
+  assert(food == 1u || food == 2u);
+  for (lane = 0u; lane < GAME_LANES; ++lane) {
+    unsigned other;
+    if (stages[lane] < 0) continue;
+    /* A rival's wind-up or strike never meets food in the lane he threatens. */
+    if (attack != GAME_ATTACK_IDLE) assert(lane != (side == GAME_LEFT ? 0u : 3u));
+    for (other = lane + 1u; other < GAME_LANES; ++other) {
+      int a = game_lane_pose((uint8_t)lane), b = game_lane_pose((uint8_t)other);
+      int gap = stages[lane] - stages[other];
+      if (stages[other] < 0) continue;
+      /* can_launch: one launch per step, landings at least the pose distance apart. */
+      assert(gap != 0 && (gap < 0 ? -gap : gap) >= (a < b ? b - a : a - b));
+    }
+  }
+  assert(scene_lit(scene, SEG_OLIVE_THROW) ==
+         (stages[0] == 0 || stages[1] == 0 || stages[2] == 0 || stages[3] == 0));
+  if (scene_lit(scene, SEG_POPEYE_CATCH)) {
+    for (lane = 0u; lane < GAME_LANES; ++lane)
+      if (game_lane_pose((uint8_t)lane) == pose) assert(stages[lane] == 4);
+  }
+}
+
+static void test_still_scene(void) {
+  int style, hour, minute, second;
+  unsigned combos = 0u, pairs = 0u, catches = 0u;
+  for (style = 0; style < 2; ++style) {
+    for (hour = 0; hour < 24; ++hour) {
+      for (minute = 0; minute < 60; ++minute) {
+        Scene scene, other;
+        struct tm local = at(hour, minute, 0);
+        unsigned lane;
+        face_scene_still(&scene, &local, style != 0);
+        assert_still_valid(&scene, &local, style != 0);
+        for (second = 1; second < 60; ++second) { /* fixed for the whole minute */
+          local.tm_sec = second;
+          face_scene_still(&other, &local, style != 0);
+          assert(same(&scene, &other));
+        }
+        if (minute == 0) continue;
+        /* The paused demo food is clock_scene's: lane by minute, stage by beat. */
+        lane = (unsigned)minute % 4u;
+        assert(count_lit(&scene, SEG_CARGO + lane * 5u, 5u) == 1u);
+        for (lane = 0u; lane < 20u; ++lane)
+          if (scene_lit(&scene, SEG_CARGO + lane)) combos |= 1u << lane;
+        if (count_lit(&scene, SEG_CARGO, 20u) == 2u) ++pairs;
+        if (scene_lit(&scene, SEG_POPEYE_CATCH)) ++catches;
+        /* Neighbouring minutes always differ, so the face visibly drifts. */
+        local = at(hour, minute - 1, 0);
+        face_scene_still(&other, &local, style != 0);
+        assert(!same(&scene, &other));
+      }
+    }
+  }
+  assert(combos == 0xFFFFFu && pairs > 0u && catches > 0u);
+}
+
+static void test_still_kiss(void) {
+  Scene scene, again;
+  struct tm local = at(9, 0, 0), next = at(9, 1, 0), valentine = at(15, 27, 41);
+  valentine.tm_mon = 1; valentine.tm_mday = 14;
+  face_scene_still(&scene, &local, false);
+  assert(scene_lit(&scene, SEG_OLIVE_KISS) && scene_lit(&scene, SEG_POPEYE_HEART));
+  local.tm_sec = 59;
+  face_scene_still(&again, &local, false);
+  assert(same(&scene, &again)); /* one fixed kiss frame, not an animation */
+  face_scene_still(&scene, &next, false);
+  assert(!scene_lit(&scene, SEG_OLIVE_KISS) && !scene_lit(&scene, SEG_POPEYE_HEART));
+  face_scene_still(&scene, &valentine, true);
+  assert(scene_lit(&scene, SEG_OLIVE_KISS) && scene_lit(&scene, SEG_POPEYE_HEART));
+  assert(count_lit(&scene, SEG_CARGO, 20u) == 0u);
+  valentine.tm_mday = 15;
+  face_scene_still(&scene, &valentine, true);
+  assert(!scene_lit(&scene, SEG_OLIVE_KISS));
+}
+
+/* The game's static clock and every other mode's static face are unchanged by
+ * the Still scene: a checksum of their full-day output taken before it existed. */
+static void test_static_paths_unchanged(void) {
+  uint32_t hash = UINT32_C(2166136261);
+  int style, month, hour, minute, second;
+  unsigned pause;
+  for (style = 0; style < 2; ++style)
+    for (month = 0; month < 2; ++month)
+      for (hour = 0; hour < 24; ++hour)
+        for (minute = 0; minute < 60; ++minute)
+          for (second = 0; second < 60; second += 29) {
+            Scene scene[5];
+            struct tm local = at(hour, minute, second);
+            size_t i;
+            local.tm_mon = month ? 1 : 9; local.tm_mday = 14;
+            clock_scene(&scene[0], &local, style != 0, false, false, false);
+            face_scene(&scene[1], &local, style != 0, -1);
+            for (pause = 0u; pause < 3u; ++pause)
+              face_scene_active(&scene[2u + pause], &local, style != 0, 0u, 0u, false, pause * 5u);
+            for (i = 0u; i < sizeof(scene); ++i) {
+              hash ^= ((const unsigned char *)scene)[i];
+              hash *= UINT32_C(16777619);
+            }
+          }
+  assert(hash == UINT32_C(0xE3414225));
+}
+
 int main(void) {
   test_static_clock();
   test_clock_style();
@@ -293,6 +430,9 @@ int main(void) {
   test_celebration_and_frame_wrap();
   test_minute_does_not_move_cast();
   test_kiss();
+  test_still_scene();
+  test_still_kiss();
+  test_static_paths_unchanged();
   puts("face tests passed");
   return 0;
 }

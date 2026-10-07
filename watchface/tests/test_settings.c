@@ -291,7 +291,14 @@ static void test_quiet_rotation_and_runtime(void) {
   }
   assert(!r.animate && !r.timer_pending);
   assert(!(data_runtime_update(&r, &s, &d, &local, true, false, FACE_RUNTIME_CHECK) & FACE_EFFECT_START));
-  s.animation_mode = FACE_ANIMATION_STILL; s.rotate_seconds = 15;
+  s.animation_mode = FACE_ANIMATION_LIVELY;
+  assert(data_animation_allowed(&s, &d, &local, true, false));
+  /* Still's paused game frame needs no timer: it is redrawn by the minute tick. */
+  s.animation_mode = FACE_ANIMATION_STILL;
+  assert(!data_animation_allowed(&s, &d, &local, true, false));
+  effects = data_runtime_update(&r, &s, &d, &local, true, false, FACE_RUNTIME_MINUTE);
+  assert(!(effects & FACE_EFFECT_START) && !r.animate && !r.timer_pending);
+  s.rotate_seconds = 15;
   local.tm_hour = 12; local.tm_min = 0; local.tm_sec = 14;
   assert(data_rotation_delay(&s, &local, true) == 1000);
   assert(data_rotating_row(&s, &local) == s.row1);
