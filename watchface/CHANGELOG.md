@@ -1,6 +1,6 @@
 # Popeye G&W Clock changelog
 
-## Unreleased
+## 1.0.2 — 2026-10-07
 
 - Olive throws Popeye a kiss on the hour, and all day on 14 February.
 

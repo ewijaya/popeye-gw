@@ -265,7 +265,8 @@ locations. Connection indicators and decorative weather effects are omitted;
 there is no sound or disconnect vibration.
 
 It shares the game's `scene.c`, `clock.c`, `game.c` and artwork by path, and has
-its own settings and UUID. **Version 1.0.1 is published:**
+its own settings and UUID. Version 1.0.2, adding Olive's hourly kiss, is being
+prepared for PT2 testing. **Version 1.0.1 is published:**
 [download the watchface PBW from GitHub](https://github.com/ewijaya/popeye-gw/releases/tag/clock-v1.0.1).
 GitHub and the general/Emery store catalog downloads match the owner-approved
 frozen build. The [store changelog](https://apps.repebble.com/popeye-g-w-clock_8e8e130581e7467d9d7b0138/changelog)
