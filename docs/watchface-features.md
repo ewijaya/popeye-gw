@@ -65,7 +65,7 @@ text on one line, the main item first, two spaces apart, and never draws an icon
   an item above the threshold is left out and the other half shows alone.
 - Steps are the count, or the percentage of the goal; the progress meter shows the count.
 - Weather is the current temperature or the high/low, with `*` when stale. Disabled, unavailable
-  or re-united data shows `--`, as single rows do.
+  or other-unit data shows `--`, as single rows do.
 - Rotating rows keep each row's own pair, and two rows that are identical, pair included, do not
   rotate. The text comes from `data_format_pair()` and is covered by the host tests.
 - Stored in slots 26 and 27 of the saved settings record, which were reserved, so the record's length
