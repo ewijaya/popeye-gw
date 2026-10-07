@@ -10,14 +10,14 @@ black segments, a white field, and vivid red, orange, blue and turquoise.
 
 *Real gameplay from the Emery emulator (a sped-up highlight, shown at half of its 2x size).*
 
-**Status:** Version 1.5.0 is being prepared for PT2 testing and publication.
-It adds Settings → Light, which keeps the backlight on during rounds. Version 1.4.0
-remains the published release; see its [release record](docs/releases/1.4.0.md).
+**Status:** Version 1.5.0 is published on GitHub and the Pebble App Store.
+It adds Settings → Light, which keeps the backlight on during rounds; see the
+[release record](docs/releases/1.5.0.md).
 
 **Download:** [Pebble App Store](https://apps.repebble.com/e9cb2950ca21440798fb1db8) ·
-[GitHub release v1.4.0](https://github.com/ewijaya/popeye-gw/releases/tag/v1.4.0)
-([PBW](https://github.com/ewijaya/popeye-gw/releases/download/v1.4.0/popeye-gw.pbw)).
-Both downloads match the approved SHA-256 recorded in the [release record](docs/releases/1.4.0.md).
+[GitHub release v1.5.0](https://github.com/ewijaya/popeye-gw/releases/tag/v1.5.0)
+([PBW](https://github.com/ewijaya/popeye-gw/releases/download/v1.5.0/popeye-gw.pbw)).
+Both downloads match the approved SHA-256 recorded in the [release record](docs/releases/1.5.0.md).
 
 This is a watch adaptation, not an exact ROM recreation. The
 [fidelity ledger](docs/pp23-fidelity.md) separates confirmed rules from provisional
@@ -87,7 +87,7 @@ the middle button on the right. In landscape it is the middle of the three butto
 | Settings: Swap | Select Swap | Reverse game movement. |
 | Settings: Theme (1.2) | Select Theme | Switch the LCD colors between Classic and Ivory, the companion watchface's palette. |
 | Settings: Sound (1.1; levels 1.3) | Select Sound | Cycle the LCD-style beeps Off → Low → Medium → High (default Medium). |
-| Settings: Light (unreleased) | Select Light | Toggle In play / Auto. In play (default for new installs) keeps the backlight on while a round runs; pausing, game over, the menu, a notification or leaving the app hands it back to the watch. Auto leaves it to the watch's own backlight settings; players with settings saved by an earlier version start on Auto. |
+| Settings: Light (1.5) | Select Light | Toggle In play / Auto. In play (default for new installs) keeps the backlight on while a round runs; pausing, game over, the menu, a notification or leaving the app hands it back to the watch. Auto leaves it to the watch's own backlight settings; players with settings saved by an earlier version start on Auto. |
 | Settings: Online (1.1) | Select Online | Off by default. When On, your best Daily round of the day is sent through the phone to a leaderboard server (needs the phone and internet). High scores page 3 shows `Online #12/140`, `Online: not sent` or `Online: off`. The server is not live yet. |
 | Help pages | Select; movement buttons; Back | Select advances, movement buttons browse both ways, Back returns to the menu. |
 
