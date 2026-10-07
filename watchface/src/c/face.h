@@ -22,6 +22,11 @@ void face_clock_layout(const Scene *scene, FaceClockLayout *layout);
  * of the food demonstration. Pure: no platform calls, wall clock is the caller's. */
 void face_scene(Scene *scene, const struct tm *local, bool style_24h, int frame);
 
+/* The Still option: one paused game frame chosen by the hour and minute alone, so
+ * it never changes within a minute. Olive's kiss replaces it on the hour and on
+ * 14 February. Other modes' static fallback remains face_scene(..., -1). */
+void face_scene_still(Scene *scene, const struct tm *local, bool style_24h);
+
 /* Continuous, stepped LCD cycle. Activity bits select motion, never visibility:
  * Olive=1, Popeye=2, Brutus=4. Pause adds quiet beats after each food catch.
  * The caller advances frame at the selected cadence; no timer lives here. */

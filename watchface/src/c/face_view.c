@@ -575,7 +575,10 @@ void face_view_draw(GContext *ctx, GRect bounds, const FaceSettings *settings,
   unsigned segment;
   /* gmtime used by a world row may share libc's localtime storage. */
   local = &stable_local;
-  if (settings->animation_mode == FACE_ANIMATION_CLASSIC && !celebration) {
+  if (settings->animation_mode == FACE_ANIMATION_STILL) {
+    /* Never animated, so a paused game frame that changes only with the minute. */
+    face_scene_still(&scene, local, use24);
+  } else if (settings->animation_mode == FACE_ANIMATION_CLASSIC && !celebration) {
     face_scene(&scene, local, use24, animate ? (int)frame : -1);
     classic_activity(&scene, (unsigned)settings->character_activity);
   } else face_scene_active(&scene, local, use24, animate ? frame : 0u,

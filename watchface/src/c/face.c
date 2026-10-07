@@ -39,6 +39,45 @@ void face_scene(Scene *scene, const struct tm *local, bool style_24h, int frame)
                       (FACE_DEMO_LAST - FACE_DEMO_FIRST));
 }
 
+void face_scene_still(Scene *scene, const struct tm *local, bool style_24h) {
+  struct tm shown = *local;
+  unsigned minute = (unsigned)local->tm_min;
+  unsigned lane = minute % GAME_LANES, target = game_lane_pose((uint8_t)lane);
+  unsigned beats = FACE_DEMO_LAST - FACE_DEMO_FIRST + 1u;
+  unsigned phase = FACE_DEMO_FIRST + minute / GAME_LANES % beats, stage = phase - 1u;
+  unsigned threat = target < 2u ? 3u : 0u, first = minute / 20u % 2u;
+  unsigned candidates[2], count = 0u, i;
+  if (clock_kiss_time(local)) {
+    /* One fixed kiss frame on the calm idle scene: Olive's kiss pose and the
+     * heart over Popeye, with no food or rival action to crowd it. */
+    face_scene(scene, local, style_24h, -1);
+    scene_kiss(scene, SCENE_KISS_STEPS - 1u);
+    return;
+  }
+  /* The app's demonstration beat, frozen: from an even second clock_scene takes
+   * the lane from the minute (minute % 4) and the beat from the second. The beat
+   * comes from the minute too, so 20 minutes show every lane at every stage. */
+  shown.tm_sec = (int)phase * 2;
+  clock_scene(scene, &shown, style_24h, true, false, false);
+  /* Olive's next food, already in flight behind the first in another lane. It
+   * keeps the game's launch spacing (stage gap at least Popeye's pose distance)
+   * and avoids the lane Brutus threatens, so Popeye could still catch both. */
+  for (i = 0u; i < GAME_LANES; ++i)
+    if (i != lane && i != threat) candidates[count++] = i;
+  for (i = 0u; i < count; ++i) {
+    unsigned other = candidates[(first + i) % count];
+    unsigned pose = game_lane_pose((uint8_t)other);
+    unsigned distance = pose > target ? pose - target : target - pose;
+    if (distance > stage) continue;
+    scene_light(scene, SEG_CARGO + other * GAME_CARGO_STEPS + stage - distance);
+    if (stage == distance) { /* that food has just left Olive's hands */
+      scene->bits[SEG_OLIVE_READY / 32u] &= ~(UINT32_C(1) << (SEG_OLIVE_READY % 32u));
+      scene_light(scene, SEG_OLIVE_THROW);
+    }
+    break;
+  }
+}
+
 void face_scene_active(Scene *scene, const struct tm *local, bool style_24h,
                        uint32_t frame, unsigned activity, bool celebration,
                        unsigned pause) {
