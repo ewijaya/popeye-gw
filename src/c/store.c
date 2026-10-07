@@ -30,13 +30,15 @@ void settings_defaults(Settings *settings) {
 void scores_defaults(HighScores *scores) { memset(scores, 0, sizeof(*scores)); }
 
 void settings_encode(const Settings *s, uint8_t out[SETTINGS_RECORD_SIZE]) {
-  out[0] = 8u;
+  out[0] = 9u;
   out[1] = (uint8_t)(s->swap_buttons | s->vibration << 1 | s->ghosts << 2 |
                      s->attract << 3 | s->alarm_on << 4 | s->landscape << 5 |
                      s->buttons_bottom << 6 | s->sound << 7);
   /* v7: Theme above the hour (0-23). v8: Sound level bit 0 in the hour byte's top bit,
-   * bit 1 above the minute (0-59), below v6's Online. */
-  out[2] = (uint8_t)(s->alarm_hour | s->theme << 5 | (s->sound_level & 1u) << 7);
+   * bit 1 above the minute (0-59), below v6's Online. v9: Light in theme's unused
+   * second bit (two themes), so a third theme needs a new layout. */
+  out[2] = (uint8_t)(s->alarm_hour | (s->theme & 1u) << 5 | s->light_play << 6 |
+                     (s->sound_level & 1u) << 7);
   out[3] = (uint8_t)(s->alarm_minute | (s->sound_level >> 1 & 1u) << 6 | s->online << 7);
   write32(out + 4, checksum(out, 4));
 }
@@ -44,10 +46,11 @@ void settings_encode(const Settings *s, uint8_t out[SETTINGS_RECORD_SIZE]) {
 bool settings_decode(Settings *s, const uint8_t *data, size_t size) {
   uint8_t minute, hour, theme, level;
   settings_defaults(s);
-  if (size != SETTINGS_RECORD_SIZE || data == NULL || data[0] < 1u || data[0] > 8u) return false;
+  if (size != SETTINGS_RECORD_SIZE || data == NULL || data[0] < 1u || data[0] > 9u) return false;
   minute = data[0] >= 8u ? (uint8_t)(data[3] & 0x3fu) : data[0] >= 6u ? (uint8_t)(data[3] & 0x7fu) : data[3];
   hour = data[0] >= 7u ? (uint8_t)(data[2] & 0x1fu) : data[2];
-  theme = data[0] >= 8u ? (uint8_t)(data[2] >> 5 & 3u) : data[0] >= 7u ? (uint8_t)(data[2] >> 5) : (uint8_t)THEME_CLASSIC;
+  theme = data[0] >= 9u ? (uint8_t)(data[2] >> 5 & 1u) : data[0] >= 8u ? (uint8_t)(data[2] >> 5 & 3u) :
+          data[0] >= 7u ? (uint8_t)(data[2] >> 5) : (uint8_t)THEME_CLASSIC;
   level = data[0] >= 8u ? (uint8_t)(data[2] >> 7 | (data[3] >> 6 & 1u) << 1) : s->sound_level;
   if ((data[1] & (data[0] == 1u ? 0xe0u : data[0] == 2u ? 0xc0u : data[0] < 5u ? 0x80u : 0u)) != 0u || hour > 23u ||
       theme >= (uint8_t)THEME_COUNT || level > 2u || minute > 59u ||
@@ -70,6 +73,7 @@ bool settings_decode(Settings *s, const uint8_t *data, size_t size) {
   s->sound_level = level; /* v8 adds the level; earlier records use Medium. */
   s->alarm_minute = minute;
   s->online = data[0] >= 6u && (data[3] & 0x80u) != 0u; /* v6 adds Online; earlier records keep it Off. */
+  s->light_play = data[0] >= 9u && (data[2] & 0x40u) != 0u; /* v9 adds Light; earlier records keep Auto. */
   return true;
 }
 

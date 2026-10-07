@@ -17,7 +17,7 @@ typedef enum { PAGE_CLOCK, PAGE_GAME, PAGE_MENU, PAGE_SCORES,
                PAGE_ORIENTATION, PAGE_STATS, PAGE_STATS_RESET } Page;
 
 typedef enum { SETTING_ORIENTATION, SETTING_BUTTONS, SETTING_SWAP,
-               SETTING_VIBRATION, SETTING_SOUND, SETTING_GHOSTS, SETTING_THEME, SETTING_DEMO,
+               SETTING_VIBRATION, SETTING_SOUND, SETTING_LIGHT, SETTING_GHOSTS, SETTING_THEME, SETTING_DEMO,
                SETTING_ONLINE } SettingItem;
 
 #define HELP_PAGES 7u
@@ -429,7 +429,7 @@ static const char *sound_name(const Settings *settings) {
 }
 
 static unsigned settings_row_count(void) {
-  return s_data.settings.landscape ? 9u : 8u;
+  return s_data.settings.landscape ? 10u : 9u;
 }
 
 /* Button position has no visible row in Vertical mode. */
@@ -480,6 +480,7 @@ static void render_panel(void) {
       snprintf(panel.rows[row++], sizeof(panel.rows[0]), "Swap: %s", on_off(settings->swap_buttons));
       snprintf(panel.rows[row++], sizeof(panel.rows[0]), "Vibrate: %s", on_off(settings->vibration));
       snprintf(panel.rows[row++], sizeof(panel.rows[0]), "Sound: %s", sound_name(settings));
+      snprintf(panel.rows[row++], sizeof(panel.rows[0]), "Light: %s", settings->light_play ? "In play" : "Auto");
       snprintf(panel.rows[row++], sizeof(panel.rows[0]), "Ghosts: %s", on_off(settings->ghosts));
       snprintf(panel.rows[row++], sizeof(panel.rows[0]), "Theme: %s",
                settings->theme == THEME_IVORY ? "Ivory" : "Classic");
@@ -494,6 +495,8 @@ static void render_panel(void) {
                  settings->buttons_bottom ? "below" : "above");
       else if (settings_item(s_row) == SETTING_SOUND)
         snprintf(panel.footer, sizeof(panel.footer), "Muted by Quiet Time\nSelect: change  Back: menu");
+      else if (settings_item(s_row) == SETTING_LIGHT)
+        snprintf(panel.footer, sizeof(panel.footer), "Backlight during rounds\nSelect: change  Back: menu");
       else if (settings_item(s_row) == SETTING_ONLINE)
         snprintf(panel.footer, sizeof(panel.footer), "Daily rank via phone\nSelect: change  Back: menu");
       else if (settings_item(s_row) == SETTING_THEME)
@@ -669,6 +672,20 @@ static void render_panel(void) {
   view_panel(&panel);
 }
 
+/* Light: In play holds the backlight on only while a visible round runs. Pause,
+ * game over, other pages, focus loss and exit hand it back to the system, which
+ * then times out as after a button press. */
+static bool s_light_held;
+
+static void sync_light(void) {
+  bool hold = s_data.settings.light_play && s_focused && s_page == PAGE_GAME &&
+              (s_game.status == GAME_PLAYING || s_game.status == GAME_RECOVERING);
+  if (hold == s_light_held) return;
+  s_light_held = hold;
+  light_enable(hold);
+  if (!hold) light_enable_interaction();
+}
+
 static void render(void) {
   Scene scene;
   ViewOverlay overlay = VIEW_OVERLAY_NONE;
@@ -676,6 +693,7 @@ static void render(void) {
   time_t now = time(NULL);
   struct tm local = *localtime(&now);
   bool full_alarm = s_ringing && !s_passive_ring;
+  sync_light(); /* Every state change ends in a render. */
   view_set_landscape(s_data.settings.landscape, s_data.settings.buttons_bottom);
   if (s_page != PAGE_CLOCK && s_page != PAGE_GAME && !full_alarm) { render_panel(); return; }
   if (s_page == PAGE_CLOCK || full_alarm) {
@@ -806,6 +824,7 @@ static void select_handler(ClickRecognizerRef recognizer, void *context) {
           else if (settings.sound_level < 2u) ++settings.sound_level;
           else settings.sound = false;
           break;
+        case SETTING_LIGHT: settings.light_play = !settings.light_play; break;
         case SETTING_GHOSTS: settings.ghosts = !settings.ghosts; break;
         case SETTING_THEME: settings.theme = (uint8_t)((settings.theme + 1u) % THEME_COUNT); break;
         case SETTING_DEMO: settings.attract = !settings.attract; break;
@@ -936,6 +955,8 @@ static void glance_reload(AppGlanceReloadSession *session, size_t limit, void *c
 
 static void window_unload(Window *window) {
   online_net_cancel();
+  if (s_light_held) light_enable(false);
+  s_light_held = false;
   feedback_service_set_running(false);
   feedback_service_reset();
   cancel_timer();

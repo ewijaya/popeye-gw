@@ -18,6 +18,7 @@ typedef struct {
   uint8_t alarm_hour, alarm_minute;
   uint8_t theme; /* Theme from theme.h; Classic by default. */
   uint8_t sound_level; /* 0 Low, 1 Medium (default), 2 High; used while sound is on. */
+  bool light_play; /* Backlight held on while a round runs; Off leaves it to the system. */
 } Settings;
 
 typedef struct {
