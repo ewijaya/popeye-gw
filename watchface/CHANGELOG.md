@@ -1,5 +1,9 @@
 # Popeye G&W Clock changelog
 
+## Unreleased
+
+- Still now shows a paused game moment instead of an idle cast: food in flight, Popeye mid-catch and Brutus on the move. It changes only with the minute, and Olive's kiss appears on the hour and on 14 February.
+
 ## 1.0.2 — 2026-10-07
 
 - Olive throws Popeye a kiss on the hour, and all day on 14 February.
