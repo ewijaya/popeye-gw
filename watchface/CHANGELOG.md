@@ -1,6 +1,6 @@
 # Popeye G&W Clock changelog
 
-## Unreleased
+## 1.0.4 — 2026-10-07
 
 - Food now shows at all five positions as it flies to Popeye. The date and battery rows were hiding its second position; they now clear only the space behind their own text and icons.
 
