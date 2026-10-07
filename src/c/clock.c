@@ -5,6 +5,14 @@ uint32_t clock_date(const struct tm *local) {
          (uint32_t)(local->tm_mon + 1) * 100u + (uint32_t)local->tm_mday;
 }
 
+bool clock_valentine(const struct tm *local) {
+  return local->tm_mon == 1 && local->tm_mday == 14;
+}
+
+bool clock_kiss_time(const struct tm *local) {
+  return local->tm_min == 0 || clock_valentine(local);
+}
+
 time_t clock_next_alarm(time_t now, unsigned hour, unsigned minute) {
   struct tm *local = localtime(&now), target;
   time_t next;
@@ -67,5 +75,9 @@ void clock_scene(Scene *scene, const struct tm *local, bool style_24h,
   } else {
     scene_light(scene, demo && phase == 1u ? SEG_OLIVE_THROW : SEG_OLIVE_READY);
     if (alarm_on) scene_light(scene, SEG_BELL);
+    /* Once in the first 16 s of each hour, and continuously on 14 February. */
+    if (demo && clock_valentine(local)) scene_kiss(scene, beat % SCENE_KISS_STEPS);
+    else if (demo && local->tm_min == 0 && local->tm_sec < 16)
+      scene_kiss(scene, (unsigned)local->tm_sec / 2u);
   }
 }

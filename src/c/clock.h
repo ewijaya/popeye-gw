@@ -12,4 +12,7 @@ void clock_scene(Scene *scene, const struct tm *local, bool style_24h,
 /* Next local calendar occurrence strictly after now, using libc DST rules. */
 time_t clock_next_alarm(time_t now, unsigned hour, unsigned minute);
 uint32_t clock_date(const struct tm *local);
+/* Olive's kiss replaces the food demo on the hour and all day on 14 February. */
+bool clock_kiss_time(const struct tm *local);
+bool clock_valentine(const struct tm *local);
 #endif

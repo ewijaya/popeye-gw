@@ -23,7 +23,7 @@ typedef struct { uint32_t events, elapsed_ms; } Feedback;
 #define FEEDBACK_SOUND_HIGH 35u
 #define FEEDBACK_SOUND_MAX_NOTES 8u
 typedef enum { CUE_NONE, CUE_CATCH, CUE_MISS, CUE_BONUS, CUE_OVER, CUE_RECORD,
-               CUE_ALARM, CUE_WARNING } SoundCue; /* WARNING: ten seconds left in a timed round */
+               CUE_ALARM, CUE_WARNING, CUE_KISS } SoundCue; /* WARNING: ten seconds left; KISS: Olive's kiss lands */
 typedef struct { uint8_t midi; uint16_t ms; } SoundNote; /* midi 0 is a rest */
 
 /* Priority: game over (ascending when it set a record) > bonus > drop/miss > catch.

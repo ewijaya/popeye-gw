@@ -48,6 +48,12 @@ static Replay s_replay;
 static uint32_t s_round_date, s_daily_baseline;
 static uint32_t s_streak, s_play_carry_ms;
 static AppTimer *s_timer, *s_ring_timer, *s_idle_timer;
+/* Olive's kiss: a game-over celebration for a new best, and a bonus nod. */
+#define KISS_STEP_MS 500u
+#define KISS_BONUS_MS 1500u
+static AppTimer *s_kiss_timer;
+static unsigned s_kiss_step = SCENE_KISS_STEPS; /* SCENE_KISS_STEPS: not playing */
+static uint64_t s_kiss_pose_until;
 static uint32_t s_timer_delay;
 static uint64_t s_timer_start;
 static TimeUnits s_tick_units;
@@ -206,6 +212,37 @@ static uint8_t sound_volume(const Settings *settings) {
   return feedback_sound_volume(settings->sound, settings->sound_level);
 }
 
+static void stop_kiss(void) {
+  if (s_kiss_timer != NULL) app_timer_cancel(s_kiss_timer);
+  s_kiss_timer = NULL;
+  s_kiss_step = SCENE_KISS_STEPS;
+  s_kiss_pose_until = 0u;
+}
+
+static void kiss_tick(void *data) {
+  s_kiss_timer = NULL;
+  if (++s_kiss_step >= SCENE_KISS_STEPS) s_kiss_step = SCENE_KISS_STEPS;
+  else {
+    if (s_kiss_step == 6u) feedback_service_play(CUE_KISS, sound_volume(&s_data.settings));
+    s_kiss_timer = app_timer_register(KISS_STEP_MS, kiss_tick, NULL);
+  }
+  render();
+}
+
+static void start_kiss(void) {
+  stop_kiss();
+  s_kiss_step = 0u;
+  s_kiss_timer = app_timer_register(KISS_STEP_MS, kiss_tick, NULL);
+}
+
+/* Any button ends the celebration early and does nothing else. */
+static bool skip_kiss(void) {
+  if (s_kiss_step >= SCENE_KISS_STEPS) return false;
+  stop_kiss();
+  render();
+  return true;
+}
+
 static void timer_fired(void *data) {
   uint32_t events;
   s_timer = NULL;
@@ -213,6 +250,8 @@ static void timer_fired(void *data) {
   events = game_take_events(&s_game);
   feedback_service_events(events, s_game.new_high_score, s_data.settings.vibration,
                           sound_volume(&s_data.settings));
+  if ((events & GAME_EVENT_OVER) != 0u && s_game.new_high_score) start_kiss();
+  else if ((events & GAME_EVENT_BONUS) != 0u) s_kiss_pose_until = now_ms() + KISS_BONUS_MS;
   if (timed_round() && !s_warned && s_game.status == GAME_PLAYING &&
       s_game.time_left_ms <= PGW_SPRINT_WARNING_MS &&
       (events & (GAME_EVENT_CATCH | GAME_EVENT_DROP | GAME_EVENT_MISS | GAME_EVENT_BONUS)) == 0u) {
@@ -236,6 +275,7 @@ static void start_game(Round round) {
   time_t now = time(NULL);
   uint32_t seed;
   online_net_cancel(); /* Never while a round is played. */
+  stop_kiss();
   feedback_service_reset();
   flush_scores();
   s_round = round;
@@ -284,6 +324,7 @@ static void cancel_hold(void) {
 
 static void open_page(Page page) {
   cancel_hold();
+  stop_kiss();
   if (page != PAGE_GAME) {
     feedback_service_set_running(false);
     feedback_service_reset();
@@ -647,8 +688,11 @@ static void render(void) {
       overlay = s_hold == HOLD_B ? VIEW_OVERLAY_BEST_B : VIEW_OVERLAY_BEST_A;
     }
   } else {
+    bool kissing = s_kiss_step < SCENE_KISS_STEPS && s_game.status == GAME_OVER;
     scene_game(&scene, &s_game);
     feedback_service_apply(&scene);
+    if (kissing) scene_kiss(&scene, s_kiss_step);
+    else if (s_game.status == GAME_PLAYING && now_ms() < s_kiss_pose_until) scene_kiss_pose(&scene);
     if (s_data.settings.alarm_on && (!s_ringing || local.tm_sec % 2 == 0)) scene_light(&scene, SEG_BELL);
     if (s_game.status == GAME_PAUSED) {
       overlay = VIEW_OVERLAY_PAUSED;
@@ -657,7 +701,7 @@ static void render(void) {
         snprintf(note, sizeof(note), "%s %u:%02u", s_round == ROUND_DAILY ? "Daily" : "Sprint", left / 60u, left % 60u);
       }
     }
-    if (s_game.status == GAME_OVER) {
+    if (s_game.status == GAME_OVER && !kissing) {
       overlay = VIEW_OVERLAY_GAME_OVER;
       if (s_game.time_up) snprintf(note, sizeof(note), "Time up!");
     }
@@ -669,7 +713,7 @@ static void render(void) {
 static void move_down_handler(ClickRecognizerRef recognizer, void *context) {
   bool up = orientation_logical_up(click_recognizer_get_button_id(recognizer) == BUTTON_ID_UP,
       s_data.settings.landscape && s_data.settings.buttons_bottom);
-  if (dismiss_ring()) return;
+  if (dismiss_ring() || skip_kiss()) return;
   if (s_page == PAGE_GAME) {
     if (replay_input(recorder(), &s_game, up ? GAME_UP : GAME_DOWN, true)) render();
     arm_idle();
@@ -698,7 +742,7 @@ static void move_up_handler(ClickRecognizerRef recognizer, void *context) {
 
 static void select_handler(ClickRecognizerRef recognizer, void *context) {
   Settings settings = s_data.settings;
-  if (dismiss_ring()) return;
+  if (dismiss_ring() || skip_kiss()) return;
   flush_scores();
   switch (s_page) {
     case PAGE_CLOCK: start_game(ROUND_A); return;
@@ -799,7 +843,7 @@ static void select_handler(ClickRecognizerRef recognizer, void *context) {
 }
 
 static void select_long_action(ClickRecognizerRef recognizer, void *context) {
-  if (dismiss_ring()) return;
+  if (dismiss_ring() || skip_kiss()) return;
   if (s_page == PAGE_CLOCK) start_game(ROUND_B);
   else if (s_page == PAGE_GAME && s_game.status == GAME_OVER)
     start_game(s_round == ROUND_A ? ROUND_B : s_round == ROUND_B ? ROUND_A :
@@ -833,7 +877,7 @@ static void select_long_handler(ClickRecognizerRef recognizer, void *context) {
 }
 
 static void back_handler(ClickRecognizerRef recognizer, void *context) {
-  if (dismiss_ring()) return;
+  if (dismiss_ring() || skip_kiss()) return;
   if (s_editing) { s_editing = false; render(); return; }
   if (s_page == PAGE_CLOCK) { window_stack_pop(true); return; }
   if (s_page == PAGE_GAME) {
@@ -858,6 +902,7 @@ static void will_focus(bool in_focus) {
   s_focused = in_focus;
   if (!in_focus) {
     cancel_hold();
+    stop_kiss();
     if (s_page == PAGE_GAME) pause_game();
     flush_scores();
     if (s_ring_timer != NULL) app_timer_cancel(s_ring_timer);
