@@ -19,7 +19,26 @@ module.exports = function() {
         if (control) { if (yes) { control.enable(); } else { control.disable(); } }
       });
     }
+    function setVisible(control, yes) {
+      if (control) { if (yes) { control.show(); } else { control.hide(); } }
+    }
+    function pairs(main) { return (data.pairable || []).indexOf(main) !== -1; }
+    // A row shows an item itself, or as the second half of a pair.
+    function uses(row) {
+      return [1, 2].some(function(n) {
+        var main = +item('Row' + n).get(), then = +item('Row' + n + 'Then').get();
+        return main === row || (pairs(main) && pairs(then) && then !== main && then === row);
+      });
+    }
+    function layout() {
+      [1, 2].forEach(function(n) { setVisible(item('Row' + n + 'Then'), pairs(+item('Row' + n).get())); });
+      (data.groups || []).forEach(function(group) {
+        var yes = group.use.rows.some(uses) || !!(group.use.or && item(group.use.or).get());
+        group.targets.forEach(function(name) { setVisible(item(name) || clay.getItemById(name), yes); });
+      });
+    }
     function dependencies() {
+      layout();
       var weather = !!item('WeatherEnabled').get();
       enabled(['WeatherUnits', 'WeatherDetail', 'WeatherRefresh', 'LocationMode'], weather);
       enabled(['LocationName'], weather && +item('LocationMode').get() === 1);

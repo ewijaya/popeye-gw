@@ -94,6 +94,8 @@ Item.prototype.set = function(value) {
 Item.prototype.on = function(event, fn) { (this.listeners[event] = this.listeners[event] || []).push(fn); };
 Item.prototype.trigger = function(event) { (this.listeners[event] || []).forEach(function(fn) { fn(); }); };
 Item.prototype.enable = function() { this.disabled = false; };
+Item.prototype.show = function() { this.hidden = false; };
+Item.prototype.hide = function() { this.hidden = true; };
 Item.prototype.disable = function() { this.disabled = true; };
 function formHarness(saved) {
   var items = {}, ids = {}, built;
@@ -109,7 +111,7 @@ function formHarness(saved) {
   visit(config);
   var presets = {}; schema.presetIds.forEach(function(id) { presets[id] = schema.preset(id); });
   custom.call({EVENTS: {AFTER_BUILD: 'built'}, on: function(event, fn) { built = fn; },
-    meta: {userData: {presets: presets, presentation: schema.presentation}},
+    meta: {userData: {presets: presets, presentation: schema.presentation, groups: schema.groups(config), pairable: schema.pairable}},
     getItemByMessageKey: function(name) { return items[name]; }, getItemById: function(name) { return ids[name]; }});
   built(); return {items: items, ids: ids};
 }
@@ -159,6 +161,54 @@ test('retired Lively becomes Arcade, and the form offers only the remaining mode
     else if (item.messageKey === 'AnimationMode') { found = item.options.map(function(o) { return o.value + ':' + o.label; }); } }); })(config);
   assert.deepStrictEqual(found, ['1:Arcade', '2:Relaxed', '4:Still']);
   assert.strictEqual(formHarness({AnimationMode: 0}).items.AnimationMode.get(), 0); // an unsanitized 0 never reaches the form
+});
+
+test('pair rows: companions sanitize, order is kept, and sections follow what the rows show', function() {
+  assert.deepStrictEqual([schema.names[48], schema.names[49]], ['Row1Then', 'Row2Then']);
+  assert.strictEqual(schema.keys.Row1Then, 49); assert.strictEqual(schema.keys.Row2Then, 50);
+  assert.strictEqual(schema.defaults.Row1Then, 0); assert.strictEqual(schema.defaults.Row2Then, 0);
+  [0, 2, 3, 4].forEach(function(v) { assert.strictEqual(schema.sanitize({Row2Then: v}).Row2Then, v); });
+  [1, 5, 6, -3].forEach(function(v) { assert.strictEqual(schema.sanitize({Row1Then: v}).Row1Then, 0); });
+  assert.strictEqual(schema.sanitize({Row2Then: 'x'}).Row2Then, 0);
+  assert.strictEqual(schema.wire(schema.sanitize({Row2: 3, Row2Then: 2}), schema.defaults)[K.Row2Then], 2);
+  // Presets restore the layout, pairs included.
+  assert.strictEqual(schema.preset(2).Row1Then, 0); assert.strictEqual(schema.preset(4).Row2Then, 0);
+  var hidden = function(form, name) { return !!(form.items[name] || form.ids[name]).hidden; };
+  var form = formHarness({Row1: 1, Row2: 2});
+  // Default layout: Date and Battery show; Steps, Weather, World and Event stay out of the way.
+  assert(!hidden(form, 'DateFormat') && !hidden(form, 'BatteryStyle') && !hidden(form, 'h-date') && !hidden(form, 'h-battery'));
+  ['StepStyle', 'WeatherUnits', 'LocationName', 'WorldZone', 'EventDate', 'h-daily-steps', 'h-weather-optional', 'weather-credit', 'weather-status'].forEach(function(name) {
+    assert(hidden(form, name), name + ' should be hidden');
+  });
+  assert(hidden(form, 'Row1Then')); // Date cannot share a line
+  assert(!hidden(form, 'Row2Then')); // Battery can
+  // The pair's second item brings its section in, and the order is the user's.
+  form.items.Row2Then.set(3);
+  assert(!hidden(form, 'WeatherUnits') && !hidden(form, 'h-weather-optional') && !hidden(form, 'weather-credit'));
+  assert(!hidden(form, 'BatteryStyle')); // the main item is still Battery
+  form.items.Row2.set(3); form.items.Row2Then.set(2); // Weather first, then Battery
+  assert(!hidden(form, 'WeatherUnits') && !hidden(form, 'BatteryStyle'));
+  form.items.Row2.set(4); form.items.Row2Then.set(4); // an item never pairs with itself
+  assert(!hidden(form, 'StepStyle') && hidden(form, 'WeatherUnits') && hidden(form, 'BatteryStyle'));
+  form.items.Row2.set(1); // Date cannot pair: its companion control hides and is ignored
+  assert(hidden(form, 'Row2Then') && hidden(form, 'StepStyle') && !hidden(form, 'DateFormat'));
+  form.items.Row2.set(5); assert(!hidden(form, 'WorldZone') && hidden(form, 'EventDate'));
+  form.items.Row2.set(6); assert(!hidden(form, 'EventDate') && hidden(form, 'WorldZone'));
+  // Weather consent never hides: turned on, its section stays even with no weather row.
+  var consent = formHarness({Row1: 1, Row2: 2, WeatherEnabled: true});
+  assert(!hidden(consent, 'WeatherUnits') && !hidden(consent, 'h-weather-optional'));
+  // Hidden controls keep their saved values.
+  var kept = formHarness({Row1: 1, Row2: 2, StepStyle: 2, EventDate: '2027-01-01', WorldLabel: 'NYC'});
+  assert(hidden(kept, 'StepStyle') && kept.items.StepStyle.get() === 2 && kept.items.EventDate.get() === '2027-01-01');
+  // Applying a preset updates what shows.
+  var traveller = formHarness({Row1: 1, Row2: 2}); traveller.items.Preset.set(4);
+  assert(!hidden(traveller, 'WorldZone') && hidden(traveller, 'BatteryStyle') && !hidden(traveller, 'DateFormat'));
+  var classic = formHarness({Row1: 3, Row2: 4}); classic.items.Preset.set(1);
+  assert(hidden(classic, 'WeatherUnits') && hidden(classic, 'StepStyle') && hidden(classic, 'DateFormat'));
+  // Every hidden control is real: nothing in a group is missing from the page.
+  var seen = {};
+  (function visit(list) { list.forEach(function(c) { if (c.items) { visit(c.items); } else { seen[c.id || c.messageKey] = true; } }); })(config);
+  schema.groups(config).forEach(function(group) { group.targets.forEach(function(name) { assert(seen[name], name); }); });
 });
 
 test('preset form changes are visible before save and preserve opt-in/personal choices', function() {

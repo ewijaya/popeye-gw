@@ -73,6 +73,8 @@
       "CustomColors": 46,
       "GhostStrength": 47,
       "ColorArtwork": 48,
+      "Row1Then": 49,
+      "Row2Then": 50,
       "RequestData": 100,
       "WeatherTemp": 101,
       "WeatherHigh": 102,

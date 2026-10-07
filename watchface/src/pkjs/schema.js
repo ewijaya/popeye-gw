@@ -10,7 +10,8 @@ var names = ['Preset', 'Row1', 'Row2', 'RotateSeconds', 'TimeFormat',
   'EventLabel', 'EventDate', 'EventRepeat', 'EventElapsed', 'AnimationMode',
   'AnimationSpeed', 'AnimationPause', 'CharacterActivity', 'QuietStart',
   'QuietEnd', 'QuietHours', 'LowBatteryCutoff', 'Theme', 'BackgroundColor',
-  'SegmentColor', 'AccentColor', 'CustomColors', 'GhostStrength', 'ColorArtwork'];
+  'SegmentColor', 'AccentColor', 'CustomColors', 'GhostStrength', 'ColorArtwork',
+  'Row1Then', 'Row2Then'];
 var keys = {};
 names.forEach(function(name, i) { keys[name] = i + 1; });
 ['RequestData', 'WeatherTemp', 'WeatherHigh', 'WeatherLow', 'WeatherCode',
@@ -31,7 +32,7 @@ var defaults = {
   AnimationSpeed: 0, AnimationPause: 1, CharacterActivity: 7,
   QuietStart: 22, QuietEnd: 7, QuietHours: false, LowBatteryCutoff: 20,
   Theme: 1, BackgroundColor: 0xFFFFFF, SegmentColor: 0, AccentColor: 0xFF5500,
-  CustomColors: false, GhostStrength: 1, ColorArtwork: true
+  CustomColors: false, GhostStrength: 1, ColorArtwork: true, Row1Then: 0, Row2Then: 0
 };
 var bounds = {
   Preset: [0, 5], Row1: [0, 6], Row2: [0, 6], RotateSeconds: [0, 120],
@@ -42,8 +43,10 @@ var bounds = {
   AnimationSpeed: [0, 4000], AnimationPause: [0, 10], CharacterActivity: [0, 7],
   QuietStart: [0, 23], QuietEnd: [0, 23], LowBatteryCutoff: [0, 50],
   Theme: [0, 3], BackgroundColor: [0, 0xFFFFFF], SegmentColor: [0, 0xFFFFFF],
-  AccentColor: [0, 0xFFFFFF], GhostStrength: [0, 2]
+  AccentColor: [0, 0xFFFFFF], GhostStrength: [0, 2], Row1Then: [0, 6], Row2Then: [0, 6]
 };
+// Only these rows are short enough to share a line: Battery, Weather and Steps.
+var pairable = [2, 3, 4];
 // Presets change layout/style, preserving independently selected animation.
 var presetIds = [1, 2, 4, 5];
 var presentation = ['Row1', 'Row2', 'RotateSeconds', 'TimeFormat', 'LargeTime',
@@ -51,7 +54,7 @@ var presentation = ['Row1', 'Row2', 'RotateSeconds', 'TimeFormat', 'LargeTime',
   'ShowYear', 'ShowWeek', 'BatteryStyle', 'BatteryThreshold', 'StepStyle',
   'WeatherDetail', 'WorldFormat', 'Theme',
   'BackgroundColor', 'SegmentColor', 'AccentColor', 'CustomColors',
-  'GhostStrength', 'ColorArtwork'];
+  'GhostStrength', 'ColorArtwork', 'Row1Then', 'Row2Then'];
 
 function own(obj, key) { return Object.prototype.hasOwnProperty.call(obj, key); }
 function copy(obj) {
@@ -112,6 +115,7 @@ function sanitize(patch, previous) {
   if (result.AnimationSpeed > 0 && result.AnimationSpeed < 500) { result.AnimationSpeed = 500; }
   if (result.Theme < 0 || result.Theme > 3) { result.Theme = defaults.Theme; }
   if (result.Preset === 3) { result.Preset = 0; } // Preserve retired Active choices as Custom.
+  ['Row1Then', 'Row2Then'].forEach(function(name) { if (pairable.indexOf(result[name]) === -1) { result[name] = 0; } });
   if (result.AnimationMode === 0) { result.AnimationMode = 1; } // Retired Lively becomes Arcade.
   if (result.AnimationMode === 3) { result.AnimationMode = 4; } // Retired Once per minute becomes Still.
   // Retired controls retain their wire IDs for old saved settings and phones.
@@ -142,6 +146,12 @@ function wire(settings, previous, includePreset) {
   if (changed) { result[keys.ConfigVersion] = 1; }
   return result;
 }
+// Sections that belong to a row, with the controls inside them (see config.js `use`).
+function groups(config) {
+  return config.filter(function(section) { return section.use; }).map(function(section) {
+    return {use: section.use, targets: section.items.map(function(c) { return c.id || c.messageKey; }).filter(Boolean)};
+  });
+}
 function bytes(payload) {
   var size = 1;
   Object.keys(payload).forEach(function(k) {
@@ -150,5 +160,5 @@ function bytes(payload) {
   return size;
 }
 module.exports = {version: 1, names: names, keys: keys, defaults: defaults, presetIds: presetIds,
-  bounds: bounds, presentation: presentation, sanitize: sanitize, preset: preset,
+  bounds: bounds, presentation: presentation, pairable: pairable, groups: groups, sanitize: sanitize, preset: preset,
   wire: wire, bytes: bytes, ascii: ascii, validDate: validDate, copy: copy};

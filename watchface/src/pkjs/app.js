@@ -22,8 +22,11 @@ module.exports = function(options) {
   var world = new World({now: options.now, timers: options.timers, send: send, zone: settings.WorldZone});
   var presets = {};
   schema.presetIds.forEach(function(id) { presets[id] = schema.preset(id); });
-  var clay = new options.Clay(require('./config'), require('./config-custom'),
-    {autoHandleEvents: false, userData: {presets: presets, presentation: schema.presentation}});
+  var config = require('./config');
+  // Sections that belong to a row show only while a row uses them (see config.js).
+  var groups = schema.groups(config);
+  var clay = new options.Clay(config, require('./config-custom'), {autoHandleEvents: false,
+    userData: {presets: presets, presentation: schema.presentation, groups: groups, pairable: schema.pairable}});
   function persist() {
     storage.write(SETTINGS_KEY, {version: schema.version, settings: settings});
     try { clay.setSettings(settings); } catch (e) { options.log('Phone settings could not be stored; watch updates still work.'); }

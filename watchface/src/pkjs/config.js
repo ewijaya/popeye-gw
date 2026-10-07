@@ -23,21 +23,34 @@ function input(key, label, max, description, type) {
 function color(key, label) {
   return {type: 'color', messageKey: key, label: label, defaultValue: D[key], sunlight: false};
 }
-function section(title, items) {
-  return {type: 'section', items: [{type: 'heading', defaultValue: title}].concat(items)};
+// use: the rows a section belongs to. It is shown while a row (or a row's pair) shows
+// that item, or while its optional switch is on; its saved values are kept when hidden.
+function section(title, items, use) {
+  var result = {type: 'section', items: [{type: 'heading',
+    id: 'h-' + title.toLowerCase().replace(/[^a-z]+/g, '-'), defaultValue: title}].concat(items)};
+  if (use) { result.use = use; }
+  return result;
 }
 var rows = ['Hidden', 'Date', 'Battery', 'Weather', 'Steps', 'World time', 'Event'];
+var pairs = [['None', 0], ['Battery %', 2], ['Weather', 3], ['Steps', 4]];
 var formats = ['Follow watch', '12-hour', '24-hour'];
 module.exports = [
   {type: 'heading', defaultValue: 'Popeye G&W Clock'},
   {type: 'text', defaultValue: 'Your pocket-sized LCD world. Settings work offline; weather updates need the phone and Internet.'},
-  section('Start with a preset', [
+  section('Layout', [
     select('Preset', 'Preset', [['Custom', 0], ['Classic', 1], ['Everyday', 2], ['Traveller', 4], ['Large', 5]],
       'Presets change layout and style. Your animation activity and weather consent stay as you set them.'),
     {type: 'button', id: 'apply-preset', defaultValue: 'Apply selected preset again'},
-    select('Row1', 'Top information row', rows), select('Row2', 'Second information row', rows),
+    select('Row1', 'Top information row', rows),
+    select('Row1Then', 'Then show on the same line', pairs,
+      'Plain text without icons, in the order you choose. Battery, Weather and Steps only.'),
+    select('Row2', 'Second information row', rows),
+    select('Row2Then', 'Then show on the same line', pairs,
+      'Plain text without icons, in the order you choose. Battery, Weather and Steps only.'),
     number('RotateSeconds', 'Rotate rows every (seconds)', 0, 120,
-      '0 keeps both rows visible. 15–120 cycles your selected nonempty rows in one line.'),
+      '0 keeps both rows visible. 15–120 cycles your selected nonempty rows in one line.')
+  ]),
+  section('Clock', [
     select('TimeFormat', 'Main clock', formats), toggle('LargeTime', 'Larger clock digits'),
     toggle('HighContrast', 'High contrast'),
     toggle('BlinkColon', 'Blink clock colon', 'Off gives a steady colon and avoids second ticks.')
@@ -47,16 +60,16 @@ module.exports = [
     select('Language', 'Day / month language', ['English', 'Deutsch', 'Français', 'Español', '日本語'],
       'Japanese uses month/day order and compact weekday kanji.'),
     toggle('ShowYear', 'Show year'), toggle('ShowWeek', 'Show ISO week number')
-  ]),
+  ], {rows: [1]}),
   section('Battery', [
-    select('BatteryStyle', 'Battery display', ['Percentage only', 'Battery icon only', 'Battery icon + percentage', 'Spinach can + percentage']),
-    number('BatteryThreshold', 'Show battery only below (%)', 0, 100, '0 always shows the battery row.')
-  ]),
+    select('BatteryStyle', 'Battery display', ['Percentage only', 'Battery icon only', 'Battery icon + percentage', 'Spinach can + percentage'],
+      'Used when Battery is a row by itself; in a pair it is always the percentage.'),
+    number('BatteryThreshold', 'Show battery only below (%)', 0, 100, '0 always shows the battery.')
+  ], {rows: [2]}),
   section('Daily steps', [
-    number('StepGoal', 'Daily step goal', 100, 100000),
-    select('StepStyle', 'Step display', ['Step count', 'Goal percentage', 'Progress meter']),
-    toggle('Celebrate', 'Celebrate reaching the goal', 'A brief spinach celebration once per day when motion is enabled.')
-  ]),
+    select('StepStyle', 'Step display', ['Step count', 'Goal percentage', 'Progress meter'],
+      'In a pair, the progress meter shows the count.')
+  ], {rows: [4]}),
   section('Weather — optional', [
     toggle('WeatherEnabled', 'Enable weather updates',
       'Uses Open-Meteo. Automatic mode shares phone coordinates with Open-Meteo; manual mode searches your city instead.'),
@@ -67,21 +80,21 @@ module.exports = [
     input('LocationName', 'City or postal code', 80,
       'For example Tokyo, JP or Paris, France. Add a country or region to distinguish cities.'),
     {type: 'text', id: 'weather-status', defaultValue: 'Cached weather stays visible with a stale marker if an update fails.'},
-    {type: 'text', defaultValue: 'Weather: <a href="https://open-meteo.com/">Open-Meteo</a> (CC BY 4.0). Location search: GeoNames.'}
-  ]),
+    {type: 'text', id: 'weather-credit', defaultValue: 'Weather: <a href="https://open-meteo.com/">Open-Meteo</a> (CC BY 4.0). Location search: GeoNames.'}
+  ], {rows: [3], or: 'WeatherEnabled'}),
   section('World clock', [
     select('WorldZone', 'City / timezone', require('./zones').cities,
       'Uses bundled IANA rules for daylight saving time; no Internet needed.'),
     input('WorldLabel', 'Clock label', 8, 'Up to 8 ASCII characters.'),
     select('WorldFormat', 'World clock format', ['Follow main clock', '12-hour', '24-hour'])
-  ]),
+  ], {rows: [5]}),
   section('Event countdown', [
     input('EventLabel', 'Event name', 10, 'Up to 10 ASCII characters.'),
     input('EventDate', 'Event date', 10, 'Leave empty to disable. Date range 1900–2199.', 'date'),
     toggle('EventRepeat', 'Repeat every year', 'A February 29 anniversary uses February 28 in other years.'),
     toggle('EventElapsed', 'Count days after the event', 'When off, a past one-time event shows --.')
-  ]),
-  section('Animation activity — independent of preset', [
+  ], {rows: [6]}),
+  section('Motion and celebrations', [
     select('AnimationMode', 'Animation activity', [['Arcade', 1], ['Relaxed', 2], ['Still', 4]],
       'Works with every preset, including Classic. Changing presets keeps this choice.'),
     toggle('ReducedMotion', 'Reduce motion', 'Pauses character motion in every preset. Turn off to use your selected activity.'),
@@ -91,6 +104,9 @@ module.exports = [
       'Used by Relaxed. Arcade keeps going without pauses.'),
     select('CharacterActivity', 'Active characters', [['None', 0], ['Olive', 1], ['Popeye', 2],
       ['Olive + Popeye', 3], ['Brutus', 4], ['Olive + Brutus', 5], ['Popeye + Brutus', 6], ['All three', 7]]),
+    toggle('Celebrate', 'Celebrate goals and event days',
+      'A brief spinach celebration, once per day, when motion is enabled. Uses your step goal and the event date.'),
+    number('StepGoal', 'Daily step goal', 100, 100000, 'For the celebration and for step percentages and meters.'),
     toggle('QuietHours', 'Pause motion during quiet hours'),
     number('QuietStart', 'Quiet hours start (hour)', 0, 23),
     number('QuietEnd', 'Quiet hours end (hour)', 0, 23,
