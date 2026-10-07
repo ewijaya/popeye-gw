@@ -184,12 +184,16 @@ test('pair rows: companions sanitize, order is kept, and sections follow what th
   assert(!hidden(form, 'Row2Then')); // Battery can
   // The pair's second item brings its section in, and the order is the user's.
   form.items.Row2Then.set(3);
-  assert(!hidden(form, 'WeatherUnits') && !hidden(form, 'h-weather-optional') && !hidden(form, 'weather-credit'));
+  assert(!hidden(form, 'WeatherEnabled') && !hidden(form, 'h-weather-optional') && !hidden(form, 'weather-credit'));
+  assert(hidden(form, 'WeatherUnits') && hidden(form, 'LocationName')); // its options wait for the switch
+  form.items.WeatherEnabled.set(true); assert(!hidden(form, 'WeatherUnits') && hidden(form, 'LocationName'));
+  form.items.LocationMode.set(1); assert(!hidden(form, 'LocationName'));
+  form.items.WeatherEnabled.set(false);
   assert(!hidden(form, 'BatteryStyle')); // the main item is still Battery
   form.items.Row2.set(3); form.items.Row2Then.set(2); // Weather first, then Battery
-  assert(!hidden(form, 'WeatherUnits') && !hidden(form, 'BatteryStyle'));
+  assert(!hidden(form, 'WeatherEnabled') && !hidden(form, 'BatteryStyle'));
   form.items.Row2.set(4); form.items.Row2Then.set(4); // an item never pairs with itself
-  assert(!hidden(form, 'StepStyle') && hidden(form, 'WeatherUnits') && hidden(form, 'BatteryStyle'));
+  assert(!hidden(form, 'StepStyle') && hidden(form, 'WeatherEnabled') && hidden(form, 'BatteryStyle'));
   form.items.Row2.set(1); // Date cannot pair: its companion control hides and is ignored
   assert(hidden(form, 'Row2Then') && hidden(form, 'StepStyle') && !hidden(form, 'DateFormat'));
   form.items.Row2.set(5); assert(!hidden(form, 'WorldZone') && hidden(form, 'EventDate'));
@@ -204,7 +208,7 @@ test('pair rows: companions sanitize, order is kept, and sections follow what th
   var traveller = formHarness({Row1: 1, Row2: 2}); traveller.items.Preset.set(4);
   assert(!hidden(traveller, 'WorldZone') && hidden(traveller, 'BatteryStyle') && !hidden(traveller, 'DateFormat'));
   var classic = formHarness({Row1: 3, Row2: 4}); classic.items.Preset.set(1);
-  assert(hidden(classic, 'WeatherUnits') && hidden(classic, 'StepStyle') && hidden(classic, 'DateFormat'));
+  assert(hidden(classic, 'WeatherEnabled') && hidden(classic, 'StepStyle') && hidden(classic, 'DateFormat'));
   // Every hidden control is real: nothing in a group is missing from the page.
   var seen = {};
   (function visit(list) { list.forEach(function(c) { if (c.items) { visit(c.items); } else { seen[c.id || c.messageKey] = true; } }); })(config);
@@ -237,9 +241,11 @@ test('preset form changes are visible before save and preserve opt-in/personal c
   assert.strictEqual(form.items.ReducedMotion.get(), true);
   assert.deepStrictEqual(form.items.Preset.config.options.map(function(o) { return o.value; }), ['0','1','2','4','5']);
   var disabled = formHarness(); disabled.items.Preset.set(4);
-  assert.strictEqual(disabled.items.WeatherEnabled.get(), false); assert(disabled.items.LocationName.disabled);
-  disabled.items.WeatherEnabled.set(true); disabled.items.LocationMode.set(1); assert(!disabled.items.LocationName.disabled);
-  disabled.items.CustomColors.set(true); assert(!disabled.items.BackgroundColor.disabled);
+  assert.strictEqual(disabled.items.WeatherEnabled.get(), false); assert(disabled.items.LocationName.hidden);
+  disabled.items.WeatherEnabled.set(true); disabled.items.LocationMode.set(1); assert(!disabled.items.LocationName.hidden);
+  assert(disabled.items.BackgroundColor.hidden && disabled.items.QuietStart.hidden);
+  disabled.items.CustomColors.set(true); assert(!disabled.items.BackgroundColor.hidden && !disabled.items.AccentColor.hidden);
+  disabled.items.QuietHours.set(true); assert(!disabled.items.QuietStart.hidden && !disabled.items.QuietEnd.hidden);
 });
 test('queue serializes, coalesces newer settings on failure, and ignores late callbacks', function() {
   var clock = new Clock(), pebble = new Pebble(); pebble.autoAck = false;

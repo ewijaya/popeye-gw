@@ -13,12 +13,6 @@ module.exports = function() {
     var data = clay.meta.userData || {}, updating = false;
     var preset = clay.getItemByMessageKey('Preset');
     function item(name) { return clay.getItemByMessageKey(name); }
-    function enabled(names, yes) {
-      names.forEach(function(name) {
-        var control = item(name);
-        if (control) { if (yes) { control.enable(); } else { control.disable(); } }
-      });
-    }
     function setVisible(control, yes) {
       if (control) { if (yes) { control.show(); } else { control.hide(); } }
     }
@@ -39,11 +33,17 @@ module.exports = function() {
     }
     function dependencies() {
       layout();
+      // Options of an unused feature are hidden rather than greyed out; layout() has
+      // already shown everything in a visible section, so these only hide.
       var weather = !!item('WeatherEnabled').get();
-      enabled(['WeatherUnits', 'WeatherDetail', 'WeatherRefresh', 'LocationMode'], weather);
-      enabled(['LocationName'], weather && +item('LocationMode').get() === 1);
-      enabled(['BackgroundColor', 'SegmentColor', 'AccentColor'], !!item('CustomColors').get());
-      enabled(['QuietStart', 'QuietEnd'], !!item('QuietHours').get());
+      ['WeatherUnits', 'WeatherDetail', 'WeatherRefresh', 'LocationMode'].forEach(function(name) {
+        if (!weather) { setVisible(item(name), false); }
+      });
+      if (!weather || +item('LocationMode').get() !== 1) { setVisible(item('LocationName'), false); }
+      ['BackgroundColor', 'SegmentColor', 'AccentColor'].forEach(function(name) {
+        setVisible(item(name), !!item('CustomColors').get());
+      });
+      ['QuietStart', 'QuietEnd'].forEach(function(name) { setVisible(item(name), !!item('QuietHours').get()); });
     }
     function applyPreset() {
       var id = +preset.get(), values = data.presets && data.presets[id];
