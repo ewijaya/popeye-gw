@@ -9,7 +9,6 @@ settings migration; `settings.c/.h` and `pkjs/config.js` are untouched.
 | Caller | Path | Change |
 |---|---|---|
 | Game clock page, `src/c/main.c` `render()` | `clock_scene(attract=setting)` | none |
-| Watchface Classic, not animating | `face_scene(-1)` + `classic_activity` | none |
 | Watchface Arcade/Relaxed, not animating (quiet hours, Quiet Time, battery cutoff, reduced motion, covered, timer failure, no activity) | `face_scene_active(frame 0, activity 0)` → `face_scene(-1)` → `clock_scene(attract=false)` | none |
 | Watchface **Still** | was as above; now `face_scene_still()` | new |
 | Tests: `tests/test_m4.c`, `tests/test_m5.c`, `watchface/tests/test_face.c` | `clock_scene`, `face_scene`, `face_scene_active` | new tests only |

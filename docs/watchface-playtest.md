@@ -81,7 +81,7 @@ host or emulator evidence is recorded separately.
 | World DST and stale data | A DST transition updates the offset; after sufficient phone disconnection, the stale marker appears without implying fresh data | Pending |
 | Event dates | Future/today/elapsed displays are correct; empty or past one-time dates with elapsed off show `--`; annual repeats and February 29 behave as documented | Pending |
 | Event celebration | Today's event produces a brief eligible-motion celebration once per local day; it does not show the steps-only goal label | Pending |
-| Animation controls | Arcade, Relaxed, Classic and Still match their descriptions; custom speed, pauses and individual character switches work | Pending |
+| Animation controls | Arcade, Relaxed and Still match their descriptions; custom speed, pauses and individual character switches work | Pending |
 | Focus interruption | Cover with a notification mid-sequence and across minutes; motion stops and resumes promptly without a burst of missed frames | Pending |
 | Quiet Time | Enable before and during motion; time continues and motion stops | Pending |
 | Quiet hours | Verify normal and overnight intervals; matching start/end creates no quiet interval; eligible motion resumes at the end | Pending |

@@ -23,7 +23,7 @@ scene animates. No continuous smooth animation or sound.
 | Weather | Opt-in; automatic or manual city; Celsius/Fahrenheit; current or high/low; refresh interval; cached/stale indication; weather symbols confined to the information row |
 | World time | Chosen city/time zone, custom label and time format; phone computes DST-aware offset; cached offset expires visibly |
 | Event | Label/date; countdown or elapsed days; optional annual repeat; leap-date handling; brief date celebration |
-| Animation | Arcade (default)/Relaxed/Classic/Still (Lively retired, saved Lively loads as Arcade); speed and pauses; individual character activity; quiet hours and battery cutoff. Still shows a paused game frame that changes only with the minute (see below) |
+| Animation | Arcade (default, crowded)/Relaxed/Still (Lively and Once per minute retired: saved Lively loads as Arcade, saved Once per minute as Still); speed and pauses; individual character activity; quiet hours and battery cutoff. Still shows a paused game frame that changes only with the minute (see below) |
 | Themes | Ivory default, Original/Green/Amber alternatives; optional custom background/segment/accent; subtle Faint or Strong ghosts; colour or monochrome scenery |
 | Accessibility | Larger time, high contrast, reduced motion, steady or blinking colon; no colour-only meaning |
 | Clay configuration | My Apps settings entry; grouped readable controls; Classic/Everyday/Traveller/Large Time layout presets independent of animation activity; persistent settings; save updates the watch |
@@ -52,6 +52,28 @@ identical for every second of a minute. Decided 2026-10-07; details in
   digits and would read as a high score; both overlap the Large Time clock.
 - Other modes' static fallback (quiet hours, battery cutoff, reduced motion,
   covered, no activity) and the game's clock page are unchanged.
+
+## Arcade scene
+
+Arcade (600 ms beats) shows `face_scene_crowd()`: a continuous 32-beat pattern, a
+pure function of the frame, with no empty beat and no Pause beats (the Pause
+setting applies to Relaxed). Decided 2026-10-07 from the owner's request.
+
+- **Foods:** 12 throws per pattern, two or three in flight on most beats and never
+  more than the game's three, each lane holding one food at a time. Every lane is
+  thrown to three times per pattern.
+- **Popeye:** leaves each catch at once, one pose per beat, and is in place for the
+  next; the catch flash shows only under food at its last position.
+- **Brutus:** five idle beats, two of wind-up and one strike, alternating sides
+  like Game B (strikes on beats 0, 8, 16, 24).
+- **Olive:** throws as each food leaves; blows a quick kiss on two free beats
+  after two of the throws, like the game's bonus nod.
+- **Game rules kept** (checked by the tests from what is lit): landings are
+  spaced by Popeye's travel, no food lands in Brutus's lane on the strike or the
+  beat before, and Popeye is never in the strike pose.
+- The hour and 14 February replace the crowd with Olive's kiss, as in the other
+  modes. Character-activity switches still choose which of the three move.
+- Relaxed keeps the original one-food cycle at 2,000 ms.
 
 ## Runtime requirements
 

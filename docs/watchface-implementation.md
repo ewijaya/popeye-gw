@@ -52,9 +52,10 @@ data updates are sent separately, and failed delivery is retried with limits.
 | Traveller | World time / date | Ivory LCD, saved world zone |
 | Large Time | Date / battery | Larger clock and high contrast |
 
-Animation activity is independent of every preset: Arcade (the default), Relaxed,
-Once per minute or Still. Lively (wire value 0) was retired on 2026-10-07: saved or
-sent 0 loads as Arcade on both phone and watch, and the other values keep their numbers. Presets preserve motion mode, speed, loop pauses,
+Animation activity is independent of every preset: Arcade (the default), Relaxed
+or Still. Lively (wire value 0) and Once per minute (wire value 3) were retired on
+2026-10-07: a saved or sent 0 loads as Arcade and a 3 as Still, on both phone and
+watch, and the other values keep their numbers. Presets preserve motion mode, speed, loop pauses,
 active characters, reduced motion and weather effects. Retired Active preset
 preferences keep their choices under Custom. Japanese date labels use compact
 weekday kanji and month/day order, with a numeric form when the year is shown.
@@ -121,9 +122,10 @@ unavailable offset displays `--:--` rather than inventing a new one.
 
 Arcade uses 600 ms beats, Relaxed 2,000 ms (the retired Lively was 1,000 ms). Custom beats range
 from 500–4,000 ms; pause beats and individual character activity are selectable.
-The default motion continues through linked throws, flights, catches and rival
-poses. Classic runs the original five 2,000 ms demonstration beats and then
-returns to a static scene; Still shows a static cast.
+Arcade is the crowded 32-beat pattern described in `docs/watchface-features.md`;
+Relaxed continues through linked throws, flights, catches and rival poses one food
+at a time. Still shows a paused game frame that changes only with the minute.
+The retired Once per minute mode ran five demonstration beats once a minute.
 
 One presentation timer schedules the next animation beat or panel rotation.
 Motion stops while covered, in system Quiet Time, during configured quiet hours,
