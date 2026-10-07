@@ -1,5 +1,9 @@
 # Popeye G&W Clock changelog
 
+## Unreleased
+
+- Olive throws Popeye a kiss on the hour, and all day on 14 February.
+
 ## 1.0.1 — 2026-10-07
 
 - Centers Large Time in 12-hour mode and places a full AM/PM label beside the digits.

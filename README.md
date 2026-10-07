@@ -136,7 +136,7 @@ failures are visible. The unchanged UUID preserves records across app updates.
 `src/c/game.c` and `game.h` have no platform dependencies. `game_init` starts a round; `game_input` handles
 press/release edges immediately; `game_advance` consumes active milliseconds; `game_step` advances to the next
 boundary for simulation. Pacing values live in `src/c/tuning.h`. `src/c/scene.c` turns game state into the
-PRD 9.2 set of 82 lit segments (pure C99, host-tested). `src/c/view.c` draws each segment from a packed sprite
+PRD 9.2 set of lit segments plus Olive's kiss, 89 in all (pure C99, host-tested). `src/c/view.c` draws each segment from a packed sprite
 sheet using positions generated into `src/c/segments.h`; only unlit digit/MISS registers have baked grey ghosts.
 `src/c/main.c` runs one `AppTimer` per step or recovery and none while paused, over or in the clock. A separate
 presentation timer finishes a bounded 1.5-second feedback sequence and then stops. Pausing keeps the elapsed
@@ -209,7 +209,7 @@ python3 tools/build_art.py --check
 ```
 
 The art check rejects missing, unexpected, empty or opaque full-screen
-segments, and validates the 25 × 25 launcher icon. Host tests check all 82
+segments, and validates the 25 × 25 launcher icon. Host tests check all 89
 generated entries, screen bounds, atlas bounds and non-overlapping atlas crops.
 
 ## Gameplay GIF

@@ -2,7 +2,7 @@
 
 Popeye G&W uses the approved Popeye, Olive Oyl and Brutus designs, with fixed black LCD segments inspired by the original wide-screen handheld.
 
-The complete runtime set has **82 segments**, including every gameplay pose and the clock/alarm indicators. Character variants, cargo and the backdrop were made with the built-in image generation tool. The tool does not expose a model selector or identifier. Source PNGs preserve generated transparency. Runtime segments are strictly opaque black or transparent at 200 × 228.
+The complete runtime set has **89 segments**, including every gameplay pose and the clock/alarm indicators. Character variants, cargo and the backdrop were made with the built-in image generation tool. The tool does not expose a model selector or identifier. Source PNGs preserve generated transparency. Runtime segments are strictly opaque black or transparent at 200 × 228.
 
 ## Reproduce the art
 
@@ -32,6 +32,7 @@ The renderer loads the packed atlas once with a black/transparent 1-bit palette.
 | `olive.png` | Ready beside the left car |
 | `olive-throw.png` | Throw from the fixed left ledge |
 | `olive-bell-0.png`, `olive-bell-1.png` | Two alarm ringing frames |
+| `olive-kiss.png` | Olive throwing Popeye a kiss (approved variant A of three); the flying and "love" hearts are pixel art in `tools/prepare_art.py` |
 | `brutus.png`, `brutus-windup.png`, `brutus-strike.png` | Mirrored right fist phases |
 | `brutus-hammer-idle.png`, `brutus-hammer-windup.png`, `brutus-hammer-strike.png` | Left hammer phases |
 | `food-bottle.png`, `fish.png`, `barrel.png`, `food-can.png` | Four food arcs, five stages each: lane 0 tilted bottle, lane 1 fish, lane 2 upright barrel, lane 3 can. The barrel replaced a second, upright bottle that looked too much like lane 0 at 14 px; its prompt is in `m3-prompts.json` |

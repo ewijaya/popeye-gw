@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Olive throws Popeye a kiss when you set a new best: after the last miss, a heart flies from her to Popeye before the Game over box appears. Any button skips it. At the 200 and 500 bonuses she blows a quick kiss from her ledge.
+- On the clock, Olive kisses Popeye at the top of every hour, and all day on 14 February she throws hearts instead of food.
+- The second bottle (lane 2) is now a barrel, so all four foods look different.
+
 ## 1.3.0 — 2026-10-06
 
 - Make the beeps quieter and add volume levels: Settings → Sound now cycles Off, Low, Medium and High. Medium, the new default, is a third of the previous level, and High is still quieter than before. The alarm uses the same level. Existing On/Off choices are kept.
