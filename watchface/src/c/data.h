@@ -16,6 +16,12 @@ bool data_apply_weather(FaceData *data, const FaceData *snapshot, bool complete,
 bool data_apply_world(FaceData *data, int32_t offset, time_t updated,
                       bool has_offset, time_t now);
 int data_rotating_row(const FaceSettings *settings, const struct tm *local);
+/* Which row (0 or 1) the single rotating line shows now. */
+int data_rotating_slot(const FaceSettings *settings, const struct tm *local);
+/* A pair row: two short items as plain text on one line, first then second, with no
+ * icons. An item with nothing to show (battery above its threshold) is left out. */
+void data_format_pair(char *output, size_t length, const FaceSettings *settings,
+                      const FaceData *data, time_t now, int first, int second);
 uint32_t data_rotation_delay(const FaceSettings *settings, const struct tm *local,
                               bool focused);
 

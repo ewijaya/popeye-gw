@@ -156,18 +156,70 @@ bool data_apply_world(FaceData *d, int32_t offset, time_t updated, bool has_offs
   return true;
 }
 
+/* Two slots count as the same line when both the main item and its pair match. */
+static int row_code(const FaceSettings *s, int slot) {
+  int main = slot == 0 ? s->row1 : s->row2;
+  return main * 8 + settings_row_then(s, slot);
+}
+
+int data_rotating_slot(const FaceSettings *s, const struct tm *local) {
+  if (s->row1 == FACE_ROW_NONE) return 1;
+  if (s->row2 == FACE_ROW_NONE || s->rotate_seconds == 0 || local == NULL) return 0;
+  return ((local->tm_hour*3600 + local->tm_min*60 + local->tm_sec) / s->rotate_seconds) % 2 ? 1 : 0;
+}
+
 int data_rotating_row(const FaceSettings *s, const struct tm *local) {
-  if (s->row1 == FACE_ROW_NONE) return s->row2;
-  if (s->row2 == FACE_ROW_NONE || s->rotate_seconds == 0 || local == NULL) return s->row1;
-  return ((local->tm_hour*3600 + local->tm_min*60 + local->tm_sec) / s->rotate_seconds) % 2 ? s->row2 : s->row1;
+  return data_rotating_slot(s, local) ? s->row2 : s->row1;
 }
 
 uint32_t data_rotation_delay(const FaceSettings *s, const struct tm *local, bool focused) {
   int seconds;
   if (!focused || !local || s->rotate_seconds <= 0 || s->row1 == FACE_ROW_NONE ||
-      s->row2 == FACE_ROW_NONE || s->row1 == s->row2) return 0;
+      s->row2 == FACE_ROW_NONE || row_code(s, 0) == row_code(s, 1)) return 0;
   seconds = local->tm_hour*3600 + local->tm_min*60 + local->tm_sec;
   return (uint32_t)(s->rotate_seconds - seconds % s->rotate_seconds)*1000;
+}
+
+/* One half of a pair row. Returns false when the item has nothing to show. */
+static bool pair_item(char *out, size_t length, const FaceSettings *s, const FaceData *d,
+                      time_t now, int item) {
+  int percent = d->battery_percent < 0 ? 0 : d->battery_percent > 100 ? 100 : d->battery_percent;
+  out[0] = '\0';
+  switch (item) {
+    case FACE_ROW_BATTERY:
+      if (s->battery_threshold > 0 && percent >= s->battery_threshold && !d->charging) return false;
+      snprintf(out, length, "%d%%%s", percent, d->charging ? "+" : "");
+      return true;
+    case FACE_ROW_STEPS:
+      if (!d->health_available) snprintf(out, length, "--");
+      else if (s->step_style == 1) snprintf(out, length, "%d%%", data_step_percent(s, d));
+      else snprintf(out, length, "%ld", (long)d->steps);
+      return true;
+    case FACE_ROW_WEATHER:
+      if (!s->weather_enabled || d->weather_updated <= 0 || d->weather_unit != s->weather_units)
+        snprintf(out, length, "--");
+      else {
+        char unit = d->weather_unit == 1 ? 'F' : 'C';
+        const char *stale = data_weather_stale(s, d, now) ? "*" : "";
+        if (s->weather_detail == 1)
+          snprintf(out, length, "%ld/%ld%c%s", (long)d->weather_high, (long)d->weather_low, unit, stale);
+        else snprintf(out, length, "%ld%c%s", (long)d->weather_temp, unit, stale);
+      }
+      return true;
+    default: return false;
+  }
+}
+
+void data_format_pair(char *out, size_t length, const FaceSettings *s, const FaceData *d,
+                      time_t now, int first, int second) {
+  char a[24], b[24];
+  bool has_a, has_b;
+  if (length == 0) return;
+  has_a = pair_item(a, sizeof(a), s, d, now, first);
+  has_b = pair_item(b, sizeof(b), s, d, now, second);
+  if (has_a && has_b) snprintf(out, length, "%s  %s", a, b);
+  else if (has_a || has_b) snprintf(out, length, "%s", has_a ? a : b);
+  else out[0] = '\0';
 }
 
 bool data_animation_allowed(const FaceSettings *s, const FaceData *d,

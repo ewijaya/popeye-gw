@@ -38,7 +38,7 @@ enum FaceWireKey {
   FACE_KEY_QUIET_START, FACE_KEY_QUIET_END, FACE_KEY_QUIET_HOURS,
   FACE_KEY_LOW_BATTERY_CUTOFF, FACE_KEY_THEME, FACE_KEY_BACKGROUND_COLOR,
   FACE_KEY_SEGMENT_COLOR, FACE_KEY_ACCENT_COLOR, FACE_KEY_CUSTOM_COLORS,
-  FACE_KEY_GHOST_STRENGTH, FACE_KEY_COLOR_ARTWORK,
+  FACE_KEY_GHOST_STRENGTH, FACE_KEY_COLOR_ARTWORK, FACE_KEY_ROW1_THEN, FACE_KEY_ROW2_THEN,
   FACE_KEY_REQUEST_DATA = 100, FACE_KEY_WEATHER_TEMP, FACE_KEY_WEATHER_HIGH,
   FACE_KEY_WEATHER_LOW, FACE_KEY_WEATHER_CODE, FACE_KEY_WEATHER_UPDATED,
   FACE_KEY_WEATHER_STATUS, FACE_KEY_WORLD_OFFSET, FACE_KEY_WORLD_UPDATED,
@@ -48,6 +48,7 @@ enum FaceWireKey {
 
 typedef struct {
   int32_t preset, row1, row2, rotate_seconds, time_format;
+  int32_t row1_then, row2_then; /* optional second item on a row; see settings_row_then */
   bool large_time, high_contrast, reduced_motion, blink_colon;
   int32_t date_format, language;
   bool show_year, show_week;
@@ -88,6 +89,9 @@ typedef struct {
 void settings_defaults(FaceSettings *settings);
 void settings_validate(FaceSettings *settings);
 void settings_apply_preset(FaceSettings *settings, int preset);
+/* The item shown after a row's own, or FACE_ROW_NONE. Only Battery, Weather and Steps
+ * are short enough to share a line, and a row never pairs with itself. slot is 0 or 1. */
+int settings_row_then(const FaceSettings *settings, int slot);
 bool settings_apply_integer(FaceSettings *settings, uint32_t key, int32_t value);
 bool settings_apply_text(FaceSettings *settings, uint32_t key, const char *value);
 bool settings_quiet_now(const FaceSettings *settings, const struct tm *local);

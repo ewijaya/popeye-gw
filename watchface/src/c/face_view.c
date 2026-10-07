@@ -424,7 +424,7 @@ static void clear_behind(GContext *ctx, int left, int y, int right) {
 
 static void draw_row(GContext *ctx, int row, int y, const FaceSettings *settings,
                      const FaceData *data, const struct tm *local, time_t now,
-                     bool watch_24h, bool celebration, int right, bool compact) {
+                     bool watch_24h, bool celebration, int right, bool compact, int then) {
   char text[64];
   int x = 60, width = right - 60;
   int panel_width = width;
@@ -432,6 +432,14 @@ static void draw_row(GContext *ctx, int row, int y, const FaceSettings *settings
   int percent = data->battery_percent < 0 ? 0 : data->battery_percent > 100 ? 100 : data->battery_percent;
   text[0] = '\0';
   graphics_context_set_fill_color(ctx, s_foreground);
+  if (then != FACE_ROW_NONE) { /* a pair: plain text, no icons, items in the chosen order */
+    data_format_pair(text, sizeof(text), settings, data, now, row, then);
+    if (text[0] != '\0') {
+      clear_behind(ctx, right - info_text_width(text, width), y, right);
+      info_text(ctx, text, y, width, right);
+    }
+    return;
+  }
   switch (row) {
     case FACE_ROW_DATE:
       data_format_date(text, sizeof(text), settings, local);
@@ -596,11 +604,15 @@ void face_view_draw(GContext *ctx, GRect bounds, const FaceSettings *settings,
                    segment_art[SEG_DIGIT + 3u * 7u + 1u].w;
   if (settings->large_time || !s_loaded) info_right = large_clock(ctx, &scene, ghosts);
   bool rotated_second = false;
+  int then1 = settings_row_then(settings, 0), then2 = settings_row_then(settings, 1);
   if (settings->rotate_seconds > 0) {
-    row1 = data_rotating_row(settings, local);
-    rotated_second = row1 == settings->row2 && row1 != settings->row1;
+    int slot = data_rotating_slot(settings, local);
+    row1 = slot ? settings->row2 : settings->row1;
+    then1 = slot ? then2 : then1;
+    rotated_second = slot == 1 && settings->row2 != settings->row1;
     row2 = FACE_ROW_NONE;
+    then2 = FACE_ROW_NONE;
   }
-  draw_row(ctx, row1, settings->large_time || !s_loaded ? 42 : 33, settings, data, local, now, use24, celebration, info_right, rotated_second);
-  draw_row(ctx, row2, settings->large_time || !s_loaded ? 61 : 52, settings, data, local, now, use24, celebration, info_right, true);
+  draw_row(ctx, row1, settings->large_time || !s_loaded ? 42 : 33, settings, data, local, now, use24, celebration, info_right, rotated_second, then1);
+  draw_row(ctx, row2, settings->large_time || !s_loaded ? 61 : 52, settings, data, local, now, use24, celebration, info_right, true, then2);
 }

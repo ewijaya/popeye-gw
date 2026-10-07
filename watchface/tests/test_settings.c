@@ -368,6 +368,118 @@ static void test_data_messages(void) {
   assert(d.world_updated == 0); /* Explicit unavailable zone invalidates old offset availability. */
 }
 
+static void test_pair_rows(void) {
+  FaceSettings s, restored;
+  FaceData d;
+  char text[64];
+  uint8_t bytes[FACE_SETTINGS_STORAGE_SIZE];
+  struct tm local;
+  time_t now = 1760000000;
+  int main, then;
+  settings_defaults(&s);
+  memset(&d, 0, sizeof(d));
+  assert(s.row1_then == FACE_ROW_NONE && s.row2_then == FACE_ROW_NONE);
+  assert(settings_row_then(&s, 0) == FACE_ROW_NONE && settings_row_then(&s, 1) == FACE_ROW_NONE);
+  /* Only Battery, Weather and Steps pair, in any order, never with themselves. */
+  for (main = 0; main <= 6; ++main) {
+    for (then = 0; then <= 6; ++then) {
+      int ok = (main == 2 || main == 3 || main == 4) && (then == 2 || then == 3 || then == 4) && main != then;
+      s.row1 = main; s.row1_then = then; s.row2 = 2; s.row2_then = then;
+      settings_validate(&s);
+      assert(settings_row_then(&s, 0) == (ok ? then : FACE_ROW_NONE));
+      assert(settings_row_then(&s, 1) == (then == 3 || then == 4 ? then : FACE_ROW_NONE));
+    }
+  }
+  settings_defaults(&s);
+  s.row2 = FACE_ROW_WEATHER; s.row2_then = FACE_ROW_BATTERY; s.row1 = FACE_ROW_STEPS; s.row1_then = 6;
+  settings_validate(&s);
+  assert(s.row1_then == FACE_ROW_NONE); /* an item that cannot pair is dropped */
+  assert(settings_apply_integer(&s, FACE_KEY_ROW1_THEN, FACE_ROW_WEATHER) && s.row1_then == FACE_ROW_WEATHER);
+  assert(settings_apply_integer(&s, FACE_KEY_ROW2_THEN, 99)); settings_validate(&s);
+  assert(s.row2_then == FACE_ROW_NONE);
+  /* The two companions survive the saved record, whose length and version are unchanged. */
+  s.row1_then = FACE_ROW_BATTERY; s.row2_then = FACE_ROW_STEPS;
+  assert(settings_encode(&s, bytes, sizeof(bytes)) == FACE_SETTINGS_STORAGE_SIZE && bytes[4] == 1);
+  assert(settings_decode(&restored, bytes, sizeof(bytes)));
+  assert(restored.row1_then == FACE_ROW_BATTERY && restored.row2_then == FACE_ROW_STEPS);
+  /* A record from before the pairs (zeros in those slots) loads as single rows. */
+  s.row1_then = s.row2_then = FACE_ROW_NONE;
+  assert(settings_encode(&s, bytes, sizeof(bytes)) == FACE_SETTINGS_STORAGE_SIZE);
+  assert(settings_decode(&restored, bytes, sizeof(bytes)) && restored.row1_then == 0 && restored.row2_then == 0);
+  /* A preset restores the layout, pairs included. */
+  s.row1_then = FACE_ROW_BATTERY; s.row2_then = FACE_ROW_STEPS;
+  settings_apply_preset(&s, FACE_PRESET_EVERYDAY);
+  assert(s.row1_then == FACE_ROW_NONE && s.row2_then == FACE_ROW_NONE);
+
+  /* Text: items in the chosen order, plain, two spaces apart. */
+  settings_defaults(&s);
+  d.battery_percent = 62; d.health_available = true; d.steps = 8412;
+  d.weather_updated = now; d.weather_temp = 21; d.weather_high = 25; d.weather_low = 14;
+  d.weather_unit = 0; d.weather_status = 1;
+  s.weather_enabled = true; s.weather_units = 0; s.weather_refresh = 60;
+  data_format_pair(text, sizeof(text), &s, &d, now, FACE_ROW_BATTERY, FACE_ROW_WEATHER);
+  assert(strcmp(text, "62%  21C") == 0);
+  data_format_pair(text, sizeof(text), &s, &d, now, FACE_ROW_WEATHER, FACE_ROW_BATTERY);
+  assert(strcmp(text, "21C  62%") == 0);
+  data_format_pair(text, sizeof(text), &s, &d, now, FACE_ROW_BATTERY, FACE_ROW_STEPS);
+  assert(strcmp(text, "62%  8412") == 0);
+  data_format_pair(text, sizeof(text), &s, &d, now, FACE_ROW_STEPS, FACE_ROW_WEATHER);
+  assert(strcmp(text, "8412  21C") == 0);
+  s.step_style = 1; s.step_goal = 10000;
+  data_format_pair(text, sizeof(text), &s, &d, now, FACE_ROW_STEPS, FACE_ROW_BATTERY);
+  assert(strcmp(text, "84%  62%") == 0);
+  s.step_style = 2; /* the meter has no text, so the count is shown */
+  data_format_pair(text, sizeof(text), &s, &d, now, FACE_ROW_STEPS, FACE_ROW_BATTERY);
+  assert(strcmp(text, "8412  62%") == 0);
+  s.weather_detail = 1;
+  data_format_pair(text, sizeof(text), &s, &d, now, FACE_ROW_BATTERY, FACE_ROW_WEATHER);
+  assert(strcmp(text, "62%  25/14C") == 0);
+  s.weather_detail = 0; s.weather_units = 1; /* units changed since the cache: never relabel old values */
+  data_format_pair(text, sizeof(text), &s, &d, now, FACE_ROW_BATTERY, FACE_ROW_WEATHER);
+  assert(strcmp(text, "62%  --") == 0);
+  s.weather_units = 0; s.weather_enabled = false;
+  data_format_pair(text, sizeof(text), &s, &d, now, FACE_ROW_WEATHER, FACE_ROW_BATTERY);
+  assert(strcmp(text, "--  62%") == 0);
+  s.weather_enabled = true; d.health_available = false;
+  data_format_pair(text, sizeof(text), &s, &d, now, FACE_ROW_BATTERY, FACE_ROW_STEPS);
+  assert(strcmp(text, "62%  --") == 0);
+  d.weather_updated = now - 4 * 60 * 60; /* stale cache keeps its marker */
+  data_format_pair(text, sizeof(text), &s, &d, now, FACE_ROW_WEATHER, FACE_ROW_BATTERY);
+  assert(strcmp(text, "21C*  62%") == 0);
+  /* Battery follows its threshold: above it, only the other item shows. */
+  d.weather_updated = now; s.battery_threshold = 50;
+  data_format_pair(text, sizeof(text), &s, &d, now, FACE_ROW_BATTERY, FACE_ROW_WEATHER);
+  assert(strcmp(text, "21C") == 0);
+  d.battery_percent = 30;
+  data_format_pair(text, sizeof(text), &s, &d, now, FACE_ROW_BATTERY, FACE_ROW_WEATHER);
+  assert(strcmp(text, "30%  21C") == 0);
+  d.battery_percent = 80; d.charging = true;
+  data_format_pair(text, sizeof(text), &s, &d, now, FACE_ROW_BATTERY, FACE_ROW_WEATHER);
+  assert(strcmp(text, "80%+  21C") == 0);
+  d.charging = false; d.battery_percent = 150; s.battery_threshold = 0;
+  data_format_pair(text, sizeof(text), &s, &d, now, FACE_ROW_BATTERY, FACE_ROW_WEATHER);
+  assert(strcmp(text, "100%  21C") == 0);
+  s.battery_threshold = 50; d.battery_percent = 80;
+  data_format_pair(text, sizeof(text), &s, &d, now, FACE_ROW_BATTERY, FACE_ROW_BATTERY);
+  assert(text[0] == '\0'); /* nothing to show */
+  data_format_pair(text, 1, &s, &d, now, FACE_ROW_WEATHER, FACE_ROW_BATTERY); /* a tiny buffer is safe (ASan/UBSan run) */
+  assert(text[0] == '\0');
+
+  /* Rotation keeps each row's own pair, and equal rows only rotate when their pairs differ. */
+  settings_defaults(&s);
+  memset(&local, 0, sizeof(local));
+  s.row1 = FACE_ROW_BATTERY; s.row1_then = FACE_ROW_WEATHER;
+  s.row2 = FACE_ROW_BATTERY; s.row2_then = FACE_ROW_WEATHER; s.rotate_seconds = 15;
+  settings_validate(&s);
+  assert(data_rotation_delay(&s, &local, true) == 0); /* the same line twice */
+  s.row2_then = FACE_ROW_STEPS;
+  assert(data_rotation_delay(&s, &local, true) == 15000);
+  local.tm_sec = 14; assert(data_rotating_slot(&s, &local) == 0 && data_rotating_row(&s, &local) == s.row1);
+  local.tm_sec = 15; assert(data_rotating_slot(&s, &local) == 1);
+  s.row1 = FACE_ROW_NONE; assert(data_rotating_slot(&s, &local) == 1);
+  s.row1 = FACE_ROW_DATE; s.row2 = FACE_ROW_NONE; local.tm_sec = 15; assert(data_rotating_slot(&s, &local) == 0);
+}
+
 int main(void) {
   test_defaults_and_partial_settings();
   test_validation();
@@ -378,6 +490,7 @@ int main(void) {
   test_quiet_rotation_and_runtime();
   test_request_retry();
   test_data_messages();
+  test_pair_rows();
   puts("settings/data/runtime tests passed");
   return 0;
 }

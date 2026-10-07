@@ -10,12 +10,16 @@
   X(34, animation_mode) X(35, animation_speed) X(36, animation_pause) \
   X(37, character_activity) X(38, quiet_start) X(39, quiet_end) \
   X(41, low_battery_cutoff) X(42, theme) X(43, background_color) \
-  X(44, segment_color) X(45, accent_color) X(47, ghost_strength)
+  X(44, segment_color) X(45, accent_color) X(47, ghost_strength) \
+  X(49, row1_then) X(50, row2_then)
 #define BOOL_FIELDS(X) \
   X(6, large_time) X(7, high_contrast) X(8, reduced_motion) X(9, blink_colon) \
   X(12, show_year) X(13, show_week) X(16, disconnect_alert) X(19, celebrate) \
   X(20, weather_enabled) X(24, weather_effects) X(32, event_repeat) \
   X(33, event_elapsed) X(40, quiet_hours) X(46, custom_colors) X(48, color_artwork)
+
+#define STORAGE_SLOT_ROW1_THEN 26
+#define STORAGE_SLOT_ROW2_THEN 27
 
 static int32_t clamp(int32_t value, int32_t minimum, int32_t maximum) {
   return value < minimum ? minimum : value > maximum ? maximum : value;
@@ -87,6 +91,15 @@ void settings_defaults(FaceSettings *s) {
   s->color_artwork = true;
 }
 
+static bool pairable(int32_t row) {
+  return row == FACE_ROW_BATTERY || row == FACE_ROW_WEATHER || row == FACE_ROW_STEPS;
+}
+
+int settings_row_then(const FaceSettings *s, int slot) {
+  int32_t main = slot == 0 ? s->row1 : s->row2, then = slot == 0 ? s->row1_then : s->row2_then;
+  return pairable(main) && pairable(then) && then != main ? (int)then : FACE_ROW_NONE;
+}
+
 void settings_validate(FaceSettings *s) {
   int y, m, d;
   /* Keep legacy record fields and wire keys, but retire their behavior. */
@@ -94,6 +107,8 @@ void settings_validate(FaceSettings *s) {
   s->weather_effects = false;
 #define RANGE(field, lo, hi) s->field = clamp(s->field, lo, hi)
   RANGE(preset, 0, 5); RANGE(row1, 0, 6); RANGE(row2, 0, 6);
+  if (!pairable(s->row1_then)) s->row1_then = FACE_ROW_NONE;
+  if (!pairable(s->row2_then)) s->row2_then = FACE_ROW_NONE;
   if (s->preset == 3) s->preset = FACE_PRESET_CUSTOM;
   if (s->rotate_seconds != 0) RANGE(rotate_seconds, 15, 120);
   RANGE(time_format, 0, 2); RANGE(date_format, 0, 2); RANGE(language, 0, 4);
@@ -163,7 +178,7 @@ void settings_apply_preset(FaceSettings *s, int preset) {
   settings_defaults(&defaults);
   /* Reset layout/style only. Motion, service consent and personal values
    * stay independent, including the reduced-motion accessibility override. */
-  for (key = 2; key <= 48; ++key) {
+  for (key = 2; key <= 50; ++key) {
     if ((key <= 15 && key != FACE_KEY_REDUCED_MOTION) || key == 18 ||
         key == 22 || key == 29 || key >= 42)
       settings_apply_integer(s, key, integer_value(&defaults, key));
@@ -245,6 +260,11 @@ size_t settings_encode(const FaceSettings *settings, uint8_t *buffer, size_t len
   write32(buffer, 0x57464750u); /* PGFW */
   write32(buffer + 4, 1);
   for (key = 1; key <= 48; ++key) write32(buffer + 12 + (key-1)*4, (uint32_t)integer_value(&s, key));
+  /* Slots 26 and 27 were reserved (phone-only text keys), so the two row companions
+   * keep the record's length and version: older records read them as none, and an
+   * older app ignores them. */
+  write32(buffer + 12 + (STORAGE_SLOT_ROW1_THEN-1)*4, (uint32_t)s.row1_then);
+  write32(buffer + 12 + (STORAGE_SLOT_ROW2_THEN-1)*4, (uint32_t)s.row2_then);
   memcpy(buffer + 204, s.world_label, 9);
   memcpy(buffer + 213, s.event_label, 11);
   memcpy(buffer + 224, s.event_date, 11);
@@ -259,6 +279,8 @@ bool settings_decode(FaceSettings *settings, const uint8_t *buffer, size_t lengt
       read32(buffer + 4) != 1 || read32(buffer + 8) != checksum(buffer + 12, length-12)) return false;
   settings_defaults(&result);
   for (key = 1; key <= 48; ++key) settings_apply_integer(&result, key, (int32_t)read32(buffer + 12 + (key-1)*4));
+  result.row1_then = (int32_t)read32(buffer + 12 + (STORAGE_SLOT_ROW1_THEN-1)*4);
+  result.row2_then = (int32_t)read32(buffer + 12 + (STORAGE_SLOT_ROW2_THEN-1)*4);
   memcpy(result.world_label, buffer + 204, 9);
   memcpy(result.event_label, buffer + 213, 11);
   memcpy(result.event_date, buffer + 224, 11);
