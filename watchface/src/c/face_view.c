@@ -414,21 +414,23 @@ static void calendar_icon(GContext *ctx, int x, int y) {
   graphics_fill_rect(ctx, GRect(x + 7, y, 1, 4), 0, GCornerNone);
 }
 
+/* Moving cargo can cross the information rows. Clear only behind what a row
+ * shows, so food elsewhere in the row (such as its second stop) stays visible. */
+static void clear_behind(GContext *ctx, int left, int y, int right) {
+  graphics_context_set_fill_color(ctx, s_background);
+  graphics_fill_rect(ctx, GRect(left - 2, y - 3, right - left + 2, 18), 0, GCornerNone);
+  graphics_context_set_fill_color(ctx, s_foreground);
+}
+
 static void draw_row(GContext *ctx, int row, int y, const FaceSettings *settings,
                      const FaceData *data, const struct tm *local, time_t now,
                      bool watch_24h, bool celebration, int right, bool compact) {
   char text[64];
   int x = 60, width = right - 60;
   int panel_width = width;
-  int icon = 0, icon_value = 0;
+  int icon = 0, icon_value = 0, bar = -1;
   int percent = data->battery_percent < 0 ? 0 : data->battery_percent > 100 ? 100 : data->battery_percent;
   text[0] = '\0';
-  /* Moving cargo can cross this area; keep it behind visible information. */
-  if (row != FACE_ROW_NONE && !(row == FACE_ROW_BATTERY &&
-      settings->battery_threshold > 0 && percent >= settings->battery_threshold && !data->charging)) {
-    graphics_context_set_fill_color(ctx, s_background);
-    graphics_fill_rect(ctx, GRect(60, y - 3, 140, 18), 0, GCornerNone);
-  }
   graphics_context_set_fill_color(ctx, s_foreground);
   switch (row) {
     case FACE_ROW_DATE:
@@ -436,26 +438,26 @@ static void draw_row(GContext *ctx, int row, int y, const FaceSettings *settings
       break;
     case FACE_ROW_BATTERY: {
       if (settings->battery_threshold > 0 && percent >= settings->battery_threshold && !data->charging) return;
-      int content_right = right;
-      if (data->charging) {
-        charging_icon(ctx, right - 7, y);
-        content_right -= 10;
-      }
+      int content_right = data->charging ? right - 10 : right;
+      snprintf(text, sizeof(text), "%d%%", percent);
+      int text_width = settings->battery_style == 1 ? 0 : info_text_width(text, content_right - x);
+      int icon_right = content_right - text_width - 5;
+      int bar_width = icon_right - x - 2;
+      if (bar_width > 24) bar_width = 24;
+      clear_behind(ctx, settings->battery_style == 1 ? content_right - 26 :
+                   settings->battery_style == 2 ? icon_right - bar_width - 2 :
+                   settings->battery_style == 3 ? content_right - text_width - 15 :
+                   content_right - text_width, y, right);
+      if (data->charging) charging_icon(ctx, right - 7, y);
       if (settings->battery_style == 1) {
         battery_icon(ctx, content_right - 26, y + 2, percent, 24);
         return;
       }
-      snprintf(text, sizeof(text), "%d%%", percent);
-      int text_width = info_text_width(text, content_right - x);
       info_text(ctx, text, y, text_width, content_right);
-      if (settings->battery_style == 2) {
-        int icon_right = content_right - text_width - 5;
-        int bar_width = icon_right - x - 2;
-        if (bar_width > 24) bar_width = 24;
+      if (settings->battery_style == 2)
         battery_icon(ctx, icon_right - bar_width - 2, y + 2, percent, bar_width);
-      } else if (settings->battery_style == 3) {
+      else if (settings->battery_style == 3)
         spinach_icon(ctx, content_right - text_width - 15, y + 1, percent);
-      }
       return;
     }
     case FACE_ROW_STEPS: {
@@ -468,14 +470,8 @@ static void draw_row(GContext *ctx, int row, int y, const FaceSettings *settings
         snprintf(text, sizeof(text), "GOAL REACHED!");
       else if (settings->step_style == 1) snprintf(text, sizeof(text), compact ? "%d%%" : "%d%% OF GOAL", progress);
       else snprintf(text, sizeof(text), compact ? "%ld" : "%ld STEPS", (long)data->steps);
-      if (settings->step_style == 2 && data->health_available) {
-        int amount = data->steps >= goal ? panel_width : data->steps <= 0 ? 0 : (int)((int64_t)data->steps * panel_width / goal);
-        graphics_context_set_fill_color(ctx, s_ghost);
-        graphics_fill_rect(ctx, GRect(x, y + 13, panel_width, 2), 0, GCornerNone);
-        graphics_context_set_fill_color(ctx, s_accent);
-        if (amount > 0) graphics_fill_rect(ctx, GRect(x, y + 13, amount, 2), 0, GCornerNone);
-        graphics_context_set_fill_color(ctx, s_foreground);
-      }
+      if (settings->step_style == 2 && data->health_available)
+        bar = data->steps >= goal ? panel_width : data->steps <= 0 ? 0 : (int)((int64_t)data->steps * panel_width / goal);
       break;
     }
     case FACE_ROW_WEATHER:
@@ -532,6 +528,14 @@ static void draw_row(GContext *ctx, int row, int y, const FaceSettings *settings
       break;
     }
     default: return;
+  }
+  clear_behind(ctx, right - info_text_width(text, width) - (icon ? 13 : 0), y, right);
+  if (bar >= 0) { /* the step meter spans the row under the text */
+    graphics_context_set_fill_color(ctx, s_ghost);
+    graphics_fill_rect(ctx, GRect(x, y + 13, panel_width, 2), 0, GCornerNone);
+    graphics_context_set_fill_color(ctx, s_accent);
+    if (bar > 0) graphics_fill_rect(ctx, GRect(x, y + 13, bar, 2), 0, GCornerNone);
+    graphics_context_set_fill_color(ctx, s_foreground);
   }
   if (icon) {
     int icon_x = right - info_text_width(text, width) - 13;
