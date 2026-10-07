@@ -47,3 +47,17 @@ fall inside the Large Time clock band (y 0–40, digits from x 8), where
 `face_view` draws segments over the large clock. The face already gains food,
 throw, catch and strike detail, so the lamps were left out.
 Character-activity toggles are not applied to Still; it shows all three.
+
+## Verification, 2026-10-07
+
+Development build at `335d275`..`43aec30`, not a release; no version change.
+
+- `watchface/test.sh` and `--sanitize`, and `tools/test.sh` (fairness bot zero
+  unavoidable misses in every mode) passed.
+- Clean Emery build: exit 0 with `'build' finished`; only the existing SDK RWX
+  warning. App image 22,254 + 337 + 1,016 = 23,607 / 61,440 bytes. From
+  `game.c` the linker kept only `game_lane_pose`.
+- PBW 1,141,412 bytes, resources 12,954 bytes, identity checks pass.
+- Emulator previews in `docs/releases/clock/previews/still-*.png` (10:23 throw,
+  11:00 kiss, 14 February kiss). Three captures across 14 s of one minute were
+  byte-identical. Not yet seen on a physical watch.
