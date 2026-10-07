@@ -73,6 +73,7 @@ void settings_defaults(FaceSettings *s) {
   s->weather_refresh = 60;
   memcpy(s->world_label, "HOME", 5);
   memcpy(s->event_label, "EVENT", 6);
+  s->animation_mode = FACE_ANIMATION_ARCADE;
   s->animation_pause = 1;
   s->character_activity = 7;
   s->quiet_start = 22;
@@ -101,6 +102,7 @@ void settings_validate(FaceSettings *s) {
   RANGE(weather_units, 0, 1); RANGE(weather_detail, 0, 1);
   RANGE(weather_refresh, 15, 180); RANGE(location_mode, 0, 1);
   RANGE(world_format, 0, 2); RANGE(animation_mode, 0, 4);
+  if (s->animation_mode == FACE_ANIMATION_RETIRED_LIVELY) s->animation_mode = FACE_ANIMATION_ARCADE;
   if (s->animation_speed != 0) RANGE(animation_speed, 500, 4000);
   RANGE(animation_pause, 0, 10); RANGE(character_activity, 0, 7);
   RANGE(quiet_start, 0, 23); RANGE(quiet_end, 0, 23);

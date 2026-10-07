@@ -82,11 +82,11 @@ module.exports = [
     toggle('EventElapsed', 'Count days after the event', 'When off, a past one-time event shows --.')
   ]),
   section('Animation activity — independent of preset', [
-    select('AnimationMode', 'Animation activity', ['Lively', 'Arcade', 'Relaxed', 'Once per minute', 'Still'],
+    select('AnimationMode', 'Animation activity', [['Arcade', 1], ['Relaxed', 2], ['Once per minute', 3], ['Still', 4]],
       'Works with every preset, including Classic. Changing presets keeps this choice.'),
     toggle('ReducedMotion', 'Reduce motion', 'Pauses character motion in every preset. Turn off to use your selected activity.'),
     number('AnimationSpeed', 'Animation beat (milliseconds)', 0, 4000,
-      '0 uses the mode’s pace: Lively 1000, Arcade 600, Relaxed 2000. Custom range 500–4000.'),
+      '0 uses the mode’s pace: Arcade 600, Relaxed 2000. Custom range 500–4000.'),
     number('AnimationPause', 'Pause between loops (beats)', 0, 10),
     select('CharacterActivity', 'Active characters', [['None', 0], ['Olive', 1], ['Popeye', 2],
       ['Olive + Popeye', 3], ['Brutus', 4], ['Olive + Brutus', 5], ['Popeye + Brutus', 6], ['All three', 7]]),

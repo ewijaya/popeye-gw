@@ -27,7 +27,7 @@ var defaults = {
   WeatherEnabled: false, WeatherUnits: 0, WeatherDetail: 0, WeatherRefresh: 60,
   WeatherEffects: false, LocationMode: 0, LocationName: '', WorldZone: 'Asia/Tokyo',
   WorldLabel: 'HOME', WorldFormat: 0, EventLabel: 'EVENT', EventDate: '',
-  EventRepeat: false, EventElapsed: false, AnimationMode: 0,
+  EventRepeat: false, EventElapsed: false, AnimationMode: 1,
   AnimationSpeed: 0, AnimationPause: 1, CharacterActivity: 7,
   QuietStart: 22, QuietEnd: 7, QuietHours: false, LowBatteryCutoff: 20,
   Theme: 1, BackgroundColor: 0xFFFFFF, SegmentColor: 0, AccentColor: 0xFF5500,
@@ -112,6 +112,7 @@ function sanitize(patch, previous) {
   if (result.AnimationSpeed > 0 && result.AnimationSpeed < 500) { result.AnimationSpeed = 500; }
   if (result.Theme < 0 || result.Theme > 3) { result.Theme = defaults.Theme; }
   if (result.Preset === 3) { result.Preset = 0; } // Preserve retired Active choices as Custom.
+  if (result.AnimationMode === 0) { result.AnimationMode = 1; } // Retired Lively becomes Arcade.
   // Retired controls retain their wire IDs for old saved settings and phones.
   result.DisconnectAlert = false; result.WeatherEffects = false;
   return result;
