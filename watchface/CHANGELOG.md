@@ -1,5 +1,11 @@
 # Popeye G&W Clock changelog
 
+## Unreleased
+
+- Information rows can now show two items on one line, with no icons: choose Battery, Weather or Steps for a row, then pick what to show after it. The order is yours: Battery then Weather, Weather then Battery, Steps then Battery and so on. In a pair, battery is always a plain percentage (with + while charging).
+- The settings page is leaner: sections for the date, battery, steps, weather, world clock and event appear only while a row uses them, and options for switched-off features (custom colours, quiet hours, weather) are hidden instead of greyed out. About half of the controls show at the default layout. Nothing you saved is lost.
+- Retired the animation beat, pause between loops, active characters and artwork colour options; they keep their defaults (the mode's own pace, one pause beat, all three characters, coloured artwork). The step goal and the celebration switch moved next to the motion settings.
+
 ## 1.1.0 — 2026-10-07
 
 - Arcade is now much busier: two or three foods are in the air at once with no empty beat between throws, Popeye hops from catch to catch, Brutus winds up and strikes from alternating sides, and Olive blows a quick kiss now and then. Every catch is one Popeye could really make, and Brutus never hits him.

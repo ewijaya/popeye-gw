@@ -16,7 +16,7 @@ scene animates. No continuous smooth animation or sound.
 
 | Feature | Required behaviour |
 |---|---|
-| Information panel | Two independently selected rows; off/date/battery/weather/steps/world time/event; optional slow rotation; second-row symbols and values, with world-location labels |
+| Information panel | Two independently selected rows; off/date/battery/weather/steps/world time/event; optional slow rotation; second-row symbols and values, with world-location labels. Battery, Weather and Steps rows can pair with a second one of those on the same line, as plain text without icons, in the chosen order (see Pair rows) |
 | Calendar | Day/month or month/day or numeric; English/German/French/Spanish/Japanese weekday labels; Japanese month/day formatting; optional year and ISO week number |
 | Power | Battery percent/bars/both/spinach; threshold visibility; charging shown in the battery row |
 | Steps | Daily count, percentage or spinach meter; configurable goal; one brief goal celebration; honest unavailable state |
@@ -26,7 +26,7 @@ scene animates. No continuous smooth animation or sound.
 | Animation | Arcade (default, crowded)/Relaxed/Still (Lively and Once per minute retired: saved Lively loads as Arcade, saved Once per minute as Still); speed and pauses; individual character activity; quiet hours and battery cutoff. Still shows a paused game frame that changes only with the minute (see below) |
 | Themes | Ivory default, Original/Green/Amber alternatives; optional custom background/segment/accent; subtle Faint or Strong ghosts; colour or monochrome scenery |
 | Accessibility | Larger time, high contrast, reduced motion, steady or blinking colon; no colour-only meaning |
-| Clay configuration | My Apps settings entry; grouped readable controls; Classic/Everyday/Traveller/Large Time layout presets independent of animation activity; persistent settings; save updates the watch |
+| Clay configuration | My Apps settings entry; grouped readable controls that appear only while a row uses them; Classic/Everyday/Traveller/Large Time layout presets independent of animation activity; persistent settings; save updates the watch |
 
 ## Still scene
 
@@ -52,6 +52,38 @@ identical for every second of a minute. Decided 2026-10-07; details in
   digits and would read as a high score; both overlap the Large Time clock.
 - Other modes' static fallback (quiet hours, battery cutoff, reduced motion,
   covered, no activity) and the game's clock page are unchanged.
+
+## Pair rows
+
+Each row has a main item and an optional companion (`row1_then`, `row2_then`, wire keys
+49 and 50). Only Battery, Weather and Steps can be a main item with a companion, or a
+companion; a row never pairs with itself, and anything else is ignored. A pair row is plain
+text on one line, the main item first, two spaces apart, and never draws an icon, so
+`Weather` then `Battery` reads `21C  62%` and `Battery` then `Weather` reads `62%  21C`.
+
+- Battery is its percentage, with a `+` while charging. With "show battery only below" set,
+  an item above the threshold is left out and the other half shows alone.
+- Steps are the count, or the percentage of the goal; the progress meter shows the count.
+- Weather is the current temperature or the high/low, with `*` when stale. Disabled, unavailable
+  or re-united data shows `--`, as single rows do.
+- Rotating rows keep each row's own pair, and two rows that are identical, pair included, do not
+  rotate. The text comes from `data_format_pair()` and is covered by the host tests.
+- Stored in slots 26 and 27 of the saved settings record, which were reserved, so the record's length
+  and version are unchanged: older records load as single rows and an older app ignores the slots.
+
+## Settings page
+
+Decided 2026-10-07 to trim the Clay page (47 controls) without removing saved settings.
+`config.js` marks each row-driven section with `use`, `schema.groups()` turns that into data for
+the page, and `config-custom.js` shows a section while a row (or a pair's second item) uses it:
+Date, Battery, Daily steps, Weather (also while weather updates are on), World clock and
+Event countdown. Options of switched-off features are hidden, not greyed. Hidden controls keep
+their saved values. About 25 of 45 controls show at the default layout.
+
+Retired with their wire numbers kept, pinned to the defaults: animation beat (speed), pause between
+loops, active characters and artwork colour. Celebrate and the step goal now sit in "Motion and
+celebrations". The page was checked in Chrome with the real Clay code and the phone's `ready`
+event; a phone WebView was not available.
 
 ## Arcade scene
 
