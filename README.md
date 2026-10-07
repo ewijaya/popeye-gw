@@ -87,6 +87,7 @@ the middle button on the right. In landscape it is the middle of the three butto
 | Settings: Swap | Select Swap | Reverse game movement. |
 | Settings: Theme (1.2) | Select Theme | Switch the LCD colors between Classic and Ivory, the companion watchface's palette. |
 | Settings: Sound (1.1; levels 1.3) | Select Sound | Cycle the LCD-style beeps Off → Low → Medium → High (default Medium). |
+| Settings: Light (unreleased) | Select Light | Toggle Auto / In play. In play keeps the backlight on while a round runs; pausing, game over, the menu, a notification or leaving the app hands it back to the watch. Auto (default) leaves it to the watch's own backlight settings. |
 | Settings: Online (1.1) | Select Online | Off by default. When On, your best Daily round of the day is sent through the phone to a leaderboard server (needs the phone and internet). High scores page 3 shows `Online #12/140`, `Online: not sent` or `Online: off`. The server is not live yet. |
 | Help pages | Select; movement buttons; Back | Select advances, movement buttons browse both ways, Back returns to the menu. |
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- New Settings → Light: choose In play to keep the backlight on while a round is running. It returns to normal when you pause, the game ends or you leave the game. The default, Auto, leaves the backlight to the watch as before.
+
 ## 1.4.0 — 2026-10-07
 
 - Olive throws Popeye a kiss when you set a new best: after the last miss, a heart flies from her to Popeye before the Game over box appears. Any button skips it. At the 200 and 500 bonuses she blows a quick kiss from her ledge.
