@@ -34,7 +34,7 @@ The renderer loads the packed atlas once with a black/transparent 1-bit palette.
 | `olive-bell-0.png`, `olive-bell-1.png` | Two alarm ringing frames |
 | `brutus.png`, `brutus-windup.png`, `brutus-strike.png` | Mirrored right fist phases |
 | `brutus-hammer-idle.png`, `brutus-hammer-windup.png`, `brutus-hammer-strike.png` | Left hammer phases |
-| `food-bottle.png`, `fish.png`, `food-can.png` | Four food arcs, five stages each; angled/upright bottles distinguish their launch frames |
+| `food-bottle.png`, `fish.png`, `barrel.png`, `food-can.png` | Four food arcs, five stages each: lane 0 tilted bottle, lane 1 fish, lane 2 upright barrel, lane 3 can. The barrel replaced a second, upright bottle that looked too much like lane 0 at 14 px; its prompt is in `m3-prompts.json` |
 | `backdrop-vibrant.png` | Bright red car, brick ledge, orange boat, blue ship and water |
 | Geometric artwork in `tools/prepare_art.py` | Seven-segment digits, text indicators, splashes, MISS cans, bell, catch flash and anchor launcher icon |
 
