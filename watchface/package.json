@@ -97,6 +97,13 @@
       "media": [
         {
           "type": "bitmap",
+          "name": "MENU_ICON",
+          "file": "images/menu-icon.png",
+          "menuIcon": true,
+          "memoryFormat": "1BitPalette"
+        },
+        {
+          "type": "bitmap",
           "name": "BACKDROP",
           "file": "../../resources/images/backdrop.png",
           "memoryFormat": "8Bit"
