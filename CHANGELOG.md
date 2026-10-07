@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.5.0 — 2026-10-07
 
 - New Settings → Light: In play keeps the backlight on while a round is running. It returns to normal when you pause, the game ends or you leave the game. New installs start on In play; if you already have saved settings, Light starts on Auto (the backlight works as before) until you change it.
 
