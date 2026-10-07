@@ -32,6 +32,11 @@ void face_scene(Scene *scene, const struct tm *local, bool style_24h, int frame)
    * food lane still follows the minute exactly as in the app. */
   shown.tm_sec = frame * 2;
   clock_scene(scene, &shown, style_24h, true, false, false);
+  /* On the hour and on 14 February the minute demo is Olive's kiss instead,
+   * from her kiss pose to the heart over Popeye across the five beats. */
+  if (clock_kiss_time(local))
+    scene_kiss(scene, (unsigned)(frame - FACE_DEMO_FIRST) * (SCENE_KISS_STEPS - 1u) /
+                      (FACE_DEMO_LAST - FACE_DEMO_FIRST));
 }
 
 void face_scene_active(Scene *scene, const struct tm *local, bool style_24h,
@@ -81,4 +86,6 @@ void face_scene_active(Scene *scene, const struct tm *local, bool style_24h,
   scene_light(scene, olive);
   scene_light(scene, SEG_POPEYE + pose);
   scene_light(scene, SEG_BRUTUS + side * 3u + attack);
+  if ((activity & 1u) != 0u && !celebration && clock_kiss_time(local))
+    scene_kiss(scene, frame % SCENE_KISS_STEPS);
 }
