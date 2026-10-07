@@ -24,7 +24,6 @@ uint32_t data_rotation_delay(const FaceSettings *settings, const struct tm *loca
 typedef struct {
   uint32_t frame;
   bool animate, timer_pending, timer_failed, permitted;
-  unsigned classic_remaining;
 } FaceRuntime;
 enum FaceRuntimeEvent { FACE_RUNTIME_CHECK, FACE_RUNTIME_RESTART,
   FACE_RUNTIME_MINUTE, FACE_RUNTIME_BEAT, FACE_RUNTIME_TIMER_FAILED };

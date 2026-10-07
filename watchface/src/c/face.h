@@ -27,6 +27,16 @@ void face_scene(Scene *scene, const struct tm *local, bool style_24h, int frame)
  * 14 February. Other modes' static fallback remains face_scene(..., -1). */
 void face_scene_still(Scene *scene, const struct tm *local, bool style_24h);
 
+/* Arcade: a crowded, continuous 32-beat pattern with two or three foods in flight,
+ * Popeye hopping between catches, Brutus winding up and striking from alternating
+ * sides, and Olive blowing a quick kiss now and then. Pure function of frame (one
+ * beat per frame); activity bits as in face_scene_active. The pattern keeps the
+ * game's rules: landings are spaced by Popeye's travel, no food lands in Brutus's
+ * lane at his strike, and Popeye is never in the strike pose. Pause beats do not
+ * apply: Arcade never stops. */
+void face_scene_crowd(Scene *scene, const struct tm *local, bool style_24h,
+                      uint32_t frame, unsigned activity);
+
 /* Continuous, stepped LCD cycle. Activity bits select motion, never visibility:
  * Olive=1, Popeye=2, Brutus=4. Pause adds quiet beats after each food catch.
  * The caller advances frame at the selected cadence; no timer lives here. */

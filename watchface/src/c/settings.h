@@ -16,9 +16,10 @@ enum FaceRow { FACE_ROW_NONE, FACE_ROW_DATE, FACE_ROW_BATTERY,
 enum FacePreset { FACE_PRESET_CUSTOM, FACE_PRESET_CLASSIC,
   FACE_PRESET_EVERYDAY, /* Retired value 3 stays reserved for old preferences. */
   FACE_PRESET_TRAVELLER = 4, FACE_PRESET_LARGE = 5 };
-/* Wire value 0 was Lively, retired in favour of Arcade; saved 0 loads as Arcade. */
+/* Wire value 0 was Lively (now Arcade) and 3 was Once per minute (now Still); saved
+ * or sent retired values load as their replacement and the others keep their numbers. */
 enum FaceAnimation { FACE_ANIMATION_RETIRED_LIVELY, FACE_ANIMATION_ARCADE,
-  FACE_ANIMATION_RELAXED, FACE_ANIMATION_CLASSIC, FACE_ANIMATION_STILL };
+  FACE_ANIMATION_RELAXED, FACE_ANIMATION_RETIRED_CLASSIC, FACE_ANIMATION_STILL };
 enum FaceCelebration { FACE_CELEBRATION_NONE, FACE_CELEBRATION_STEPS,
   FACE_CELEBRATION_EVENT };
 enum FaceWireKey {

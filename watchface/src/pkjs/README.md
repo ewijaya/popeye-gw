@@ -26,7 +26,7 @@ quiet-hour/power limits. The form updates before saving:
 | Large | Date / battery | Larger digits, high contrast |
 
 Animation activity, speed, pauses, character selection, reduced motion are independent and survive preset changes. Arcade therefore
-works with Classic. Retired Lively (wire value 0) migrates to Arcade. Removed Active (wire value 3) migrates to Custom while
+works with Classic. Retired Lively (wire value 0) migrates to Arcade and retired Once per minute (wire value 3) to Still. Removed Active (wire value 3) migrates to Custom while
 retaining its saved layout/motion. Japanese is date-language value 4; the watch
 renders seven compact kanji glyphs without adding a system-font dependency.
 

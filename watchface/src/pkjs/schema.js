@@ -113,6 +113,7 @@ function sanitize(patch, previous) {
   if (result.Theme < 0 || result.Theme > 3) { result.Theme = defaults.Theme; }
   if (result.Preset === 3) { result.Preset = 0; } // Preserve retired Active choices as Custom.
   if (result.AnimationMode === 0) { result.AnimationMode = 1; } // Retired Lively becomes Arcade.
+  if (result.AnimationMode === 3) { result.AnimationMode = 4; } // Retired Once per minute becomes Still.
   // Retired controls retain their wire IDs for old saved settings and phones.
   result.DisconnectAlert = false; result.WeatherEffects = false;
   return result;

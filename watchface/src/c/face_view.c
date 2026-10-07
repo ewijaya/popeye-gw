@@ -547,25 +547,6 @@ static void draw_row(GContext *ctx, int row, int y, const FaceSettings *settings
   info_text(ctx, text, y, width, right);
 }
 
-static void classic_activity(Scene *scene, unsigned activity) {
-  unsigned segment;
-  if ((activity & 1u) == 0u) {
-    for (segment = SEG_OLIVE_READY; segment < SEG_POPEYE; ++segment)
-      scene->bits[segment / 32u] &= ~(UINT32_C(1) << (segment % 32u));
-    scene_light(scene, SEG_OLIVE_READY);
-  }
-  if ((activity & 2u) == 0u) {
-    for (segment = SEG_POPEYE; segment < SEG_SPLASH; ++segment)
-      scene->bits[segment / 32u] &= ~(UINT32_C(1) << (segment % 32u));
-    scene_light(scene, SEG_POPEYE + 2u);
-  }
-  if ((activity & 4u) == 0u) {
-    for (segment = SEG_BRUTUS; segment < SEG_MISS; ++segment)
-      scene->bits[segment / 32u] &= ~(UINT32_C(1) << (segment % 32u));
-    scene_light(scene, SEG_BRUTUS);
-  }
-}
-
 void face_view_draw(GContext *ctx, GRect bounds, const FaceSettings *settings,
                     const FaceData *data, const struct tm *local,
                     bool watch_24h, uint32_t frame, bool animate) {
@@ -582,9 +563,8 @@ void face_view_draw(GContext *ctx, GRect bounds, const FaceSettings *settings,
   if (settings->animation_mode == FACE_ANIMATION_STILL) {
     /* Never animated, so a paused game frame that changes only with the minute. */
     face_scene_still(&scene, local, use24);
-  } else if (settings->animation_mode == FACE_ANIMATION_CLASSIC && !celebration) {
-    face_scene(&scene, local, use24, animate ? (int)frame : -1);
-    classic_activity(&scene, (unsigned)settings->character_activity);
+  } else if (settings->animation_mode == FACE_ANIMATION_ARCADE && animate && !celebration) {
+    face_scene_crowd(&scene, local, use24, frame, (unsigned)settings->character_activity);
   } else face_scene_active(&scene, local, use24, animate ? frame : 0u,
       animate ? (unsigned)settings->character_activity : 0u, celebration,
       (unsigned)settings->animation_pause);

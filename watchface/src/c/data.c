@@ -174,7 +174,7 @@ bool data_animation_allowed(const FaceSettings *s, const FaceData *d,
                             const struct tm *local, bool focused, bool system_quiet) {
   return focused && !system_quiet && !settings_quiet_now(s, local) &&
     !s->reduced_motion && s->animation_mode != FACE_ANIMATION_STILL &&
-    (s->character_activity != 0 || s->animation_mode == FACE_ANIMATION_CLASSIC) &&
+    s->character_activity != 0 &&
     (s->low_battery_cutoff == 0 || d->charging || d->battery_percent > s->low_battery_cutoff);
 }
 
@@ -182,7 +182,7 @@ uint32_t data_animation_interval(const FaceSettings *s) {
   if (s->animation_speed != 0) return (uint32_t)s->animation_speed;
   switch (s->animation_mode) {
     case FACE_ANIMATION_ARCADE: return 600;
-    case FACE_ANIMATION_RELAXED: case FACE_ANIMATION_CLASSIC: return 2000;
+    case FACE_ANIMATION_RELAXED: return 2000;
     default: return 1000;
   }
 }
@@ -207,27 +207,16 @@ unsigned data_runtime_update(FaceRuntime *r, const FaceSettings *s, const FaceDa
     if (r->timer_pending && event != FACE_RUNTIME_BEAT) effects |= FACE_EFFECT_CANCEL;
     if (r->animate) effects |= FACE_EFFECT_REDRAW;
     r->animate = r->timer_pending = r->permitted = false;
-    r->classic_remaining = 0;
     return effects;
   }
   r->permitted = true;
   if (event == FACE_RUNTIME_BEAT) {
     if (!r->timer_pending) return effects;
     r->timer_pending = false;
-    if (s->animation_mode == FACE_ANIMATION_CLASSIC) {
-      if (r->classic_remaining > 1) { --r->classic_remaining; ++r->frame; }
-      else { r->classic_remaining = 0; r->animate = false; return effects | FACE_EFFECT_REDRAW; }
-    } else ++r->frame;
+    ++r->frame;
     effects |= FACE_EFFECT_REDRAW;
   }
-  if (s->animation_mode == FACE_ANIMATION_CLASSIC && begin) {
-    if (r->timer_pending) { effects |= FACE_EFFECT_CANCEL; r->timer_pending = false; }
-    r->frame = 1;
-    r->classic_remaining = 5;
-    effects |= FACE_EFFECT_REDRAW;
-  }
-  if (!r->timer_pending && !r->timer_failed &&
-      (s->animation_mode != FACE_ANIMATION_CLASSIC || r->classic_remaining != 0)) {
+  if (!r->timer_pending && !r->timer_failed) {
     r->animate = r->timer_pending = true;
     effects |= FACE_EFFECT_START | FACE_EFFECT_REDRAW;
   }

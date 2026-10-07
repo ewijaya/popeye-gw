@@ -78,6 +78,69 @@ void face_scene_still(Scene *scene, const struct tm *local, bool style_24h) {
   }
 }
 
+/* The Arcade pattern, found by search and checked by the tests against the game's
+ * own launch, strike and spacing rules. Throws land four beats after they leave
+ * Olive; Brutus strikes on beats 0, 8, 16 and 24, left then right. Each lane holds at
+ * most one food at a time. */
+#define CROWD_PERIOD 32u
+#define CROWD_THROWS 12u
+#define CROWD_STRIKE_BEAT 0u
+static const uint8_t crowd_launch[CROWD_THROWS] = { 0, 3, 5, 7, 10, 12, 14, 18, 20, 23, 27, 30 };
+static const uint8_t crowd_lane[CROWD_THROWS] = { 0, 1, 2, 3, 2, 1, 0, 3, 2, 0, 3, 1 };
+/* Olive's quick kiss fills the two free beats after these throws. */
+static const uint8_t crowd_kiss[2] = { 15, 24 };
+
+/* Popeye leaves each catch at once, one pose per beat, to be in place for the next. */
+static unsigned crowd_popeye(unsigned beat) {
+  unsigned i, since = CROWD_PERIOD, from = 0u, here, next, steps;
+  for (i = 0u; i < CROWD_THROWS; ++i) {
+    unsigned age = (beat + CROWD_PERIOD - (crowd_launch[i] + 4u) % CROWD_PERIOD) % CROWD_PERIOD;
+    if (age < since) { since = age; from = i; }
+  }
+  here = game_lane_pose(crowd_lane[from]);
+  next = game_lane_pose(crowd_lane[(from + 1u) % CROWD_THROWS]);
+  steps = next > here ? next - here : here - next;
+  if (since < steps) steps = since;
+  return next > here ? here + steps : here - steps;
+}
+
+void face_scene_crowd(Scene *scene, const struct tm *local, bool style_24h,
+                      uint32_t frame, unsigned activity) {
+  unsigned beat = (unsigned)(frame % CROWD_PERIOD), i, popeye = 2u, caught = 0u;
+  unsigned olive = SEG_OLIVE_READY, side = GAME_LEFT, attack = GAME_ATTACK_IDLE;
+  unsigned cycle;
+  face_scene(scene, local, style_24h, -1);
+  scene->bits[(SEG_POPEYE + 2u) / 32u] &= ~(UINT32_C(1) << ((SEG_POPEYE + 2u) % 32u));
+  scene->bits[SEG_BRUTUS / 32u] &= ~(UINT32_C(1) << (SEG_BRUTUS % 32u));
+  scene->bits[SEG_OLIVE_READY / 32u] &= ~(UINT32_C(1) << (SEG_OLIVE_READY % 32u));
+  if ((activity & 1u) != 0u) {
+    for (i = 0u; i < CROWD_THROWS; ++i) {
+      unsigned stage = (beat + CROWD_PERIOD - crowd_launch[i]) % CROWD_PERIOD;
+      if (stage >= GAME_CARGO_STEPS) continue;
+      scene_light(scene, SEG_CARGO + crowd_lane[i] * GAME_CARGO_STEPS + stage);
+      if (stage == 0u) olive = SEG_OLIVE_THROW;
+      if (stage == GAME_CARGO_STEPS - 1u) caught = 1u;
+    }
+    for (i = 0u; i < 2u; ++i)
+      if (beat == crowd_kiss[i] || beat == crowd_kiss[i] + 1u) olive = SEG_OLIVE_KISS;
+  }
+  if ((activity & 2u) != 0u) {
+    popeye = crowd_popeye(beat);
+    if (caught != 0u) scene_light(scene, SEG_POPEYE_CATCH);
+  }
+  if ((activity & 4u) != 0u) {
+    /* Eight-beat attacks (five idle, two wind-up, one strike), alternating sides. */
+    cycle = (beat + CROWD_PERIOD - CROWD_STRIKE_BEAT + 7u) % CROWD_PERIOD;
+    side = cycle / 8u % 2u;
+    attack = cycle % 8u < 5u ? GAME_ATTACK_IDLE : cycle % 8u < 7u ? GAME_ATTACK_WINDUP : GAME_ATTACK_STRIKE;
+  }
+  scene_light(scene, olive);
+  scene_light(scene, SEG_POPEYE + popeye);
+  scene_light(scene, SEG_BRUTUS + side * 3u + attack);
+  if ((activity & 1u) != 0u && clock_kiss_time(local))
+    scene_kiss(scene, frame % SCENE_KISS_STEPS);
+}
+
 void face_scene_active(Scene *scene, const struct tm *local, bool style_24h,
                        uint32_t frame, unsigned activity, bool celebration,
                        unsigned pause) {
