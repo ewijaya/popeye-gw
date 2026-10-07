@@ -272,7 +272,7 @@ or install it from the [store listing](https://apps.repebble.com/8e8e130581e7467
 GitHub and the general/Emery store catalog downloads match the owner-approved
 frozen build, and the store listing page shows 1.1.0; its
 [changelog page](https://apps.repebble.com/popeye-g-w-clock_8e8e130581e7467d9d7b0138/changelog)
-was still refreshing and the store description keeps its older wording. Detailed
+was still refreshing. The store description now describes the current options (the listing page may take a little longer to show it). Detailed
 physical edge cases remain documented in the device checklist. See the [implementation notes](docs/watchface-implementation.md),
 [feature scope](docs/watchface-features.md) and
 [device checklist](docs/watchface-playtest.md).
