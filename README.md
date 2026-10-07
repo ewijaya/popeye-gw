@@ -265,14 +265,14 @@ locations. Connection indicators and decorative weather effects are omitted;
 there is no sound or disconnect vibration.
 
 It shares the game's `scene.c`, `clock.c`, `game.c` and artwork by path, and has
-its own settings and UUID. Version 1.1.0, with a crowded Arcade, is being
-prepared for PT2 testing. **Version 1.0.4 is published**, keeping every food position visible
-([release record](docs/releases/clock/1.0.4.md)):
-[download the watchface PBW from GitHub](https://github.com/ewijaya/popeye-gw/releases/tag/clock-v1.0.4)
+its own settings and UUID. **Version 1.1.0 is published**, with a crowded Arcade and the Lively and
+Once per minute options removed ([release record](docs/releases/clock/1.1.0.md)):
+[download the watchface PBW from GitHub](https://github.com/ewijaya/popeye-gw/releases/tag/clock-v1.1.0)
 or install it from the [store listing](https://apps.repebble.com/8e8e130581e7467d9d7b0138).
 GitHub and the general/Emery store catalog downloads match the owner-approved
-frozen build, and the store [changelog](https://apps.repebble.com/popeye-g-w-clock_8e8e130581e7467d9d7b0138/changelog)
-lists 1.0.4; the main store page still showed 1.0.3 after two checks. Detailed
+frozen build, and the store listing page shows 1.1.0; its
+[changelog page](https://apps.repebble.com/popeye-g-w-clock_8e8e130581e7467d9d7b0138/changelog)
+was still refreshing and the store description keeps its older wording. Detailed
 physical edge cases remain documented in the device checklist. See the [implementation notes](docs/watchface-implementation.md),
 [feature scope](docs/watchface-features.md) and
 [device checklist](docs/watchface-playtest.md).
