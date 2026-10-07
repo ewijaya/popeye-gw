@@ -26,7 +26,7 @@ function color(key, label) {
 function section(title, items) {
   return {type: 'section', items: [{type: 'heading', defaultValue: title}].concat(items)};
 }
-var rows = ['Hidden', 'Date', 'Battery / connection', 'Weather', 'Steps', 'World time', 'Event'];
+var rows = ['Hidden', 'Date', 'Battery', 'Weather', 'Steps', 'World time', 'Event'];
 var formats = ['Follow watch', '12-hour', '24-hour'];
 module.exports = [
   {type: 'heading', defaultValue: 'Popeye G&W Clock'},
@@ -48,10 +48,9 @@ module.exports = [
       'Japanese uses month/day order and compact weekday kanji.'),
     toggle('ShowYear', 'Show year'), toggle('ShowWeek', 'Show ISO week number')
   ]),
-  section('Battery and connection', [
+  section('Battery', [
     select('BatteryStyle', 'Battery display', ['Percentage only', 'Battery icon only', 'Battery icon + percentage', 'Spinach can + percentage']),
-    number('BatteryThreshold', 'Show battery only below (%)', 0, 100, '0 always shows the battery row.'),
-    toggle('DisconnectAlert', 'Vibrate on phone disconnect', 'Respects Pebble Quiet Time and your quiet hours.')
+    number('BatteryThreshold', 'Show battery only below (%)', 0, 100, '0 always shows the battery row.')
   ]),
   section('Daily steps', [
     number('StepGoal', 'Daily step goal', 100, 100000),
@@ -64,7 +63,6 @@ module.exports = [
     select('WeatherUnits', 'Temperature units', ['Celsius (°C)', 'Fahrenheit (°F)']),
     select('WeatherDetail', 'Weather display', ['Current temperature', 'Today’s high / low']),
     number('WeatherRefresh', 'Refresh every (minutes)', 15, 180),
-    toggle('WeatherEffects', 'Weather effects in the scene'),
     select('LocationMode', 'Weather location', ['Phone location', 'Manual city']),
     input('LocationName', 'City or postal code', 80,
       'For example Tokyo, JP or Paris, France. Add a country or region to distinguish cities.'),

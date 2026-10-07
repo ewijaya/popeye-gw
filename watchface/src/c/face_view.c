@@ -291,23 +291,12 @@ static void draw_segment(GContext *ctx, unsigned segment, bool ghost) {
 static int large_clock(GContext *ctx, const Scene *scene, bool ghosts) {
   unsigned digit, bar;
   const int top = 8;
-  int widths[4], starts[4];
-  /* Keep the colon centered and leave eight pixels beside each number group.
-   * A narrow 1 avoids a full empty cell between the colon and minutes (14:19).
-   * Segment height and physical-bezel padding stay unchanged. */
+  FaceClockLayout layout;
+  /* Narrow 1s and the AM/PM label participate in the same centered layout. */
+  face_clock_layout(scene, &layout);
   for (digit = 0u; digit < 4u; ++digit) {
-    unsigned pattern = 0u;
-    for (bar = 0u; bar < 7u; ++bar)
-      if (scene_lit(scene, SEG_DIGIT + digit * 7u + bar)) pattern |= 1u << bar;
-    widths[digit] = pattern == 0x06u ? 4 : 32;
-  }
-  starts[1] = 90 - widths[1];
-  starts[0] = starts[1] - 8 - widths[0];
-  starts[2] = 110;
-  starts[3] = starts[2] + widths[2] + 8;
-  for (digit = 0u; digit < 4u; ++digit) {
-    int x = starts[digit];
-    if (widths[digit] == 4) {
+    int x = layout.starts[digit];
+    if (layout.widths[digit] == 4) {
       graphics_context_set_fill_color(ctx, s_foreground);
       graphics_fill_rect(ctx, GRect(x, top + 4, 4, 11), 1, GCornersAll);
       graphics_fill_rect(ctx, GRect(x, top + 17, 4, 11), 1, GCornersAll);
@@ -329,12 +318,12 @@ static int large_clock(GContext *ctx, const Scene *scene, bool ghosts) {
   }
   graphics_context_set_fill_color(ctx, s_foreground);
   if (scene_lit(scene, SEG_COLON)) {
-    graphics_fill_rect(ctx, GRect(98, top + 8, 4, 4), 0, GCornerNone);
-    graphics_fill_rect(ctx, GRect(98, top + 21, 4, 4), 0, GCornerNone);
+    graphics_fill_rect(ctx, GRect(layout.colon_x, top + 8, 4, 4), 0, GCornerNone);
+    graphics_fill_rect(ctx, GRect(layout.colon_x, top + 21, 4, 4), 0, GCornerNone);
   }
-  if (scene_lit(scene, SEG_AM)) pixel_text(ctx, "A", 190, top + 3, 6);
-  if (scene_lit(scene, SEG_PM)) pixel_text(ctx, "P", 190, top + 20, 6);
-  return starts[3] + widths[3];
+  if (scene_lit(scene, SEG_AM)) pixel_text(ctx, "AM", layout.meridiem_x, top + 20, 12);
+  if (scene_lit(scene, SEG_PM)) pixel_text(ctx, "PM", layout.meridiem_x, top + 20, 12);
+  return layout.right;
 }
 
 static void battery_icon(GContext *ctx, int x, int y, int percent, int width) {
@@ -386,6 +375,12 @@ static bool snowy(int code) {
 
 static void weather_icon(GContext *ctx, int x, int y, int code) {
   graphics_context_set_stroke_color(ctx, s_foreground);
+  if (code < 0) {
+    /* Thermometer identifies unavailable weather without inventing conditions. */
+    graphics_draw_rect(ctx, GRect(x + 3, y, 3, 7));
+    graphics_draw_circle(ctx, GPoint(x + 4, y + 8), 2);
+    return;
+  }
   if (code == 0) {
     graphics_draw_circle(ctx, GPoint(x + 4, y + 4), 2);
     graphics_fill_rect(ctx, GRect(x + 4, y, 1, 1), 0, GCornerNone);
@@ -411,9 +406,17 @@ static void weather_icon(GContext *ctx, int x, int y, int code) {
   }
 }
 
+static void calendar_icon(GContext *ctx, int x, int y) {
+  graphics_context_set_stroke_color(ctx, s_foreground);
+  graphics_draw_rect(ctx, GRect(x, y + 2, 10, 9));
+  graphics_fill_rect(ctx, GRect(x, y + 4, 10, 1), 0, GCornerNone);
+  graphics_fill_rect(ctx, GRect(x + 2, y, 1, 4), 0, GCornerNone);
+  graphics_fill_rect(ctx, GRect(x + 7, y, 1, 4), 0, GCornerNone);
+}
+
 static void draw_row(GContext *ctx, int row, int y, const FaceSettings *settings,
                      const FaceData *data, const struct tm *local, time_t now,
-                     bool watch_24h, bool celebration, int right) {
+                     bool watch_24h, bool celebration, int right, bool compact) {
   char text[64];
   int x = 60, width = right - 60;
   int panel_width = width;
@@ -460,11 +463,11 @@ static void draw_row(GContext *ctx, int row, int y, const FaceSettings *settings
       int progress = data_step_percent(settings, data);
       icon = settings->step_style == 2 ? 1 : 2; icon_value = progress;
       width -= 13;
-      if (!data->health_available) snprintf(text, sizeof(text), "STEPS --");
-      else if (celebration && data->celebration_kind == FACE_CELEBRATION_STEPS)
+      if (!data->health_available) snprintf(text, sizeof(text), compact ? "--" : "STEPS --");
+      else if (!compact && celebration && data->celebration_kind == FACE_CELEBRATION_STEPS)
         snprintf(text, sizeof(text), "GOAL REACHED!");
-      else if (settings->step_style == 1) snprintf(text, sizeof(text), "%d%% OF GOAL", progress);
-      else snprintf(text, sizeof(text), "%ld STEPS", (long)data->steps);
+      else if (settings->step_style == 1) snprintf(text, sizeof(text), compact ? "%d%%" : "%d%% OF GOAL", progress);
+      else snprintf(text, sizeof(text), compact ? "%ld" : "%ld STEPS", (long)data->steps);
       if (settings->step_style == 2 && data->health_available) {
         int amount = data->steps >= goal ? panel_width : data->steps <= 0 ? 0 : (int)((int64_t)data->steps * panel_width / goal);
         graphics_context_set_fill_color(ctx, s_ghost);
@@ -476,16 +479,19 @@ static void draw_row(GContext *ctx, int row, int y, const FaceSettings *settings
       break;
     }
     case FACE_ROW_WEATHER:
-      if (!settings->weather_enabled) snprintf(text, sizeof(text), "WEATHER OFF");
+      if (compact) { icon = 3; icon_value = -1; width -= 13; }
+      if (!settings->weather_enabled) snprintf(text, sizeof(text), compact ? "--" : "WEATHER OFF");
       else if (data->weather_updated <= 0 || data->weather_unit != settings->weather_units)
-        snprintf(text, sizeof(text), "WEATHER --");
+        snprintf(text, sizeof(text), compact ? "--" : "WEATHER --");
       else {
         bool stale = data_weather_stale(settings, data, now);
         char unit = data->weather_unit == 1 ? 'F' : 'C';
-        icon = 3; icon_value = data->weather_code; width -= 13;
+        icon = 3; icon_value = data->weather_code; if (!compact) width -= 13;
         if (settings->weather_detail == 1)
           snprintf(text, sizeof(text), "%ld/%ld%c%s", (long)data->weather_high,
                    (long)data->weather_low, unit, stale ? "*" : "");
+        else if (compact) snprintf(text, sizeof(text), "%ld%c%s", (long)data->weather_temp,
+                                   unit, stale ? "*" : "");
         else snprintf(text, sizeof(text), "%ld%c %s%s", (long)data->weather_temp,
                       unit, weather_word(data->weather_code), stale ? "*" : "");
       }
@@ -505,6 +511,13 @@ static void draw_row(GContext *ctx, int row, int y, const FaceSettings *settings
     }
     case FACE_ROW_EVENT: {
       int days;
+      if (compact) {
+        icon = 4; width -= 13;
+        if (!settings_event_days(settings, local, &days) || (days < 0 && !settings->event_elapsed))
+          snprintf(text, sizeof(text), "--");
+        else snprintf(text, sizeof(text), "%s%d", days < 0 ? "+" : "", days < 0 ? -days : days);
+        break;
+      }
       if (!settings_event_days(settings, local, &days)) snprintf(text, sizeof(text), "%s --", settings->event_label);
       else if (days == 0) snprintf(text, sizeof(text), "%s TODAY", settings->event_label);
       else if (days < 0 && !settings->event_elapsed) snprintf(text, sizeof(text), "%s PASSED", settings->event_label);
@@ -524,55 +537,10 @@ static void draw_row(GContext *ctx, int row, int y, const FaceSettings *settings
     int icon_x = right - info_text_width(text, width) - 13;
     if (icon == 1) spinach_icon(ctx, icon_x, y + 1, icon_value);
     else if (icon == 2) step_icon(ctx, icon_x, y + 1);
-    else weather_icon(ctx, icon_x, y + 1, icon_value);
+    else if (icon == 3) weather_icon(ctx, icon_x, y + 1, icon_value);
+    else calendar_icon(ctx, icon_x, y + 1);
   }
   info_text(ctx, text, y, width, right);
-}
-
-static void connection_indicator(GContext *ctx, const FaceData *data, bool large) {
-  int y = large ? 42 : 8;
-  graphics_context_set_fill_color(ctx, s_foreground);
-  if (!data->connected) {
-    /* Broken link and a short label fit above Olive's ledge. */
-    graphics_fill_rect(ctx, GRect(5, y + 1, 5, 2), 0, GCornerNone);
-    graphics_fill_rect(ctx, GRect(13, y + 5, 5, 2), 0, GCornerNone);
-    graphics_fill_rect(ctx, GRect(5, y + 3, 2, 3), 0, GCornerNone);
-    graphics_fill_rect(ctx, GRect(16, y + 2, 2, 3), 0, GCornerNone);
-    pixel_text(ctx, "OFFLINE", 18, y + 9, 42);
-  } else if (data->charging) pixel_text(ctx, large ? "+" : "+ CHARGING", 5, y, 72);
-}
-
-static void weather_effect(GContext *ctx, const FaceSettings *settings,
-                           const FaceData *data, uint32_t frame, bool animate) {
-  /* The small printed-weather cue occupies the empty lower-left strip, away
-   * from the cast, cargo tracks, panel, and water splashes. */
-  if (!settings->weather_enabled || !settings->weather_effects || data->weather_updated <= 0) return;
-  graphics_context_set_fill_color(ctx, s_accent);
-  if (data->weather_code == 0) {
-    graphics_context_set_stroke_color(ctx, s_accent);
-    graphics_draw_circle(ctx, GPoint(12, 184), 4);
-    if (!animate || frame % 2u == 0u) {
-      graphics_fill_rect(ctx, GRect(11, 176, 2, 2), 0, GCornerNone);
-      graphics_fill_rect(ctx, GRect(4, 183, 2, 2), 0, GCornerNone);
-      graphics_fill_rect(ctx, GRect(18, 183, 2, 2), 0, GCornerNone);
-    }
-  } else {
-    int shift = animate ? (int)(frame % 3u) : 0;
-    graphics_fill_rect(ctx, GRect(5, 177, 15, 4), 0, GCornerNone);
-    graphics_fill_rect(ctx, GRect(9, 174, 7, 7), 0, GCornerNone);
-    if (snowy(data->weather_code)) {
-      pixel_text(ctx, "* *", 5, 182 + shift, 18);
-    } else if (data->weather_code == 45 || data->weather_code == 48) {
-      graphics_fill_rect(ctx, GRect(5, 184, 15, 1), 0, GCornerNone);
-      graphics_fill_rect(ctx, GRect(8, 188, 12, 1), 0, GCornerNone);
-    } else if (data->weather_code >= 95) {
-      graphics_fill_rect(ctx, GRect(12, 183 + shift, 3, 2), 0, GCornerNone);
-      graphics_fill_rect(ctx, GRect(10, 185 + shift, 3, 3), 0, GCornerNone);
-    } else if (data->weather_code > 3) {
-      graphics_fill_rect(ctx, GRect(7, 184 + shift, 1, 3), 0, GCornerNone);
-      graphics_fill_rect(ctx, GRect(16, 185 + shift, 1, 3), 0, GCornerNone);
-    }
-  }
 }
 
 static void classic_activity(Scene *scene, unsigned activity) {
@@ -624,7 +592,6 @@ void face_view_draw(GContext *ctx, GRect bounds, const FaceSettings *settings,
   graphics_context_set_fill_color(ctx, s_background);
   graphics_fill_rect(ctx, GRect(60, 28, 140, 50), 0, GCornerNone);
   if (settings->large_time || !s_loaded) graphics_fill_rect(ctx, GRect(0, 0, 200, 40), 0, GCornerNone);
-  weather_effect(ctx, settings, data, frame, animate);
   graphics_context_set_compositing_mode(ctx, GCompOpSet);
   if (s_loaded) {
     if (!settings->large_time && ghosts) {
@@ -637,15 +604,16 @@ void face_view_draw(GContext *ctx, GRect bounds, const FaceSettings *settings,
     }
   }
   graphics_context_set_compositing_mode(ctx, GCompOpAssign);
-  /* Align information with the final clock digit, including narrow minutes. */
+  /* Align information with the clock's right edge, including its AM/PM label. */
   int info_right = segment_art[SEG_DIGIT + 3u * 7u + 1u].x +
                    segment_art[SEG_DIGIT + 3u * 7u + 1u].w;
   if (settings->large_time || !s_loaded) info_right = large_clock(ctx, &scene, ghosts);
-  connection_indicator(ctx, data, settings->large_time || !s_loaded);
+  bool rotated_second = false;
   if (settings->rotate_seconds > 0) {
     row1 = data_rotating_row(settings, local);
+    rotated_second = row1 == settings->row2 && row1 != settings->row1;
     row2 = FACE_ROW_NONE;
   }
-  draw_row(ctx, row1, settings->large_time || !s_loaded ? 42 : 33, settings, data, local, now, use24, celebration, info_right);
-  draw_row(ctx, row2, settings->large_time || !s_loaded ? 61 : 52, settings, data, local, now, use24, celebration, info_right);
+  draw_row(ctx, row1, settings->large_time || !s_loaded ? 42 : 33, settings, data, local, now, use24, celebration, info_right, rotated_second);
+  draw_row(ctx, row2, settings->large_time || !s_loaded ? 61 : 52, settings, data, local, now, use24, celebration, info_right, true);
 }

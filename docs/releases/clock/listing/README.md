@@ -1,6 +1,9 @@
 # Popeye G&W Clock listing assets
 
-Draft listing material prepared 2026-10-06. Not yet approved for publication.
+Listing material prepared 2026-10-06. The supplied clock icon was attached to
+both App Store icon fields on 2026-10-07 (80 × 80 and 144 × 144). The Dashboard
+read-back and downloaded pixels match; public catalog icon URLs remained empty
+after two checks. Evidence is in `.release/popeye-gw-clock/display-cleanup/`.
 These assets belong to the clock; the game's listing remains unchanged.
 
 | Asset | Dimensions | Source |

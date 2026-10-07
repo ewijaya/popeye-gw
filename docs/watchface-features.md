@@ -16,11 +16,11 @@ scene animates. No continuous smooth animation or sound.
 
 | Feature | Required behaviour |
 |---|---|
-| Information panel | Two independently selected rows; off/date/battery/weather/steps/world time/event; optional slow rotation |
+| Information panel | Two independently selected rows; off/date/battery/weather/steps/world time/event; optional slow rotation; second-row symbols and values, with world-location labels |
 | Calendar | Day/month or month/day or numeric; English/German/French/Spanish/Japanese weekday labels; Japanese month/day formatting; optional year and ISO week number |
-| Power and connection | Battery percent/bars/both/spinach; threshold visibility; connection status; optional disconnect vibration |
+| Power | Battery percent/bars/both/spinach; threshold visibility; charging shown in the battery row |
 | Steps | Daily count, percentage or spinach meter; configurable goal; one brief goal celebration; honest unavailable state |
-| Weather | Opt-in; automatic or manual city; Celsius/Fahrenheit; current or high/low; refresh interval; cached/stale indication; optional LCD effects |
+| Weather | Opt-in; automatic or manual city; Celsius/Fahrenheit; current or high/low; refresh interval; cached/stale indication; weather symbols confined to the information row |
 | World time | Chosen city/time zone, custom label and time format; phone computes DST-aware offset; cached offset expires visibly |
 | Event | Label/date; countdown or elapsed days; optional annual repeat; leap-date handling; brief date celebration |
 | Animation | Lively/Arcade/Relaxed/Classic/Still; speed and pauses; individual character activity; quiet hours and battery cutoff |

@@ -259,7 +259,9 @@ rules for daylight saving time. Cached data shows a stale marker. Themes,
 custom colours, ghost strength, larger time and reduced motion are configurable.
 Motion pauses while covered, in Quiet Time or configured quiet hours, and at
 the chosen battery cutoff off power. The colon stays steady unless blinking is
-enabled. Disconnect vibration is optional and off by default; there is no sound.
+enabled. The second row uses symbols and values, with text retained for world
+locations. Connection indicators and decorative weather effects are omitted;
+there is no sound or disconnect vibration.
 
 It shares the game's `scene.c`, `clock.c`, `game.c` and artwork by path, and has
 its own settings and UUID. **Version 1.0.0 is published:**

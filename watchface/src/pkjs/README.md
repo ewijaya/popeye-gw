@@ -1,5 +1,9 @@
 # Phone configuration and data
 
+Connection alerts and scene weather effects are retired. Their wire IDs remain
+reserved, but old saved values are sanitized to false and neither control
+appears in the form.
+
 The Clock uses pinned `@rebble/clay` 1.1.0. Its settings page is generated into
 an offline data URL; no configuration server is needed on a real phone. The
 emulator keeps Clay's standard proxy/return flow. `app.js` handles saves itself
@@ -12,7 +16,7 @@ event resends the complete saved preferences without reapplying a preset.
 
 Each preset resets presentation controls to defaults and preserves weather
 consent, location, units, refresh period, step goal, personal labels, event date,
-disconnect alerts and quiet-hour/power limits. The form updates before saving:
+quiet-hour/power limits. The form updates before saving:
 
 | Preset | Rows | Additional presentation |
 | --- | --- | --- |
@@ -21,8 +25,7 @@ disconnect alerts and quiet-hour/power limits. The form updates before saving:
 | Traveller | World / date | Saved world zone |
 | Large | Date / battery | Larger digits, high contrast |
 
-Animation activity, speed, pauses, character selection, reduced motion and
-weather effects are independent and survive preset changes. Lively therefore
+Animation activity, speed, pauses, character selection, reduced motion are independent and survive preset changes. Lively therefore
 works with Classic. Removed Active (wire value 3) migrates to Custom while
 retaining its saved layout/motion. Japanese is date-language value 4; the watch
 renders seven compact kanji glyphs without adding a system-font dependency.

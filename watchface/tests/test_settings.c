@@ -23,7 +23,7 @@ static void test_defaults_and_partial_settings(void) {
   assert(s.preset == FACE_PRESET_EVERYDAY && s.row1 == FACE_ROW_DATE && s.row2 == FACE_ROW_BATTERY);
   assert(s.animation_mode == FACE_ANIMATION_LIVELY && s.animation_speed == 0 && s.animation_pause == 1);
   assert(s.character_activity == 7 && !s.weather_enabled && !s.disconnect_alert && !s.blink_colon);
-  assert(s.color_artwork && s.celebrate && s.weather_effects && s.low_battery_cutoff == 20);
+  assert(s.color_artwork && s.celebrate && !s.weather_effects && s.low_battery_cutoff == 20);
   assert(s.theme == 1);
   assert(settings_apply_integer(&s, FACE_KEY_STEP_GOAL, 13500));
   assert(settings_apply_integer(&s, FACE_KEY_THEME, 3));
@@ -41,6 +41,7 @@ static void test_defaults_and_partial_settings(void) {
 static void test_validation(void) {
   FaceSettings s;
   settings_defaults(&s);
+  s.disconnect_alert = true; s.weather_effects = true;
   s.row1 = -1; s.row2 = INT32_MAX; s.rotate_seconds = 1;
   s.time_format = 100; s.step_goal = INT32_MIN; s.weather_refresh = 0;
   s.animation_speed = 1; s.animation_pause = 500; s.character_activity = -8;
@@ -49,6 +50,7 @@ static void test_validation(void) {
   memset(s.world_label, 'Q', sizeof(s.world_label));
   settings_apply_text(&s, FACE_KEY_EVENT_DATE, "2026-02-29");
   settings_validate(&s);
+  assert(!s.disconnect_alert && !s.weather_effects);
   assert(s.row1 == 0 && s.row2 == 6 && s.rotate_seconds == 15 && s.time_format == 2);
   assert(s.step_goal == 100 && s.weather_refresh == 15 && s.animation_speed == 500);
   assert(s.animation_pause == 10 && s.character_activity == 0 && s.quiet_start == 23 && s.quiet_end == 0);
@@ -79,7 +81,7 @@ static void test_preset_preserves_personal_settings(void) {
     s.theme = 4; s.custom_colors = true; s.reduced_motion = true; s.animation_speed = 4000;
     settings_apply_preset(&s, preset);
     assert(s.preset == preset && s.step_goal == 22222 && s.weather_enabled && s.weather_units == 1);
-    assert(s.weather_refresh == 90 && s.disconnect_alert && s.quiet_hours && s.quiet_start == 17);
+    assert(s.weather_refresh == 90 && !s.disconnect_alert && s.quiet_hours && s.quiet_start == 17);
     assert(s.low_battery_cutoff == 8 && strcmp(s.world_label, "TOKYO") == 0);
     assert(strcmp(s.event_date, "2028-02-29") == 0 && s.theme == 1 && !s.custom_colors && s.animation_speed == 4000);
     assert(s.animation_mode == FACE_ANIMATION_ARCADE && s.animation_pause == 4 && s.character_activity == 5 && s.reduced_motion);

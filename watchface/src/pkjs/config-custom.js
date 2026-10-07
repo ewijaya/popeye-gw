@@ -21,7 +21,7 @@ module.exports = function() {
     }
     function dependencies() {
       var weather = !!item('WeatherEnabled').get();
-      enabled(['WeatherUnits', 'WeatherDetail', 'WeatherRefresh', 'WeatherEffects', 'LocationMode'], weather);
+      enabled(['WeatherUnits', 'WeatherDetail', 'WeatherRefresh', 'LocationMode'], weather);
       enabled(['LocationName'], weather && +item('LocationMode').get() === 1);
       enabled(['BackgroundColor', 'SegmentColor', 'AccentColor'], !!item('CustomColors').get());
       enabled(['QuietStart', 'QuietEnd'], !!item('QuietHours').get());

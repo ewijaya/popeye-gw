@@ -20,7 +20,8 @@ for shared in src/c/scene.c src/c/clock.c src/c/game.c resources/images/backdrop
   grep -q "$(basename "$shared")" "$watch_dir/wscript" "$watch_dir/package.json"
 done
 if find "$watch_dir" \( -path "$watch_dir/build" -o -type d -name node_modules \) -prune \
-    -o \( -name 'scene.c' -o -name 'clock.c' -o -name 'game.c' -o -name '*.png' \) -print | grep -q .; then
+    -o \( -name 'scene.c' -o -name 'clock.c' -o -name 'game.c' -o -name '*.png' \) \
+    ! -path "$watch_dir/resources/images/menu-icon.png" -print | grep -q .; then
   echo 'watchface/ must not contain copies of shared sources or art' >&2
   exit 1
 fi

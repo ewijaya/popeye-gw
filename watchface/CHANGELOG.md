@@ -1,5 +1,15 @@
 # Popeye G&W Clock changelog
 
+## Unreleased fixes
+
+- Uses symbols and values in the second information row, retaining location
+  labels for world time. Steps, weather and countdowns drop descriptive words.
+- Removes the connection indicator, disconnect alert option and decorative
+  weather graphics from the scene. Battery choices now say Battery.
+
+- Centers the complete Large Time display, including narrow `1` digits, and
+  places a full AM/PM label beside the time instead of a detached corner letter.
+
 ## 1.0.0 — 2026-10-06
 
 Old-school charm. Right on time. The first release brings Popeye, Olive Oyl

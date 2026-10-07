@@ -71,7 +71,6 @@ void settings_defaults(FaceSettings *s) {
   s->step_goal = 10000;
   s->celebrate = true;
   s->weather_refresh = 60;
-  s->weather_effects = true;
   memcpy(s->world_label, "HOME", 5);
   memcpy(s->event_label, "EVENT", 6);
   s->animation_pause = 1;
@@ -89,6 +88,9 @@ void settings_defaults(FaceSettings *s) {
 
 void settings_validate(FaceSettings *s) {
   int y, m, d;
+  /* Keep legacy record fields and wire keys, but retire their behavior. */
+  s->disconnect_alert = false;
+  s->weather_effects = false;
 #define RANGE(field, lo, hi) s->field = clamp(s->field, lo, hi)
   RANGE(preset, 0, 5); RANGE(row1, 0, 6); RANGE(row2, 0, 6);
   if (s->preset == 3) s->preset = FACE_PRESET_CUSTOM;

@@ -57,6 +57,54 @@ static void test_clock_style(void) {
   assert(scene_lit(&scene, SEG_PM));
 }
 
+static void test_large_clock_layout(void) {
+  int style, hour, minute;
+  for (style = 0; style < 2; ++style) {
+    for (hour = 0; hour < 24; ++hour) {
+      for (minute = 0; minute < 60; ++minute) {
+        Scene scene;
+        FaceClockLayout layout, blink;
+        struct tm local = at(hour, minute, 0);
+        int digit, shown_hour = style ? hour : (hour % 12 ? hour % 12 : 12);
+        int digits[4] = {shown_hour / 10, shown_hour % 10, minute / 10, minute % 10};
+        face_scene(&scene, &local, style != 0, -1);
+        face_clock_layout(&scene, &layout);
+        /* Even the widest time + label keeps eight pixels beside the bezel. */
+        assert(layout.starts[0] >= 8 && layout.right <= 192);
+        assert(layout.starts[0] + layout.right >= 199);
+        assert(layout.starts[0] + layout.right <= 200);
+        for (digit = 0; digit < 4; ++digit) {
+          assert(layout.widths[digit] == (digits[digit] == 1 ? 4 : 32));
+          if (digit > 0)
+            assert(layout.starts[digit] >= layout.starts[digit - 1] + layout.widths[digit - 1] + 8);
+        }
+        assert(layout.colon_x >= layout.starts[1] + layout.widths[1] + 8);
+        assert(layout.colon_x + 4 + 8 <= layout.starts[2]);
+        if (style) {
+          assert(layout.meridiem_x == -1);
+          assert(layout.right == layout.starts[3] + layout.widths[3]);
+        } else {
+          assert(layout.meridiem_x == layout.starts[3] + layout.widths[3] + 8);
+          assert(layout.right == layout.meridiem_x + 11);
+        }
+        /* A blinking colon must not make the clock jump. */
+        scene.bits[SEG_COLON / 32u] &= ~(UINT32_C(1) << (SEG_COLON % 32u));
+        face_clock_layout(&scene, &blink);
+        assert(blink.colon_x == layout.colon_x && blink.right == layout.right);
+        for (digit = 0; digit < 4; ++digit) assert(blink.starts[digit] == layout.starts[digit]);
+      }
+    }
+  }
+  /* The reported 08:13 AM layout keeps its label next to the minute digits. */
+  Scene scene;
+  FaceClockLayout layout;
+  struct tm local = at(8, 13, 0);
+  face_scene(&scene, &local, false, -1);
+  face_clock_layout(&scene, &layout);
+  assert(layout.starts[0] == 22 && layout.right == 177);
+  assert(layout.meridiem_x == 166);
+}
+
 static void test_demo_beats(void) {
   Scene idle, scene;
   struct tm local = at(9, 41, 0);
@@ -196,6 +244,7 @@ static void test_minute_does_not_move_cast(void) {
 int main(void) {
   test_static_clock();
   test_clock_style();
+  test_large_clock_layout();
   test_demo_beats();
   test_demo_matches_app_clock();
   test_all_lanes_appear();

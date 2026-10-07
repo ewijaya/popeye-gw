@@ -1,5 +1,26 @@
 #include "face.h"
 
+void face_clock_layout(const Scene *scene, FaceClockLayout *layout) {
+  unsigned digit, bar;
+  bool meridiem = scene_lit(scene, SEG_AM) || scene_lit(scene, SEG_PM);
+  int width = 8 + 20 + 8 + (meridiem ? 8 + 11 : 0);
+  for (digit = 0u; digit < 4u; ++digit) {
+    unsigned pattern = 0u;
+    for (bar = 0u; bar < 7u; ++bar)
+      if (scene_lit(scene, SEG_DIGIT + digit * 7u + bar)) pattern |= 1u << bar;
+    layout->widths[digit] = pattern == 0x06u ? 4 : 32;
+    width += layout->widths[digit];
+  }
+  layout->starts[0] = (200 - width) / 2;
+  layout->starts[1] = layout->starts[0] + layout->widths[0] + 8;
+  layout->colon_x = layout->starts[1] + layout->widths[1] + 8;
+  layout->starts[2] = layout->colon_x + 4 + 8;
+  layout->starts[3] = layout->starts[2] + layout->widths[2] + 8;
+  layout->right = layout->starts[3] + layout->widths[3];
+  layout->meridiem_x = meridiem ? layout->right + 8 : -1;
+  if (meridiem) layout->right = layout->meridiem_x + 11;
+}
+
 void face_scene(Scene *scene, const struct tm *local, bool style_24h, int frame) {
   struct tm shown = *local;
   if (frame < FACE_DEMO_FIRST || frame > FACE_DEMO_LAST) {

@@ -66,15 +66,15 @@ host or emulator evidence is recorded separately.
 | Clay opening | My Apps settings opens a readable offline form in the real phone WebView and returns to the Pebble app on save/cancel | Owner confirms settings save works; cancel/offline variations pending |
 | Save and persistence | Change several controls, save, switch faces and restart the phone app; saved choices reach the watch and remain selected | Owner confirms preset save works; extended restart persistence pending |
 | Presets | Classic, Everyday, Traveller and Large Time update layout/style; animation activity, reduced motion, labels/goals and weather consent remain intact | Pending |
-| Information rows | Select each row type and Hidden; labels/data fit without covering the clock or character lanes | Pending |
+| Information rows | Select each row type and Hidden; second-row steps/weather/countdown use symbols and values, world locations retain text; data fits without covering the clock or character lanes | Pending |
 | Rotation | Two configured nonempty choices alternate at the chosen interval, including Still, reduced motion, quiet hours and low battery; hidden face stops updates | Pending |
 | Date options | Date order and five weekday languages (including Japanese) work; year and ISO week remain visible together, including year rollover | Pending |
 | Battery styles | Percent, bars, both and spinach reflect battery state; threshold visibility and charging indicator behave as selected | Pending |
-| Connection | Connection indicator changes correctly; optional disconnect pulse occurs only when enabled and permitted by quiet settings | Pending |
+| Connection | Disconnect/reconnect leaves no top-left indicator or pulse; data requests resume after reconnection | Pending |
 | Steps and permissions | Daily count matches Pebble Health; percentage/meter respect the goal; denied or unavailable Health data displays `STEPS --` | Pending |
 | Goal celebration | Reach the goal with motion eligible; celebration is brief and does not replay after switching faces or reopening that day | Pending |
 | Weather opt-in | Weather disabled causes no location prompt or weather request; enabling it permits the selected phone/manual location workflow | Pending |
-| Weather location and display | A manual city and phone location each produce plausible current/high-low data; effects follow their switch | Pending |
+| Weather location and display | A manual city and phone location each produce plausible current/high-low data; symbols appear only in the information row; the bottom-left scene stays clear | Pending |
 | Weather units and failures | C/F changes show correctly converted values; loss of Internet keeps valid cached data with `*`; a new uncached location displays `WEATHER --` | Pending |
 | Weather refresh | Selected refresh interval is respected during normal use; GPS/network failures recover without repeated prompts or rapid requests | Pending |
 | World time | Selected city/zone, fractional offsets, label and time format match an independent clock; phone restart refreshes the offset | Pending |
@@ -83,7 +83,7 @@ host or emulator evidence is recorded separately.
 | Event celebration | Today's event produces a brief eligible-motion celebration once per local day; it does not show the steps-only goal label | Pending |
 | Animation controls | Lively, Arcade, Relaxed, Classic and Still match their descriptions; custom speed, pauses and individual character switches work | Pending |
 | Focus interruption | Cover with a notification mid-sequence and across minutes; motion stops and resumes promptly without a burst of missed frames | Pending |
-| Quiet Time | Enable before and during motion; time continues, motion stops, and disconnect vibration is suppressed | Pending |
+| Quiet Time | Enable before and during motion; time continues and motion stops | Pending |
 | Quiet hours | Verify normal and overnight intervals; matching start/end creates no quiet interval; eligible motion resumes at the end | Pending |
 | Low battery and power | At/below chosen cutoff off power, motion stops; charging or rising above the cutoff resumes it; cutoff zero disables the limit | Pending |
 | Themes and colours | All four themes (Ivory default), custom background/segment/accent colours, ghost strengths and monochrome artwork remain readable | Pending |

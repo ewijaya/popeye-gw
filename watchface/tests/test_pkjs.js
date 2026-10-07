@@ -114,12 +114,12 @@ function formHarness(saved) {
   built(); return {items: items, ids: ids};
 }
 
-test('wire map matches package exactly and every setting has one offline form control', function() {
+test('wire map matches package exactly and every active setting has one offline form control', function() {
   var pkg = require('../package.json'), seen = {};
   assert.deepStrictEqual(pkg.pebble.messageKeys, K);
   function visit(items) { items.forEach(function(item) { if (item.items) { visit(item.items); }
     else if (item.messageKey) { assert(!seen[item.messageKey]); seen[item.messageKey] = true; } }); }
-  visit(config); assert.deepStrictEqual(Object.keys(seen).sort(), schema.names.slice().sort());
+  visit(config); assert.deepStrictEqual(Object.keys(seen).sort(), schema.names.filter(function(name) { return name !== 'DisconnectAlert' && name !== 'WeatherEffects'; }).sort());
   assert(pkg.pebble.capabilities.indexOf('configurable') >= 0);
   var max = schema.copy(schema.defaults); max.WorldLabel = '12345678'; max.EventLabel = '1234567890'; max.EventDate = '2199-12-31';
   var payload = schema.wire(max, null, true);
@@ -140,6 +140,9 @@ test('sanitization clamps values, preserves missing/invalid keys, and validates 
   assert.strictEqual(schema.sanitize({2: {value: 4}}, old).Row1, 4);
   assert(!schema.validDate('2100-02-29')); assert(schema.validDate('2000-02-29'));
   assert(!schema.validDate('2026-04-31')); assert(!schema.validDate('0001-01-01'));
+  var retired = schema.sanitize({DisconnectAlert: true, WeatherEffects: true});
+  assert.strictEqual(retired.DisconnectAlert, false); assert.strictEqual(retired.WeatherEffects, false);
+  assert(!/connection|disconnect|weather effects/i.test(JSON.stringify(config)));
   assert.strictEqual(schema.defaults.Theme, 1);
   assert.strictEqual(schema.sanitize({Theme: 4}).Theme, 1);
   assert.strictEqual(schema.sanitize({Theme: 0}).Theme, 0);

@@ -374,12 +374,7 @@ static void battery_changed(BatteryChargeState battery) {
 }
 
 static void connection_changed(bool connected) {
-  bool was_connected = s_data.connected;
   s_data.connected = connected;
-  if (was_connected && !connected && s_settings.disconnect_alert && !quiet_time_is_active()) {
-    time_t now = time(NULL);
-    if (!settings_quiet_now(&s_settings, localtime(&now))) vibes_short_pulse();
-  }
   if (connected) { s_requests.next_attempt = 0; request_data(true); }
   render();
 }

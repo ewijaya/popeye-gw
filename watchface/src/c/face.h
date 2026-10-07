@@ -9,6 +9,15 @@
 #define FACE_DEMO_LAST 5
 #define FACE_DEMO_BEAT_MS 2000u
 
+typedef struct {
+  int starts[4], widths[4];
+  int colon_x, meridiem_x, right;
+} FaceClockLayout;
+
+/* Large clock geometry on the 200px screen. Center the digits and optional
+ * 11px AM/PM label together; meridiem_x is -1 for a 24-hour scene. */
+void face_clock_layout(const Scene *scene, FaceClockLayout *layout);
+
 /* frame < 0 is the static clock; FACE_DEMO_FIRST..FACE_DEMO_LAST show that beat
  * of the food demonstration. Pure: no platform calls, wall clock is the caller's. */
 void face_scene(Scene *scene, const struct tm *local, bool style_24h, int frame);
