@@ -113,7 +113,7 @@ def characters():
 
 
 def cargo():
-    for lane, source in enumerate(("food-bottle", "fish", "food-bottle", "food-can")):
+    for lane, source in enumerate(("food-bottle", "fish", "barrel", "food-can")):
         for stage, (x, y) in enumerate(ARCS[lane]):
             sprite(source, f"cargo-{lane}-{stage}", (x - 7, y - 7, 14, 14), angle=-35 if lane == 0 else 0)
 
