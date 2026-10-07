@@ -353,7 +353,7 @@ static void test_saved_orientation_preferences(void) {
     assert(settings.theme == THEME_CLASSIC); /* The default look is unchanged. */
     settings.theme = THEME_IVORY; settings.alarm_hour = 23; settings.alarm_on = true;
     settings_encode(&settings, bytes);
-    assert(bytes[0] == 9u && bytes[2] == (23u | 0x20u | 0x80u)); /* Medium sets level bit 0 */
+    assert(bytes[0] == 9u && bytes[2] == (23u | 0x20u | 0x40u | 0x80u)); /* Light In play, Medium level bit 0 */
     assert(settings_decode(&restored, bytes, sizeof(bytes)) && restored.theme == THEME_IVORY &&
            restored.alarm_hour == 23u && restored.alarm_on);
     /* Selection survives a save and an app restart, then switches back. */
@@ -414,9 +414,9 @@ static void test_saved_orientation_preferences(void) {
     unsigned theme, level, light;
     uint8_t v8[SETTINGS_RECORD_SIZE] = { 8, 0x9e, 23u | 0x40u, 59 };
     write_checksum(v8);
-    assert(!settings_decode(&settings, v8, sizeof(v8)) && !settings.light_play);
+    assert(!settings_decode(&settings, v8, sizeof(v8)) && settings.light_play); /* rejected: defaults */
     settings_defaults(&settings);
-    assert(!settings.light_play); /* Auto by default: the system keeps control. */
+    assert(settings.light_play); /* In play for new installs; saved v1-v8 records keep Auto. */
     for (theme = 0; theme < THEME_COUNT; ++theme)
       for (level = 0; level < 3u; ++level)
         for (light = 0; light < 2u; ++light) {

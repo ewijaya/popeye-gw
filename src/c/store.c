@@ -25,6 +25,7 @@ void settings_defaults(Settings *settings) {
   settings->buttons_bottom = true;
   settings->alarm_hour = 7u;
   settings->sound_level = 1u; /* Medium */
+  settings->light_play = true; /* New installs hold the light in rounds; older records load Auto. */
 }
 
 void scores_defaults(HighScores *scores) { memset(scores, 0, sizeof(*scores)); }
