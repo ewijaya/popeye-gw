@@ -264,7 +264,8 @@ locations. Connection indicators and decorative weather effects are omitted;
 there is no sound or disconnect vibration.
 
 It shares the game's `scene.c`, `clock.c`, `game.c` and artwork by path, and has
-its own settings and UUID. **Version 1.0.0 is published:**
+its own settings and UUID. **Version 1.0.1 is prepared for watch testing and release approval.**
+Version 1.0.0 remains published:
 [install from Pebble Store](https://apps.repebble.com/8e8e130581e7467d9d7b0138)
 or [download the watchface PBW from GitHub](https://github.com/ewijaya/popeye-gw/releases/tag/clock-v1.0.0).
 Both downloads were verified against the owner-approved frozen build. Detailed

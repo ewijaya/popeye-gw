@@ -1,14 +1,12 @@
 # Popeye G&W Clock changelog
 
-## Unreleased fixes
+## 1.0.1 — 2026-10-07
 
-- Uses symbols and values in the second information row, retaining location
-  labels for world time. Steps, weather and countdowns drop descriptive words.
-- Removes the connection indicator, disconnect alert option and decorative
-  weather graphics from the scene. Battery choices now say Battery.
-
-- Centers the complete Large Time display, including narrow `1` digits, and
-  places a full AM/PM label beside the time instead of a detached corner letter.
+- Centers Large Time in 12-hour mode and places a full AM/PM label beside the digits.
+- Simplifies the second information row to symbols and values, retaining world location labels.
+- Removes the connection indicator, disconnect alert option and decorative weather graphics; battery choices now say Battery.
+- Adds a distinctive sailor-cap clock and pipe icon to the watch launcher.
+- Uses a barrel for lane 2 cargo so it is easier to distinguish from the tilted bottle.
 
 ## 1.0.0 — 2026-10-06
 
