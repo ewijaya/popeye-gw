@@ -10,9 +10,9 @@ black segments, a white field, and vivid red, orange, blue and turquoise.
 
 *Real gameplay from the Emery emulator (a sped-up highlight, shown at half of its 2x size).*
 
-**Status:** Version 1.5.0 is published on GitHub and the Pebble App Store.
-It adds Settings → Light, which keeps the backlight on during rounds; see the
-[release record](docs/releases/1.5.0.md).
+**Status:** Version 1.6.0 is being prepared for release. It adds a Clay phone
+settings page matching the game's on-watch Settings menu. Version 1.5.0 remains
+the published release; see its [release record](docs/releases/1.5.0.md).
 
 **Download:** [Pebble App Store](https://apps.repebble.com/e9cb2950ca21440798fb1db8) ·
 [GitHub release v1.5.0](https://github.com/ewijaya/popeye-gw/releases/tag/v1.5.0)

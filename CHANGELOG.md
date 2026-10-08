@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.6.0 — 2026-10-08
 
 - Add a Clay page under My Apps → Popeye G&W → Settings with exactly the game's on-watch Settings menu. It loads the watch's current values, saves only changed options, and keeps Buttons hidden in Vertical mode without forgetting its position.
 
