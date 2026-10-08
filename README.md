@@ -10,14 +10,16 @@ black segments, a white field, and vivid red, orange, blue and turquoise.
 
 *Real gameplay from the Emery emulator (a sped-up highlight, shown at half of its 2x size).*
 
-**Status:** Version 1.6.0 is being prepared for release. It adds a Clay phone
-settings page matching the game's on-watch Settings menu. Version 1.5.0 remains
-the published release; see its [release record](docs/releases/1.5.0.md).
+**Status:** Version 1.6.0 is published on GitHub and the Pebble App Store.
+It adds a Clay phone settings page matching the game's on-watch Settings menu;
+see the [release record](docs/releases/1.6.0.md).
 
 **Download:** [Pebble App Store](https://apps.repebble.com/e9cb2950ca21440798fb1db8) ·
-[GitHub release v1.5.0](https://github.com/ewijaya/popeye-gw/releases/tag/v1.5.0)
-([PBW](https://github.com/ewijaya/popeye-gw/releases/download/v1.5.0/popeye-gw.pbw)).
-Both downloads match the approved SHA-256 recorded in the [release record](docs/releases/1.5.0.md).
+[GitHub release v1.6.0](https://github.com/ewijaya/popeye-gw/releases/tag/v1.6.0)
+([PBW](https://github.com/ewijaya/popeye-gw/releases/download/v1.6.0/popeye-gw.pbw)).
+GitHub and both store catalog downloads match the approved SHA-256 in the
+[release record](docs/releases/1.6.0.md). The visible store page and changelog
+could not be checked because their HTTP requests were blocked.
 
 This is a watch adaptation, not an exact ROM recreation. The
 [fidelity ledger](docs/pp23-fidelity.md) separates confirmed rules from provisional
