@@ -100,6 +100,23 @@ seconds) on the watchface. The last Help page repeats this; Pebble's
 
 ## Playing
 
+### Phone settings
+
+Open the game on your connected watch, then **My Apps → Popeye G&W → Settings**
+in the Pebble phone app. The offline Clay page loads the watch's current settings:
+Orientation, Buttons, Swap, Vibrate, Sound, Light, Ghosts, Theme, Demo and Online.
+The choices and order match the watch menu; Buttons appears only in Horizontal
+mode, with its Top/Bottom preference retained while hidden. Alarm remains in its
+separate on-watch menu.
+
+Save applies only the options you changed and confirms that the watch saved them.
+Reopening the phone page reads any changes made on the watch. If the watch cannot
+be reached, the page asks you to open the game and reconnect; it does not display
+phone defaults as your saved settings. Finish or quit a running round before
+saving. A rejected or unconfirmed save shows a message on the phone.
+
+### Watch controls
+
 | State | Up / Down | Select | Hold Select | Back |
 |---|---|---|---|---|
 | Clock | High scores / Menu | Game A (shows best A while held) | Game B (best B shown) | Exit |
@@ -149,6 +166,7 @@ table, five player poses, four food arcs, spawn scheduler and precise miss/input
 ## Host tests
 
 ```sh
+npm ci
 ./tools/test.sh
 ./tools/test.sh --sanitize
 ```
@@ -222,9 +240,11 @@ while driving the buttons, then merged into a GIF by `tools/make_gif.py` (Python
 
 ## Build
 
-Requires Pebble Tool 5.0.40 and SDK 4.33.1. Use the bundled compiler.
+Requires Pebble Tool 5.0.40, SDK 4.33.1 and a working Node runtime for Clay.
+Use the bundled C compiler.
 
 ```sh
+npm ci
 pebble clean
 pebble build
 pebble install --emulator emery build/popeye-gw.pbw
@@ -240,7 +260,8 @@ regardless of the checkout directory name, so pass its path when installing.
 
 `server/leaderboard.py` (Python 3 standard library) and `tools/replay_verify.c` (a native verifier
 built from the real `game.c` and `replay.c`) are tested by `./tools/test.sh`. The phone side is
-`src/js/pebble-js-app.js` (PebbleKit JS, `enableMultiJS: false`; the SDK build needs no Node).
+`src/js/pebble-js-app.js`; `src/pkjs/index.js` bundles it with the Clay settings code
+(`enableMultiJS: true`, pinned `@rebble/clay` dependency).
 `tests/test_pkjs.py` runs its tests with Node when a working `node` exists and skips with a message
 otherwise. Nothing is deployed.
 

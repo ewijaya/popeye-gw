@@ -68,6 +68,7 @@ static void sync_ticks(void);
 static void ring_tick(void *data);
 static void arm_idle(void);
 static void log_heap(const char *moment);
+static void online_try_send(void);
 
 static uint64_t now_ms(void) {
   time_t seconds;
@@ -136,6 +137,7 @@ static bool save_settings(const Settings *settings) {
   if (!settings->online) online_net_cancel();
   alarm_refresh(settings, time(NULL));
   sync_ticks();
+  online_net_settings_changed();
   return true;
 }
 
@@ -164,6 +166,17 @@ static void schedule_timer(void) {
 /* Only outside a round: a transfer never runs while the game is being played or paused. */
 static bool round_in_progress(void) {
   return s_page == PAGE_GAME && s_game.status != GAME_OVER;
+}
+
+static uint8_t phone_settings_apply(const Settings *settings) {
+  /* The watch menu cannot change settings inside a round either. In particular,
+   * changing Swap mid-Daily would invalidate its recorded starting controls. */
+  if (round_in_progress()) return 2u;
+  if (!save_settings(settings)) { render(); return 1u; }
+  if (s_page == PAGE_SETTINGS) s_row = 0u;
+  online_try_send();
+  render();
+  return 0u;
 }
 
 static void online_done(OnlineNetResult result, uint32_t rank, uint32_t total) {
@@ -954,7 +967,7 @@ static void glance_reload(AppGlanceReloadSession *session, size_t limit, void *c
 }
 
 static void window_unload(Window *window) {
-  online_net_cancel();
+  online_net_deinit();
   if (s_light_held) light_enable(false);
   s_light_held = false;
   feedback_service_set_running(false);
@@ -991,6 +1004,7 @@ int main(void) {
   window_set_window_handlers(s_window, (WindowHandlers) { .load = window_load, .unload = window_unload });
   window_stack_push(s_window, true);
   alarm_init(&s_data.settings, begin_ring);
+  online_net_init(&s_data.settings, phone_settings_apply);
   if (s_data.settings.online && online_should_send(&s_data.online)) app_timer_register(4000, launch_send, NULL);
   app_focus_service_subscribe_handlers((AppFocusHandlers) { .will_focus = will_focus });
   sync_ticks();

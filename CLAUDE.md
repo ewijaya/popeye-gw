@@ -40,10 +40,10 @@
 - Use the SDK's bundled compiler at
   `toolchain/arm-none-eabi/bin/arm-none-eabi-gcc` under that root; do not install
   another compiler. Host tests use `/usr/bin/cc` explicitly because `cc` may be
-  aliased. Treat the shell's default `node` as broken. The game is C-only, but
-  the companion watchface now needs Node for Clay and phone tests. The verified
+  aliased. Treat the shell's default `node` as broken. Both the game and
+  companion watchface need Node for Clay and phone tests. The verified
   local runtime is `~/.nvm/versions/node/v20.19.5/bin/node`; prepend its directory
-  to `PATH` for `npm ci --prefix watchface` and watchface SDK builds. Check any
+  to `PATH` for `npm ci`, `npm ci --prefix watchface` and SDK builds. Check any
   explicitly selected runtime before using it.
 - Check both the build exit status and the literal `'build' finished` in its
   output. Terminal/tput output has previously hidden a failed build. If needed,

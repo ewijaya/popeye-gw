@@ -1,4 +1,4 @@
-"""Runs tests/test_pkjs.js with node when a working one exists (the SDK build needs none)."""
+"""Runs the leaderboard and Clay phone suites with a working Node runtime."""
 import os
 from pathlib import Path
 import re
@@ -27,15 +27,17 @@ class PhoneSideTest(unittest.TestCase):
         node = working_node()
         if node is None:
             self.skipTest("no working node (set NODE=/path/to/node): phone JS tests not run")
-        done = subprocess.run([node, str(ROOT / "tests/test_pkjs.js")], stdout=subprocess.PIPE,
-                              stderr=subprocess.STDOUT, timeout=60)
-        self.assertEqual(done.returncode, 0, done.stdout.decode())
-        self.assertIn(b"pkjs tests passed", done.stdout)
+        for script in ("test_pkjs.js", "test_settings_pkjs.js"):
+            done = subprocess.run([node, str(ROOT / "tests" / script)], stdout=subprocess.PIPE,
+                                  stderr=subprocess.STDOUT, timeout=60)
+            self.assertEqual(done.returncode, 0, done.stdout.decode())
+            self.assertIn(b"pkjs tests passed", done.stdout)
 
     def test_message_keys_match_the_watch_protocol(self):
         # Runs without node: the keys named in JS, the C adapter and package.json agree.
         import json
         keys = json.loads((ROOT / "package.json").read_text())["pebble"]["messageKeys"]
+        keys = [key for key in keys if key.startswith("LB_")]
         js = (ROOT / "src/js/pebble-js-app.js").read_text()
         c = (ROOT / "src/c/online_net.c").read_text()
         for key in keys:

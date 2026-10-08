@@ -50,6 +50,15 @@ UBSAN_OPTIONS=halt_on_error=1 "$test_dir/test_scene"
 UBSAN_OPTIONS=halt_on_error=1 "$test_dir/test_game"
 UBSAN_OPTIONS=halt_on_error=1 "$test_dir/test_replay"
 UBSAN_OPTIONS=halt_on_error=1 "$test_dir/test_theme"
+# Settings persistence and the shared Clay/leaderboard AppMessage channel.
+# SDK callbacks carry unused context parameters.
+# shellcheck disable=SC2086
+/usr/bin/cc $cflags -Wno-unused-parameter "$@" -I"$repo_dir/tests/fake_pebble" -I"$repo_dir/src/c" \
+  "$repo_dir/src/c/settings_wire.c" "$repo_dir/src/c/online_net.c" \
+  "$repo_dir/src/c/store.c" "$repo_dir/src/c/storage.c" "$repo_dir/src/c/online.c" \
+  "$repo_dir/src/c/game.c" "$repo_dir/src/c/replay.c" \
+  "$repo_dir/tests/fake_pebble/fake.c" "$repo_dir/tests/test_phone.c" -o "$test_dir/test_phone"
+UBSAN_OPTIONS=halt_on_error=1 "$test_dir/test_phone"
 # The leaderboard's native verifier and the replay generator its Python tests use, both built
 # from the real engine sources (sanitized under --sanitize).
 # shellcheck disable=SC2086

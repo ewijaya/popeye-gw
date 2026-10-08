@@ -6,19 +6,36 @@
     "pebble-app"
   ],
   "private": true,
-  "dependencies": {},
+  "dependencies": {
+    "@rebble/clay": "1.1.0"
+  },
   "pebble": {
     "displayName": "Popeye G&W",
     "uuid": "6b7c8c28-36f0-47ca-a073-3e8f33efcaf0",
     "sdkVersion": "3",
-    "enableMultiJS": false,
+    "enableMultiJS": true,
     "messageKeys": [
       "LB_SEQ",
       "LB_LEN",
       "LB_DATA",
       "LB_STATUS",
       "LB_RANK",
-      "LB_TOTAL"
+      "LB_TOTAL",
+      "CFG_REQUEST",
+      "CFG_PATCH",
+      "CFG_DATA",
+      "CFG_ID",
+      "CFG_STATUS",
+      "Orientation",
+      "Buttons",
+      "Swap",
+      "Vibrate",
+      "Sound",
+      "Light",
+      "Ghosts",
+      "Theme",
+      "Demo",
+      "Online"
     ],
     "targetPlatforms": [
       "emery"
@@ -83,6 +100,9 @@
           "memoryFormat": "1BitPalette"
         }
       ]
-    }
+    },
+    "capabilities": [
+      "configurable"
+    ]
   }
 }

@@ -6,6 +6,7 @@
 import json
 import os.path
 import sys
+from waflib.TaskGen import after_method, before_method, feature
 
 top = '.'
 out = 'build'
@@ -59,7 +60,17 @@ def build(ctx):
                                          'src/pkjs/**/*.js',
                                          'src/pkjs/**/*.json',
                                          'src/common/**/*.js']),
-                   js_entry_file='src/pkjs/index.js')
+                   js_entry_file='src/pkjs/index.js',
+                   keep_debug_maps_local=True)
+
+
+@feature('js')
+@after_method('process_js')
+@before_method('make_pbl_bundle')
+def exclude_debug_maps_from_pbw(self):
+    """Keep the Clay bundle's debug map locally, as the companion watchface does."""
+    if getattr(self, 'keep_debug_maps_local', False):
+        self.js = [node for node in self.js if not node.name.endswith('.js.map')]
 
 
 def check_app_size(ctx):

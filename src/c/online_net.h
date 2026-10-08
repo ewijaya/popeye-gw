@@ -7,11 +7,20 @@
  * Phone to watch, once the server has answered (or the phone cannot ask):
  *   LB_STATUS u8: 1 ranked (LB_RANK, LB_TOTAL u32), 0 try later, 2 rejected for good,
  *   3 online play is not configured in this build.
- * AppMessage is open only while a transfer runs, and the caller never starts one during a
- * round. A transfer that gets no answer within 30 s fails. */
+ * The shared AppMessage channel also serves Clay settings, including when Online is off.
+ * Settings snapshots take priority between replay chunks. A transfer that gets no answer
+ * within 30 s fails. */
 
 #include <stdbool.h>
 #include <stdint.h>
+#include "store.h"
+
+/* Settings apply result: 0 saved, 1 storage failure, 2 round in progress.
+ * Transport adds 3 for malformed patches. Values are acknowledged only after saving. */
+typedef uint8_t (*PhoneSettingsApply)(const Settings *settings);
+bool online_net_init(const Settings *settings, PhoneSettingsApply apply);
+void online_net_settings_changed(void);
+void online_net_deinit(void);
 
 typedef enum { ONLINE_NET_OK, ONLINE_NET_FAILED, ONLINE_NET_REJECTED, ONLINE_NET_UNAVAILABLE } OnlineNetResult;
 
